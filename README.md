@@ -1,8 +1,8 @@
 # LinkedIn-Profile-Reader
 
-Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON – currently focused on the **Experience** and **Education** sections.
+Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **work** and **education** arrays.
 
-Experience and Education sections are extracted (positions and education arrays).
+Currently extracts the LinkedIn Experience and Education sections into JSON Resume `work` and `education` arrays.
 
 ## CLI usage
 
@@ -19,25 +19,25 @@ cat Profile.pdf | parse-linkedin-pdf > profile.json
 ```ts
 import { parseLinkedInPdf } from 'linkedin-profile-reader';
 
-const { positions, education } = await parseLinkedInPdf('/path/to/Profile.pdf');
+const { work, education } = await parseLinkedInPdf('/path/to/Profile.pdf');
 ```
 
 ```ts
-interface ExperiencePosition {
-  title: string;
-  company: string;
-  location: string;
-  start: string;        // e.g. "Mar 2021"
-  end: string | null;   // null when "Present"
-  summary: string;      // reserved for future
+interface JSONResumeWork {
+  name: string;
+  position: string;
+  location?: string;
+  startDate?: string | null; // YYYY or YYYY-MM
+  endDate?: string | null;   // null when "Present"
+  summary?: string;
 }
 
-interface EducationEntry {
-  school: string;
-  degree: string;
-  field: string;
-  startYear: string | null;
-  endYear: string | null;
+interface JSONResumeEducation {
+  institution: string;
+  studyType?: string;
+  area?: string;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 ```
 

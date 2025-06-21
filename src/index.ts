@@ -3,28 +3,47 @@
 import fs from "node:fs";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
-/** Position within the Experience section. */
+// Internal extraction structures -------------------------------------------
 export interface ExperiencePosition {
   title: string;
   company: string;
   location: string;
   start: string; // e.g. "Jan 2020"
-  end: string | null; // null when \"Present\"
+  end: string | null; // null when "Present"
   summary: string; // currently empty; reserved for future
 }
 
-export interface EducationEntry {
+export interface RawEducationEntry {
   school: string;
   degree: string;
   field?: string;
-  start?: string;
+  start?: string | null;
   end?: string | null;
 }
 
-/** Parsed profile data (currently only Experience). */
-export interface LinkedInProfile {
-  positions: ExperiencePosition[];
-  education: EducationEntry[];
+// JSON Resume v1 minimal types ---------------------------------------------
+
+export interface JSONResumeWork {
+  name: string; // Company / organization name
+  position: string; // Job title
+  location?: string;
+  startDate?: string | null; // YYYY or YYYY-MM
+  endDate?: string | null;   // same format, null = present
+  summary?: string;
+}
+
+export interface JSONResumeEducation {
+  institution: string;
+  studyType?: string; // Degree
+  area?: string;      // Field of study
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+export interface JSONResume {
+  $schema?: string;
+  work: JSONResumeWork[];
+  education: JSONResumeEducation[];
 }
 
 /**
@@ -36,7 +55,7 @@ export interface LinkedInProfile {
  */
 export async function parseLinkedInPdf(
   input: string | Buffer
-): Promise<LinkedInProfile> {
+): Promise<JSONResume> {
   // --- Load PDF -------------------------------------------------------------
   let data: Uint8Array | string;
   if (typeof input === "string") {
@@ -118,7 +137,7 @@ export async function parseLinkedInPdf(
   // --- Main extraction loop -------------------------------------------------
   let currentCompany = "";
   const positions: ExperiencePosition[] = [];
-  const education: EducationEntry[] = [];
+  const education: RawEducationEntry[] = [];
   const seen = new Set<string>();
 
   for (let idx = 0; idx < lines.length; idx++) {
@@ -312,5 +331,48 @@ export async function parseLinkedInPdf(
 
   // -------------------------------------------------------------------------
 
-  return { positions, education };
+  const monthMap: Record<string, string> = {
+    january: "01", jan: "01",
+    february: "02", feb: "02",
+    march: "03", mar: "03",
+    april: "04", apr: "04",
+    may: "05",
+    june: "06", jun: "06",
+    july: "07", jul: "07",
+    august: "08", aug: "08",
+    september: "09", sep: "09",
+    october: "10", oct: "10",
+    november: "11", nov: "11",
+    december: "12", dec: "12",
+  };
+
+  const toIso = (val: string | null | undefined): string | null | undefined => {
+    if (!val) return val ?? null;
+    const parts = val.split(/\s+/);
+    if (parts.length === 2) {
+      const m = monthMap[parts[0].toLowerCase()];
+      const y = parts[1];
+      if (m && /\d{4}/.test(y)) return `${y}-${m}`;
+    }
+    return val; // fallback
+  };
+
+  return {
+    $schema: "https://jsonresume.org/schema/1.0.0/resume.json",
+    work: positions.map((p) => ({
+      name: p.company,
+      position: p.title,
+      location: p.location || undefined,
+      startDate: toIso(p.start) ?? undefined,
+      endDate: toIso(p.end) ?? null,
+      summary: p.summary || undefined,
+    })),
+    education: education.map((e) => ({
+      institution: e.school,
+      studyType: e.degree || undefined,
+      area: e.field || undefined,
+      startDate: e.start ?? undefined,
+      endDate: e.end ?? undefined,
+    })),
+  };
 }

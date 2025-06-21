@@ -1,133 +1,114 @@
 {
-  "positions": [
+  "work": [
     {
-      "title": "Senior Content Design and Execution Lead, Medical Information & Communication, Medical Affairs",
-      "company": "Genentech",
+      "name": "Genentech",
+      "position": "Senior Content Design and Execution Lead, Medical Information & Communication, Medical Affairs",
       "location": "South San Francisco, California, United States",
-      "start": "July 2024",
-      "end": "November 2024",
-      "summary": ""
+      "startDate": "2024-07",
+      "endDate": "2024-11"
     },
     {
-      "title": "Director, Medical Communications & Information, Medical Affairs",
-      "company": "Sumitomo Pharma America, Inc.",
-      "location": "",
-      "start": "October 2023",
-      "end": "March 2024",
-      "summary": ""
+      "name": "Sumitomo Pharma America, Inc.",
+      "position": "Director, Medical Communications & Information, Medical Affairs",
+      "startDate": "2023-10",
+      "endDate": "2024-03"
     },
     {
-      "title": "Associate Director, Medical Communications & Information, Medical Affairs",
-      "company": "Sumitomo Pharma America, Inc.",
+      "name": "Sumitomo Pharma America, Inc.",
+      "position": "Associate Director, Medical Communications & Information, Medical Affairs",
       "location": "Brisbane, California, United States",
-      "start": "July 2023",
-      "end": "October 2023",
-      "summary": ""
+      "startDate": "2023-07",
+      "endDate": "2023-10"
     },
     {
-      "title": "Associate Director, Medical Communications & Information (Acquired by Sumitomo Pharma America, Inc.)",
-      "company": "Myovant Sciences",
+      "name": "Myovant Sciences",
+      "position": "Associate Director, Medical Communications & Information (Acquired by Sumitomo Pharma America, Inc.)",
       "location": "Brisbane, California, United States",
-      "start": "September 2021",
-      "end": "July 2023",
-      "summary": ""
+      "startDate": "2021-09",
+      "endDate": "2023-07"
     },
     {
-      "title": "Associate Director, Medical Information, Medical Affairs",
-      "company": "Ascendis Pharma",
+      "name": "Ascendis Pharma",
+      "position": "Associate Director, Medical Information, Medical Affairs",
       "location": "Palo Alto, California, United States",
-      "start": "April 2021",
-      "end": "August 2021",
-      "summary": ""
+      "startDate": "2021-04",
+      "endDate": "2021-08"
     },
     {
-      "title": "Associate Director, Global Medical Information, Medical Affairs",
-      "company": "Jazz Pharmaceuticals",
+      "name": "Jazz Pharmaceuticals",
+      "position": "Associate Director, Global Medical Information, Medical Affairs",
       "location": "Palo Alto, CA",
-      "start": "April 2019",
-      "end": "March 2021",
-      "summary": ""
+      "startDate": "2019-04",
+      "endDate": "2021-03"
     },
     {
-      "title": "Associate Director, Medical Affairs Information",
-      "company": "Exelixis",
+      "name": "Exelixis",
+      "position": "Associate Director, Medical Affairs Information",
       "location": "Alameda, CA",
-      "start": "March 2019",
-      "end": "April 2019",
-      "summary": ""
+      "startDate": "2019-03",
+      "endDate": "2019-04"
     },
     {
-      "title": "Senior Medical Information Manager",
-      "company": "Exelixis",
+      "name": "Exelixis",
+      "position": "Senior Medical Information Manager",
       "location": "Alameda, CA",
-      "start": "June 2017",
-      "end": "March 2019",
-      "summary": ""
+      "startDate": "2017-06",
+      "endDate": "2019-03"
     },
     {
-      "title": "Associate Manager, Medical Information - Oncology/Cardiovascular",
-      "company": "Gilead Sciences",
+      "name": "Gilead Sciences",
+      "position": "Associate Manager, Medical Information - Oncology/Cardiovascular",
       "location": "Foster City, CA",
-      "start": "April 2016",
-      "end": "June 2017",
-      "summary": ""
+      "startDate": "2016-04",
+      "endDate": "2017-06"
     },
     {
-      "title": "Senior Drug Information Associate",
-      "company": "Dohmen Life Science Services",
+      "name": "Dohmen Life Science Services",
+      "position": "Senior Drug Information Associate",
       "location": "Emeryville CA",
-      "start": "December 2015",
-      "end": "April 2016",
-      "summary": ""
+      "startDate": "2015-12",
+      "endDate": "2016-04"
     },
     {
-      "title": "Drug Information Associate",
-      "company": "Dohmen Life Science Services",
+      "name": "Dohmen Life Science Services",
+      "position": "Drug Information Associate",
       "location": "Emeryville, CA",
-      "start": "October 2013",
-      "end": "December 2015",
-      "summary": ""
+      "startDate": "2013-10",
+      "endDate": "2015-12"
     },
     {
-      "title": "Drug Safety Associate II",
-      "company": "Exelixis",
+      "name": "Exelixis",
+      "position": "Drug Safety Associate II",
       "location": "San Francisco Bay Area",
-      "start": "January 2013",
-      "end": "October 2013",
-      "summary": ""
+      "startDate": "2013-01",
+      "endDate": "2013-10"
     },
     {
-      "title": "Clinical Pharmacist",
-      "company": "Kaiser Permanente",
-      "location": "",
-      "start": "February 2010",
-      "end": "December 2012",
-      "summary": ""
+      "name": "Kaiser Permanente",
+      "position": "Clinical Pharmacist",
+      "startDate": "2010-02",
+      "endDate": "2012-12"
     },
     {
-      "title": "Pharmacist",
-      "company": "Walgreens",
+      "name": "Walgreens",
+      "position": "Pharmacist",
       "location": "San Francisco, California, United States",
-      "start": "June 2004",
-      "end": "September 2012",
-      "summary": ""
+      "startDate": "2004-06",
+      "endDate": "2012-09"
     },
     {
-      "title": "Pharmacy Practice Resident (PGY1)",
-      "company": "Kaiser Permanente",
+      "name": "Kaiser Permanente",
+      "position": "Pharmacy Practice Resident (PGY1)",
       "location": "Diablo Service Area, Northern California",
-      "start": "July 2008",
-      "end": "July 2009",
-      "summary": ""
+      "startDate": "2008-07",
+      "endDate": "2009-07"
     }
   ],
   "education": [
     {
-      "school": "University of Illinois Chicago",
-      "degree": "Doctor of Pharmacy (Pharm.D.)",
-      "field": "Pharmacy",
-      "start": null,
-      "end": null
+      "institution": "University of Illinois Chicago",
+      "studyType": "Doctor of Pharmacy (Pharm.D.)",
+      "area": "Pharmacy"
     }
   ]
 }

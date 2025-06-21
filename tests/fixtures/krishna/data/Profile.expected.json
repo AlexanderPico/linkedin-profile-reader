@@ -1,132 +1,115 @@
 {
-    "positions": [
-        {
-            "title": "Postdoctoral Scholar",
-            "company": "University of California, San Francisco",
-            "location": "San Francisco Bay Area",
-            "start": "April 2021",
-            "end": null,
-            "summary": ""
-        },
-        {
-            "title": "Bioinformatician II, Bioinformatics Core",
-            "company": "Gladstone Institutes",
-            "location": "San Francisco Bay Area",
-            "start": "January 2020",
-            "end": "March 2021",
-            "summary": ""
-        },
-        {
-            "title": "Instructor, Gladstone/UCSF Bakar Instititute Data Science Training Program",
-            "company": "Gladstone Institutes",
-            "location": "San Francisco Bay Area",
-            "start": "February 2019",
-            "end": "March 2021",
-            "summary": ""
-        },
-        {
-            "title": "Biostatistician I, Bioinformatics Core",
-            "company": "Gladstone Institutes",
-            "location": "San Francisco Bay Area",
-            "start": "February 2019",
-            "end": "December 2019",
-            "summary": ""
-        },
-        {
-            "title": "Teaching Assistant",
-            "company": "University of California, Davis",
-            "location": "Sacramento, California, United States",
-            "start": "September 2015",
-            "end": "December 2018",
-            "summary": ""
-        },
-        {
-            "title": "PhD Candidate",
-            "company": "University of California, Davis",
-            "location": "Sacramento, California Area",
-            "start": "September 2014",
-            "end": "December 2018",
-            "summary": ""
-        },
-        {
-            "title": "Oncology Bioinformatics Intern",
-            "company": "Roche Molecular Systems",
-            "location": "San Francisco Bay Area",
-            "start": "June 2017",
-            "end": "August 2017",
-            "summary": ""
-        },
-        {
-            "title": "Statistical Analyst & Market Researcher",
-            "company": "EuMentis Informatics",
-            "location": "",
-            "start": "January 2014",
-            "end": "August 2014",
-            "summary": ""
-        },
-        {
-            "title": "Chemical Product & Process Designer (Entrepreneur)",
-            "company": "SupraTech Chemicals",
-            "location": "Kolkata Area, India",
-            "start": "August 2012",
-            "end": "August 2014",
-            "summary": ""
-        },
-        {
-            "title": "Web Development & E-commerce Consultant",
-            "company": "STC Jewellers",
-            "location": "Kolkata Area, India",
-            "start": "January 2014",
-            "end": "May 2014",
-            "summary": ""
-        },
-        {
-            "title": "Masters Researcher",
-            "company": "Indian Institute of Technology, Delhi",
-            "location": "New Delhi Area, India",
-            "start": "May 2012",
-            "end": "July 2013",
-            "summary": ""
-        },
-        {
-            "title": "Teaching Assistant",
-            "company": "Indian Institute of Technology, Delhi",
-            "location": "New Delhi, Delhi",
-            "start": "June 2012",
-            "end": "May 2013",
-            "summary": ""
-        },
-        {
-            "title": "Biopharmaceutical Production Scale-Up (Intern)",
-            "company": "Biocon",
-            "location": "",
-            "start": "May 2011",
-            "end": "July 2011",
-            "summary": ""
-        },
-        {
-            "title": "Undergraduate Researcher",
-            "company": "Indian Institute of Technology, Delhi",
-            "location": "",
-            "start": "May 2010",
-            "end": "December 2010",
-            "summary": ""
-        }
-    ],
-    "education": [
-        {
-            "school": "University of California, Davis",
-            "degree": "Doctor of Philosophy (Ph.D.)",
-            "field": "Biomedical Engineering with Designated Emphasis in Biotechnology",
-            "start": "2014",
-            "end": "2018"
-        },
-        {
-            "school": "Indian Institute of Technology, Delhi",
-            "degree": "B. Tech and M. Tech",
-            "field": "Biochemical Engineering & Biotechnology with Minor specialization in Nano Science & Engineering",
-            "start": "2008",
-            "end": "2013"
-        }
-    ]
+  "work": [
+    {
+      "name": "University of California, San Francisco",
+      "position": "Postdoctoral Scholar",
+      "location": "San Francisco Bay Area",
+      "startDate": "2021-04",
+      "endDate": null
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatician II, Bioinformatics Core",
+      "location": "San Francisco Bay Area",
+      "startDate": "2020-01",
+      "endDate": "2021-03"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Instructor, Gladstone/UCSF Bakar Instititute Data Science Training Program",
+      "location": "San Francisco Bay Area",
+      "startDate": "2019-02",
+      "endDate": "2021-03"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Biostatistician I, Bioinformatics Core",
+      "location": "San Francisco Bay Area",
+      "startDate": "2019-02",
+      "endDate": "2019-12"
+    },
+    {
+      "name": "University of California, Davis",
+      "position": "Teaching Assistant",
+      "location": "Sacramento, California, United States",
+      "startDate": "2015-09",
+      "endDate": "2018-12"
+    },
+    {
+      "name": "University of California, Davis",
+      "position": "PhD Candidate",
+      "location": "Sacramento, California Area",
+      "startDate": "2014-09",
+      "endDate": "2018-12"
+    },
+    {
+      "name": "Roche Molecular Systems",
+      "position": "Oncology Bioinformatics Intern",
+      "location": "San Francisco Bay Area",
+      "startDate": "2017-06",
+      "endDate": "2017-08"
+    },
+    {
+      "name": "EuMentis Informatics",
+      "position": "Statistical Analyst & Market Researcher",
+      "startDate": "2014-01",
+      "endDate": "2014-08"
+    },
+    {
+      "name": "SupraTech Chemicals",
+      "position": "Chemical Product & Process Designer (Entrepreneur)",
+      "location": "Kolkata Area, India",
+      "startDate": "2012-08",
+      "endDate": "2014-08"
+    },
+    {
+      "name": "STC Jewellers",
+      "position": "Web Development & E-commerce Consultant",
+      "location": "Kolkata Area, India",
+      "startDate": "2014-01",
+      "endDate": "2014-05"
+    },
+    {
+      "name": "Indian Institute of Technology, Delhi",
+      "position": "Masters Researcher",
+      "location": "New Delhi Area, India",
+      "startDate": "2012-05",
+      "endDate": "2013-07"
+    },
+    {
+      "name": "Indian Institute of Technology, Delhi",
+      "position": "Teaching Assistant",
+      "location": "New Delhi, Delhi",
+      "startDate": "2012-06",
+      "endDate": "2013-05"
+    },
+    {
+      "name": "Biocon",
+      "position": "Biopharmaceutical Production Scale-Up (Intern)",
+      "startDate": "2011-05",
+      "endDate": "2011-07"
+    },
+    {
+      "name": "Indian Institute of Technology, Delhi",
+      "position": "Undergraduate Researcher",
+      "startDate": "2010-05",
+      "endDate": "2010-12"
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of California, Davis",
+      "studyType": "Doctor of Philosophy (Ph.D.)",
+      "area": "Biomedical Engineering with Designated Emphasis in Biotechnology",
+      "startDate": "2014",
+      "endDate": "2018"
+    },
+    {
+      "institution": "Indian Institute of Technology, Delhi",
+      "studyType": "B. Tech and M. Tech",
+      "area": "Biochemical Engineering & Biotechnology with Minor specialization in Nano Science & Engineering",
+      "startDate": "2008",
+      "endDate": "2013"
+    }
+  ]
 }

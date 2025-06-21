@@ -1,91 +1,75 @@
 {
-  "positions": [
+  "work": [
     {
-      "title": "Bioinformatics Core Director, Research Investigator",
-      "company": "Gladstone Institutes",
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatics Core Director, Research Investigator",
       "location": "San Francisco, California, United States",
-      "start": "January 2020",
-      "end": null,
-      "summary": ""
+      "startDate": "2020-01",
+      "endDate": null
     },
     {
-      "title": "Associate Core Director of Bioinformatics",
-      "company": "Gladstone Institutes",
+      "name": "Gladstone Institutes",
+      "position": "Associate Core Director of Bioinformatics",
       "location": "UCSF Mission Bay Campus",
-      "start": "January 2013",
-      "end": "January 2020",
-      "summary": ""
+      "startDate": "2013-01",
+      "endDate": "2020-01"
     },
     {
-      "title": "Staff Research Scientist II, Bioinformatics Group Leader",
-      "company": "Gladstone Institutes",
-      "location": "",
-      "start": "January 2011",
-      "end": "January 2013",
-      "summary": ""
+      "name": "Gladstone Institutes",
+      "position": "Staff Research Scientist II, Bioinformatics Group Leader",
+      "startDate": "2011-01",
+      "endDate": "2013-01"
     },
     {
-      "title": "Software Engineer, Bioinformatics Group Leader",
-      "company": "Gladstone Institutes",
-      "location": "",
-      "start": "September 2007",
-      "end": "January 2011",
-      "summary": ""
+      "name": "Gladstone Institutes",
+      "position": "Software Engineer, Bioinformatics Group Leader",
+      "startDate": "2007-09",
+      "endDate": "2011-01"
     },
     {
-      "title": "Postdoctoral Fellow",
-      "company": "Gladstone Institutes",
-      "location": "",
-      "start": "April 2004",
-      "end": "September 2007",
-      "summary": ""
+      "name": "Gladstone Institutes",
+      "position": "Postdoctoral Fellow",
+      "startDate": "2004-04",
+      "endDate": "2007-09"
     },
     {
-      "title": "Vice President",
-      "company": "Cytoscape Consortium",
-      "location": "",
-      "start": "April 2013",
-      "end": null,
-      "summary": ""
+      "name": "Cytoscape Consortium",
+      "position": "Vice President",
+      "startDate": "2013-04",
+      "endDate": null
     },
     {
-      "title": "Executive Director",
-      "company": "National Resource for Network Biology",
-      "location": "",
-      "start": "September 2010",
-      "end": null,
-      "summary": ""
+      "name": "National Resource for Network Biology",
+      "position": "Executive Director",
+      "startDate": "2010-09",
+      "endDate": null
     },
     {
-      "title": "Google Summer of Code Org Admin",
-      "company": "National Resource for Network Biology",
-      "location": "",
-      "start": "February 2007",
-      "end": null,
-      "summary": ""
+      "name": "National Resource for Network Biology",
+      "position": "Google Summer of Code Org Admin",
+      "startDate": "2007-02",
+      "endDate": null
     }
   ],
   "education": [
     {
-      "school": "The Rockefeller University",
-      "degree": "PhD",
-      "field": "Molecular Neurobiology and Biophysics",
-      "start": "1998",
-      "end": "2003"
+      "institution": "The Rockefeller University",
+      "studyType": "PhD",
+      "area": "Molecular Neurobiology and Biophysics",
+      "startDate": "1998",
+      "endDate": "2003"
     },
     {
-      "school": "University of Oregon",
-      "degree": "B.S",
-      "field": "Biochemistry",
-      "start": "1994",
-      "end": "1998"
+      "institution": "University of Oregon",
+      "studyType": "B.S",
+      "area": "Biochemistry",
+      "startDate": "1994",
+      "endDate": "1998"
     },
     {
-      "school": "Coursera",
-      "degree": "",
-      "field": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
-      "start": "2012",
-      "end": null
+      "institution": "Coursera",
+      "area": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
+      "startDate": "2012"
     }
   ]
 }
