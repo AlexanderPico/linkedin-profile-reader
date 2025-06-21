@@ -13,9 +13,18 @@ export interface ExperiencePosition {
   summary: string; // currently empty; reserved for future
 }
 
+export interface EducationEntry {
+  school: string;
+  degree: string;
+  field?: string;
+  start?: string;
+  end?: string | null;
+}
+
 /** Parsed profile data (currently only Experience). */
 export interface LinkedInProfile {
   positions: ExperiencePosition[];
+  education: EducationEntry[];
 }
 
 /**
@@ -109,6 +118,7 @@ export async function parseLinkedInPdf(
   // --- Main extraction loop -------------------------------------------------
   let currentCompany = "";
   const positions: ExperiencePosition[] = [];
+  const education: EducationEntry[] = [];
   const seen = new Set<string>();
 
   for (let idx = 0; idx < lines.length; idx++) {
@@ -188,5 +198,119 @@ export async function parseLinkedInPdf(
     positions.push({ title, company: currentCompany, location, start, end, summary: "" });
   }
 
-  return { positions };
+  // ------------------- EDUCATION PARSING -----------------------------------
+  const eduHeaderIdx = lines.findIndex((l) => /^Education\b/i.test(l.text));
+  if (eduHeaderIdx !== -1) {
+    let idx = eduHeaderIdx + 1;
+    while (idx < lines.length) {
+      // skip blank / noise lines
+      if (isNoise(lines[idx].text)) { idx++; continue; }
+
+      // break if we reach another major section
+      if (headerRe.test(lines[idx].text) && !/^Education\b/i.test(lines[idx].text)) {
+        break;
+      }
+
+      const school = lines[idx].text.trim();
+      idx++;
+
+      // move to degree line
+      while (idx < lines.length && isNoise(lines[idx].text)) idx++;
+      if (idx >= lines.length) break;
+
+      let degreeFieldStr = lines[idx].text.trim();
+
+      // accumulate additional lines that belong to the same degree/field
+      const schoolFont = lines[idx - 1].fontSize; // font of school line
+      let look = idx + 1;
+      while (look < lines.length) {
+        const t = lines[look].text.trim();
+        if (isNoise(t)) { look++; continue; }
+        if (headerRe.test(t)) break;
+        if (lines[look].fontSize >= schoolFont - 0.01) break; // new school starts
+        // stop at date-only or year-range line (starts new block)
+        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) break;
+        degreeFieldStr += ' ' + t;
+        look++;
+      }
+      idx = look - 1; // last consumed line for this entry
+
+      // parse date range in degreeRaw or will fallback to separate line
+      let start: string | undefined;
+      let end: string | null | undefined;
+      const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
+      if (dateMatch) {
+        start = dateMatch[1];
+        const endVal = dateMatch[2];
+        end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
+        degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+      }
+
+      // remove trailing bullets / separators
+      degreeFieldStr = degreeFieldStr.replace(/[\u2022•·]+$/,'').trim().replace(/,+$/,'');
+
+      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','MASTER','DOCTOR']);
+      let degree = '';
+      let field: string | undefined;
+      if (degreeFieldStr.includes(',')) {
+        const [lhs, rhs] = degreeFieldStr.split(/,(.+)/);
+        const lhsTrim = lhs.trim();
+        const rhsTrim = (rhs ?? '').trim();
+        const lhsKey = lhsTrim.split(/\s+/)[0].replace(/\./g,'').toUpperCase();
+
+        if (degreeSet.has(lhsKey)) {
+          degree = lhsTrim;
+          field = rhsTrim || undefined;
+        } else if (/Tech/i.test(lhsTrim)) {
+          degree = lhsTrim.trim();
+          field = rhsTrim || undefined;
+        } else {
+          field = degreeFieldStr.trim();
+        }
+      } else if (/\bin\b/i.test(degreeFieldStr)) {
+        const [deg, fld] = degreeFieldStr.split(/\bin\b/i);
+        degree = deg.trim();
+        field = fld.trim();
+      } else {
+        // If begins with known degree keyword treat as degree, else it's field only
+        const firstTokRaw = degreeFieldStr.split(/\s+/)[0];
+        const firstTok = firstTokRaw.replace(/\./g,'').toUpperCase();
+        if (degreeSet.has(firstTok)) {
+          degree = firstTokRaw.replace(/\./g,'');
+          field = degreeFieldStr.slice(firstTokRaw.length).trim().replace(/^,\s*/,'');
+        } else {
+          field = degreeFieldStr;
+        }
+      }
+
+      if (!start) {
+        let probe = idx + 1;
+        while (probe < lines.length && isNoise(lines[probe].text)) probe++;
+        if (probe < lines.length) {
+          const m = lines[probe].text.trim().match(/^[\u2022•·]?\s*\(?([0-9]{4})\)?$/);
+          if (m) {
+            start = m[1];
+            end = null;
+            idx = probe; // consume date-only line
+          }
+        }
+      }
+
+      // normalize degree abbreviation dots (e.g., B.S. -> BS) and casing
+      // keep dots in degree to preserve original formatting
+
+      if (field) field = field.replace(/,+$/,'').trim();
+
+      if (start === undefined) start = null as any;
+      if (end === undefined) end = null;
+
+      education.push({ school, degree, field, start, end });
+
+      idx++;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+
+  return { positions, education };
 }

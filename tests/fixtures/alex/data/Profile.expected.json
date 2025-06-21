@@ -64,5 +64,28 @@
       "end": null,
       "summary": ""
     }
+  ],
+  "education": [
+    {
+      "school": "The Rockefeller University",
+      "degree": "PhD",
+      "field": "Molecular Neurobiology and Biophysics",
+      "start": "1998",
+      "end": "2003"
+    },
+    {
+      "school": "University of Oregon",
+      "degree": "B.S",
+      "field": "Biochemistry",
+      "start": "1994",
+      "end": "1998"
+    },
+    {
+      "school": "Coursera",
+      "degree": "",
+      "field": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
+      "start": "2012",
+      "end": null
+    }
   ]
 }

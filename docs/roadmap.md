@@ -20,7 +20,7 @@
 - [x] GitHub Actions CI (Node 18 & 20)
 
 ### 🚧 Feature Expansion 0.3.0 (NEXT)
-- [ ] Parse Education section
+- [x] Parse Education section
 - [ ] Parse Skills section
 - [ ] Include Certifications and Projects
 - [ ] JSON Schema typings for output

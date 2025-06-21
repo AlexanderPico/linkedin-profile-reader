@@ -21,10 +21,11 @@ describe('parseLinkedInPdf', () => {
       const result = await parseLinkedInPdf(pdfPath);
       expect(Array.isArray(result.positions) && result.positions.length).toBeTruthy();
 
-      const expectedPath = path.join(cwd, 'data', 'experience.expected.json');
+      const expectedPath = path.join(cwd, 'data', 'Profile.expected.json');
       if (fs.existsSync(expectedPath)) {
         const expected = JSON.parse(fs.readFileSync(expectedPath, 'utf-8'));
         expect(result.positions).toEqual(expected.positions);
+        expect(result.education).toEqual(expected.education);
       }
     }
   }, 60_000); // allow ample time for PDF parsing

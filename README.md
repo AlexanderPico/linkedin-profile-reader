@@ -1,19 +1,17 @@
 # LinkedIn-Profile-Reader
 
-Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON – currently focused on the **Experience** section.
+Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON – currently focused on the **Experience** and **Education** sections.
 
-```sh
-npm install linkedin-profile-reader
-```
+Experience and Education sections are extracted (positions and education arrays).
 
 ## CLI usage
 
 ```sh
 # From a file
-parse-linkedin-pdf ./Profile.pdf > experience.json
+parse-linkedin-pdf ./Profile.pdf > profile.json
 
 # Or via stdin
-cat Profile.pdf | parse-linkedin-pdf > experience.json
+cat Profile.pdf | parse-linkedin-pdf > profile.json
 ```
 
 ## Library usage
@@ -21,7 +19,7 @@ cat Profile.pdf | parse-linkedin-pdf > experience.json
 ```ts
 import { parseLinkedInPdf } from 'linkedin-profile-reader';
 
-const { positions } = await parseLinkedInPdf('/path/to/Profile.pdf');
+const { positions, education } = await parseLinkedInPdf('/path/to/Profile.pdf');
 ```
 
 ```ts
@@ -32,6 +30,14 @@ interface ExperiencePosition {
   start: string;        // e.g. "Mar 2021"
   end: string | null;   // null when "Present"
   summary: string;      // reserved for future
+}
+
+interface EducationEntry {
+  school: string;
+  degree: string;
+  field: string;
+  startYear: string | null;
+  endYear: string | null;
 }
 ```
 
@@ -50,9 +56,9 @@ npm run build        # emit dist/ ESM build
 Pre-commit hooks format & lint staged files (husky + lint-staged).
 
 ## Roadmap
-* Education, Skills, and other sections parsing
+* Skills, Certifications, and other sections parsing
 * Smarter heuristics / machine-learning rules
 
 ## License
 
-MIT © 2024 Your Name
+MIT © 2025 Alexander Pico
