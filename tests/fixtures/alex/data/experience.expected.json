@@ -1,0 +1,68 @@
+{
+  "positions": [
+    {
+      "title": "Bioinformatics Core Director, Research Investigator",
+      "company": "Gladstone Institutes",
+      "location": "San Francisco, California, United States",
+      "start": "January 2020",
+      "end": null,
+      "summary": ""
+    },
+    {
+      "title": "Associate Core Director of Bioinformatics",
+      "company": "Gladstone Institutes",
+      "location": "UCSF Mission Bay Campus",
+      "start": "January 2013",
+      "end": "January 2020",
+      "summary": ""
+    },
+    {
+      "title": "Staff Research Scientist II, Bioinformatics Group Leader",
+      "company": "Gladstone Institutes",
+      "location": "",
+      "start": "January 2011",
+      "end": "January 2013",
+      "summary": ""
+    },
+    {
+      "title": "Software Engineer, Bioinformatics Group Leader",
+      "company": "Gladstone Institutes",
+      "location": "",
+      "start": "September 2007",
+      "end": "January 2011",
+      "summary": ""
+    },
+    {
+      "title": "Postdoctoral Fellow",
+      "company": "Gladstone Institutes",
+      "location": "",
+      "start": "April 2004",
+      "end": "September 2007",
+      "summary": ""
+    },
+    {
+      "title": "Vice President",
+      "company": "Cytoscape Consortium",
+      "location": "",
+      "start": "April 2013",
+      "end": null,
+      "summary": ""
+    },
+    {
+      "title": "Executive Director",
+      "company": "National Resource for Network Biology",
+      "location": "",
+      "start": "September 2010",
+      "end": null,
+      "summary": ""
+    },
+    {
+      "title": "Google Summer of Code Org Admin",
+      "company": "National Resource for Network Biology",
+      "location": "",
+      "start": "February 2007",
+      "end": null,
+      "summary": ""
+    }
+  ]
+}

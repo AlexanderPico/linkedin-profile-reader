@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+
+import fs from 'node:fs';
+import process from 'node:process';
+
+// Resolve to library entry (supports ts-node in dev and dist in prod)
+let parser;
+try {
+  // When installed, the compiled JS lives in dist/
+  const { parseLinkedInPdf } = await import('../dist/index.js');
+  parser = parseLinkedInPdf;
+} catch (err) {
+  // Fallback to src during development
+  const { parseLinkedInPdf } = await import('../src/index.ts');
+  parser = parseLinkedInPdf;
+}
+
+const args = process.argv.slice(2);
+
+async function readInput() {
+  if (args.length > 0 && args[0] !== '-') {
+    const filePath = args[0];
+    return fs.promises.readFile(filePath);
+  }
+  // stdin
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  if (chunks.length === 0) {
+    console.error('No input PDF provided (path argument or piped to stdin)');
+    process.exit(1);
+  }
+  return Buffer.concat(chunks);
+}
+
+try {
+  const pdfBuffer = await readInput();
+  const result = await parser(pdfBuffer);
+  console.log(JSON.stringify(result, null, 2));
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+}

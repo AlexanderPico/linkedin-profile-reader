@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Default Development Rules
+
+These rules apply to all milestones unless a milestone-specific `.mdc` overrides them.
+
+- **Roadmap as source-of-truth**  
+   Update `docs/roadmap.md` whenever tasks are started or completed.  Checkbox status must match the codebase.
+
+- **Component pattern**  
+   • All visual components live in `src/components/` and are exported via `src/components/index.js`.  
+   • Components should accept props exactly as defined in YAML.
+
+- **Data folder convention**  
+   • Raw or processed JSON lives under `data/auto/`. Files should be referenced via relative imports, not dynamic `fs` reads, so Astro can statically bundle them.
+
+- **AI Services**  
+   • Default provider is a local JavaScript model—no external API keys required.  
+   • Avoid token-based providers.
+
+- **Accessibility & Theming**  
+   • Use semantic HTML, `aria-*` where appropriate.  
+   • All components must work in light and dark themes (colors via CSS variables).
+
+- **Testing / Linting**  
+   • ESLint and Prettier configs will be added in later milestones; until then, keep code formatted with Prettier defaults.
+
+- **Debug logging**  
+    Each script/component that needs verbose output should wrap `console.log` in a local `debug()` helper that only prints when the environment variable `DEBUG` contains a matching keyword.  
+    Example usage in a Node script:  
+    ```js
+    const log = (...a) => process.env.DEBUG?.includes('linkedin') && console.log('[linkedin]', ...a);
+    ```
+    This lets you run `DEBUG=linkedin node scripts/fetch-linkedin.js` during development without polluting CI logs.
+
+    And each script should include ample logging of key booleans and example variable values so the developer can track the logic and performance, especialy in new parts of the code under development, adding more outputs if troubles persist.
+
+- **Troubleshooting**
+    If a particular function requires troubleshooting, then increase the logging to make it clear what is going on.
+
+- **Patching**
+    If you have a singular solution proposed, proceed with imlementing it. Do not ask to implement; just do it.
+
+- **Patching directive**  
+    When the assistant generates changes to the codebase, the assistant must implement the patch immediately in the same turn—no follow-up questions—unless essential information is missing. When the assistant has a plan for the next iteration, the assistant must implement the plan immediately in the same turn.
+
+- **Shell commands**
+    Provide zsh commands **without inline `# comments`**—this applies to *single-line commands* and to *multi-line script blocks*. Put any explanation on separate lines before or after the code block, never on the same line as the command itself. Important: If you can run the shell command yourself, especially if you are interested in the output (e.g., errors and console output), then you must execute the command yourself. Don't bother asking the user to do it.
+
+
+
