@@ -8,7 +8,7 @@ alwaysApply: false
 These rules apply to all milestones unless a milestone-specific `.mdc` overrides them.
 
 - **Roadmap as source-of-truth**  
-   Update `docs/roadmap.md` whenever tasks are started or completed.  Checkbox status must match the codebase.
+   Create a `docs/roadmap.md` if it does not already exist and structure as a checkbox list you can manage covering milestones and tasks. Update `docs/roadmap.md` whenever tasks are started or completed.  Checkbox status must match the codebase.
 
 - **Component pattern**  
    • All visual components live in `src/components/` and are exported via `src/components/index.js`.  
