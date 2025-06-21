@@ -21,9 +21,12 @@
 
 ### 🚧 Feature Expansion 0.3.0 (NEXT)
 - [x] Parse Education section
+- [ ] Parse Basics section (name, contact, summary)
 - [ ] Parse Skills section
-- [ ] Include Certifications and Projects
-- [ ] JSON Schema typings for output
+- [ ] Parse Certificates section
+- [ ] Parse Languages section
+- [ ] Include Projects section
+- [ ] JSON Resume schema typings & validation
 
 ### 🧠 Heuristic Improvements 0.4.0
 - [ ] Refine company detection (multi-line names, edge cases)
