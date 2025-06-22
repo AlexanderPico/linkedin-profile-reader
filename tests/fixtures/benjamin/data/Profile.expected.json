@@ -73,21 +73,21 @@
             "institution": "UC Santa Barbara",
             "studyType": "Bachelor of Science - BS",
             "area": "Data Science and Statistics",
-            "startDate": "September 2024",
-            "endDate": "June 2028"
+            "startDate": "2024-09",
+            "endDate": "2028-06"
         },
         {
             "institution": "George Washington High School",
             "studyType": "Secondary Education",
             "area": "Computer Science",
-            "startDate": "August 2020",
-            "endDate": "June 2024"
+            "startDate": "2020-08",
+            "endDate": "2024-06"
         },
         {
             "institution": "Harvard Extension School",
             "area": "Computer Science",
-            "startDate": "June 2022",
-            "endDate": "August 2022"
+            "startDate": "2022-06",
+            "endDate": "2022-08"
         }
     ],
     "skills": [

@@ -23,8 +23,7 @@
       "name": "Gladstone Institutes",
       "position": "Bioinformatics Core Director, Research Investigator",
       "location": "San Francisco, California, United States",
-      "startDate": "2020-01",
-      "endDate": null
+      "startDate": "2020-01"
     },
     {
       "name": "Gladstone Institutes",
@@ -55,21 +54,18 @@
       "name": "Cytoscape Consortium",
       "position": "Vice President",
       "startDate": "2013-04",
-      "endDate": null,
       "url": "https://cytoscapeconsortium.org"
     },
     {
       "name": "National Resource for Network Biology",
       "position": "Executive Director",
       "startDate": "2010-09",
-      "endDate": null,
       "url": "https://nrnb.org"
     },
     {
       "name": "National Resource for Network Biology",
       "position": "Google Summer of Code Org Admin",
       "startDate": "2007-02",
-      "endDate": null,
       "url": "https://nrnb.org/gsoc"
     }
   ],

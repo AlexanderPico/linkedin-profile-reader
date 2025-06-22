@@ -23,28 +23,32 @@
 - [x] Parse Education section
 - [x] Parse Basics section (name, contact, summary)
 - [x] **Major parsing improvements:**
-  - [x] Enhanced column separation and detection
-  - [x] Improved location detection (including major cities like Bangalore)
-  - [x] Better content filtering with minimal false positives
-  - [x] Automatic text capitalization for highlights
-  - [x] Removed arbitrary scanning limits - work section now properly extends until Education
-  - [x] Cross-page highlight parsing (fixes truncated content issues)
-  - [x] Enhanced healthcare/medical terminology recognition
-- [ ] Parse Skills section
-- [ ] Parse Certificates section
-- [ ] Parse Languages section
-- [ ] Include Projects section
-- [ ] JSON Resume schema typings & validation
+- [x] Enhanced column separation and detection
+- [x] Improved location detection (including major cities like Bangalore)
+- [x] Better content filtering with minimal false positives
+- [x] Automatic text capitalization for highlights
+- [x] Removed arbitrary scanning limits - work section now properly extends until Education
+- [x] Cross-page highlight parsing (fixes truncated content issues)
+- [x] Enhanced healthcare/medical terminology recognition
+- [x] Parse Skills section
+- [x] Parse Certificates section
+- [x] Parse Languages section
+- [x] JSON Resume schema validation & compliance
 
-### 🧠 Heuristic Improvements 0.4.0
+### 🧠 Heuristic Improvements & Schema Compliance 0.4.0
 - [x] **Significantly improved content parsing accuracy**
 - [x] **Enhanced location detection (major cities, complex addresses)**
 - [x] **Better highlight content separation and structuring**
-- [ ] Refine company detection (multi-line names, edge cases)
-- [ ] Smarter location parsing (geo lookup / normalization)
-- [ ] Disambiguate overlapping date ranges in nested positions
+- [x] Refine company detection (multi-line names, edge cases)
+- [x] Smarter location parsing (geo lookup / normalization)
+- [x] Disambiguate overlapping date ranges in nested positions
+- [x] **JSON Resume Schema Validation**: Added AJV validation to ensure output compliance
+- [x] **Fix Date Format Issues**: Converted dates to ISO8601 format (YYYY, YYYY-MM, YYYY-MM-DD)
+- [x] **Handle Null Values**: Properly handle null vs undefined for optional fields per schema
+- [x] **Add Validation Tests**: Included schema validation in test suite
+- [x] **CLI Schema Check**: Added `--validate` flag to CLI for schema compliance checking
 
-### ⏳ Release Preparation 0.5.0 (IN PROGRESS)
+### ⏳ Release Preparation 0.5.0 (FUTURE)
 - [ ] Publish first beta to npm (`npm publish --access public`)
 - [ ] Generate & upload documentation to GitHub Pages
 - [ ] Add semantic-release or changesets for version automation
