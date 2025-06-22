@@ -39,6 +39,8 @@
     "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
@@ -51,6 +53,9 @@
     "typescript": "^5.8.3"
   },
   "lint-staged": {
-    "*.{ts,js,tsx,jsx}": ["eslint --fix", "prettier --write"]
+    "*.{ts,js,tsx,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

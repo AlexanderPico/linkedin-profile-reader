@@ -92,6 +92,8 @@ export interface JSONResume {
   languages?: JSONResumeLanguage[];
 }
 
+
+
 /**
  * Parse a LinkedIn-exported profile PDF and return structured data.
  *
@@ -114,11 +116,16 @@ export async function parseLinkedInPdf(
     data = new Uint8Array(input);
   }
 
-  const doc = await pdfjs.getDocument({ data }).promise;
+  let doc;
+  try {
+    doc = await pdfjs.getDocument({ data }).promise;
+  } catch (error) {
+    throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : String(error)}`);
+  }
 
   // --- Helper utilities -----------------------------------------------------
   const round = (n: number, prec = 2): number => {
-    const f = Math.pow(10, prec);
+    const f = 10 ** prec; // More efficient than Math.pow
     return Math.round(n * f) / f;
   };
 
@@ -187,6 +194,11 @@ export async function parseLinkedInPdf(
   const dateRe = /[A-Za-z]{3,9}\s+\d{4}\s*[–-]\s*(Present|[A-Za-z]{3,9}\s+\d{4})/;
   const durationRe = /\d+\s+(?:yr|yrs|year|years|mos?|months?)/i;
   const headerRe = /^(Experience|Education|Certifications?|Publications?|Skills|Summary|Contact|Top Skills|Projects)/i;
+  
+  // Pre-compile commonly used regexes for better performance
+  const yearOnlyRe = /^\d{4}$/;
+  const bulletRe = /^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)](?=\s))\s*/u;
+  const inlineFluentRe = /^(.+?)\s*\(([^)]+)\)$/;
 
   // --- Basics extraction (top of PDF) --------------------------------------
   interface ProfileObj { network:string; username?:string; url:string; }
@@ -491,7 +503,7 @@ export async function parseLinkedInPdf(
         continue;
       }
       const wordCnt = ltxt.trim().split(/\s+/).length;
-      const bulletLine = /^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)])/u.test(ltxt);
+      const bulletLine = bulletRe.test(ltxt);
       const prevSeg = highlightSegs.length ? highlightSegs[highlightSegs.length-1] : undefined;
       const prevY2 = highlightSegs.length ? highlightSegs[highlightSegs.length-1].y : undefined;
       const largeGapCurrent = prevY2 !== undefined && (prevY2 - lObj.y) > baselineGap * 1.6;
@@ -824,7 +836,7 @@ export async function parseLinkedInPdf(
         let fluency: string | undefined;
         
         // Check if fluency is in the same line (in parentheses)
-        const inlineMatch = txt.match(/^(.+?)\s*\(([^)]+)\)$/);
+        const inlineMatch = txt.match(inlineFluentRe);
         if (inlineMatch) {
           languageName = inlineMatch[1].trim();
           fluency = inlineMatch[2].trim();
@@ -867,14 +879,16 @@ export async function parseLinkedInPdf(
     december: "12", dec: "12",
   };
 
-  const toIso = (val: string | null | undefined): string | null | undefined => {
-    if (!val) return val ?? null;
+  const toIso = (val: string | null | undefined): string | undefined => {
+    if (!val) return undefined; // Return undefined instead of null for schema compliance
     const parts = val.split(/\s+/);
     if (parts.length === 2) {
       const m = monthMap[parts[0].toLowerCase()];
       const y = parts[1];
       if (m && /\d{4}/.test(y)) return `${y}-${m}`;
     }
+    // If it's just a year, return as-is (YYYY format is valid in schema)
+    if (yearOnlyRe.test(val.trim())) return val.trim();
     return val; // fallback
   };
 
@@ -885,18 +899,18 @@ export async function parseLinkedInPdf(
       name: p.company,
       position: p.title,
       ...(p.location ? { location: p.location } : {}),
-      startDate: toIso(p.start) ?? undefined,
-      endDate: toIso(p.end) ?? null,
+      ...(toIso(p.start) ? { startDate: toIso(p.start) } : {}),
+      ...(toIso(p.end) ? { endDate: toIso(p.end) } : {}),
       ...(p.summary ? { summary: p.summary } : {}),
       ...(p.url ? { url: p.url } : {}),
       ...(p.highlights ? { highlights: p.highlights } : {}),
     })),
     education: education.map((e) => ({
       institution: e.school,
-      studyType: e.degree || undefined,
-      area: e.field || undefined,
-      startDate: e.start ?? undefined,
-      endDate: e.end ?? undefined,
+      ...(e.degree ? { studyType: e.degree } : {}),
+      ...(e.field ? { area: e.field } : {}),
+      ...(toIso(e.start) ? { startDate: toIso(e.start) } : {}),
+      ...(toIso(e.end) ? { endDate: toIso(e.end) } : {}),
     })),
     ...(skills.length > 0 ? { skills } : {}),
     ...(certificates.length > 0 ? { certificates } : {}),

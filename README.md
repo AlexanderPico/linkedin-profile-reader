@@ -3,6 +3,8 @@
 Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **basics**, **work**, **education**, **skills**, **certificates**, and **languages** arrays.
 
 **🎯 Recent Major Improvements (v0.3.0):**
+- **JSON Resume Schema Compliance**: Output now fully validates against JSON Resume schema with proper date formats (ISO8601) and null handling
+- **Schema Validation**: CLI `--validate` flag and programmatic validation function for quality assurance
 - **Fixed truncated content**: Work section now properly extends until Education section (no more arbitrary limits)
 - **Enhanced parsing accuracy**: Better column detection, location recognition, and content filtering
 - **Skills extraction**: Now parses Skills/Top Skills section from left column
@@ -20,8 +22,14 @@ Currently extracts the LinkedIn Basics, Experience, Education, Skills, Certifica
 # From a file
 parse-linkedin-pdf ./Profile.pdf > profile.json
 
+# With schema validation
+parse-linkedin-pdf --validate ./Profile.pdf > profile.json
+
 # Or via stdin
-cat Profile.pdf | parse-linkedin-pdf > profile.json
+cat Profile.pdf | parse-linkedin-pdf --validate > profile.json
+
+# Get help
+parse-linkedin-pdf --help
 ```
 
 ## Library usage
@@ -83,6 +91,8 @@ interface JSONResumeLanguage {
 
 ## Key Features
 
+- **Schema compliant**: Output validates against official JSON Resume schema
+- **Built-in validation**: CLI `--validate` flag ensures output quality
 - **Accurate parsing**: Enhanced column detection and content filtering
 - **Structured highlights**: Job responsibilities properly separated (no more massive single lines)
 - **Location detection**: Recognizes major cities and complex address formats
@@ -105,6 +115,7 @@ npm run build        # emit dist/ ESM build
 Pre-commit hooks format & lint staged files (husky + lint-staged).
 
 ## Roadmap
+* ✅ **JSON Resume Schema Validation**: Output now fully complies with JSON Resume schema
 * Enhanced certificate parsing (issuer, dates, URLs)
 * Enhanced language parsing (proficiency levels)
 * Publications, Projects, and other sections parsing
