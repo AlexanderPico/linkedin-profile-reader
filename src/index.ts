@@ -383,12 +383,7 @@ export async function parseLinkedInPdf(
     if (majorCities.test(line.trim())) return true; // major city names
     return false;
   };
-  const looksLikeCompany = (line: string): boolean => {
-    if (!line) return false;
-    if (dateRe.test(line) || durationRe.test(line) || isLocation(line)) return false;
-    if (/Director|Engineer|Scientist|Manager|Fellow|Vice|President/i.test(line)) return false;
-    return true;
-  };
+
 
 
 
