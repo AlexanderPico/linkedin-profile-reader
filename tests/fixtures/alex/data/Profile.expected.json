@@ -1,0 +1,93 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Alexander Pico",
+    "summary": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
+    "email": "alex.pico@gladstone.ucsf.edu",
+    "location": {
+      "city": "San Francisco",
+      "countryCode": "United States",
+      "region": "California"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "apico",
+        "url": "https://www.linkedin.com/in/apico"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatics Core Director, Research Investigator",
+      "location": "San Francisco, California, United States",
+      "startDate": "2020-01",
+      "endDate": null
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Associate Core Director of Bioinformatics",
+      "location": "UCSF Mission Bay Campus",
+      "startDate": "2013-01",
+      "endDate": "2020-01"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Staff Research Scientist II, Bioinformatics Group Leader",
+      "startDate": "2011-01",
+      "endDate": "2013-01"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Software Engineer, Bioinformatics Group Leader",
+      "startDate": "2007-09",
+      "endDate": "2011-01"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Postdoctoral Fellow",
+      "startDate": "2004-04",
+      "endDate": "2007-09"
+    },
+    {
+      "name": "Cytoscape Consortium",
+      "position": "Vice President",
+      "startDate": "2013-04",
+      "endDate": null
+    },
+    {
+      "name": "National Resource for Network Biology",
+      "position": "Executive Director",
+      "startDate": "2010-09",
+      "endDate": null
+    },
+    {
+      "name": "National Resource for Network Biology",
+      "position": "Google Summer of Code Org Admin",
+      "startDate": "2007-02",
+      "endDate": null
+    }
+  ],
+  "education": [
+    {
+      "institution": "The Rockefeller University",
+      "studyType": "PhD",
+      "area": "Molecular Neurobiology and Biophysics",
+      "startDate": "1998",
+      "endDate": "2003"
+    },
+    {
+      "institution": "University of Oregon",
+      "studyType": "B.S",
+      "area": "Biochemistry",
+      "startDate": "1994",
+      "endDate": "1998"
+    },
+    {
+      "institution": "Coursera",
+      "area": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
+      "startDate": "2012"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Elisa Park",
+    "summary": "Medical Information & Communications | Medical Affairs",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "elisapark01",
+        "url": "https://www.linkedin.com/in/elisapark01"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Genentech",
+      "position": "Senior Content Design and Execution Lead, Medical Information & Communication, Medical Affairs",
+      "location": "South San Francisco, California, United States",
+      "startDate": "2024-07",
+      "endDate": "2024-11"
+    },
+    {
+      "name": "Sumitomo Pharma America, Inc.",
+      "position": "Director, Medical Communications & Information, Medical Affairs",
+      "startDate": "2023-10",
+      "endDate": "2024-03"
+    },
+    {
+      "name": "Sumitomo Pharma America, Inc.",
+      "position": "Associate Director, Medical Communications & Information, Medical Affairs",
+      "location": "Brisbane, California, United States",
+      "startDate": "2023-07",
+      "endDate": "2023-10"
+    },
+    {
+      "name": "Myovant Sciences",
+      "position": "Associate Director, Medical Communications & Information (Acquired by Sumitomo Pharma America, Inc.)",
+      "location": "Brisbane, California, United States",
+      "startDate": "2021-09",
+      "endDate": "2023-07"
+    },
+    {
+      "name": "Ascendis Pharma",
+      "position": "Associate Director, Medical Information, Medical Affairs",
+      "location": "Palo Alto, California, United States",
+      "startDate": "2021-04",
+      "endDate": "2021-08"
+    },
+    {
+      "name": "Jazz Pharmaceuticals",
+      "position": "Associate Director, Global Medical Information, Medical Affairs",
+      "location": "Palo Alto, CA",
+      "startDate": "2019-04",
+      "endDate": "2021-03"
+    },
+    {
+      "name": "Exelixis",
+      "position": "Associate Director, Medical Affairs Information",
+      "location": "Alameda, CA",
+      "startDate": "2019-03",
+      "endDate": "2019-04"
+    },
+    {
+      "name": "Exelixis",
+      "position": "Senior Medical Information Manager",
+      "location": "Alameda, CA",
+      "startDate": "2017-06",
+      "endDate": "2019-03"
+    },
+    {
+      "name": "Gilead Sciences",
+      "position": "Associate Manager, Medical Information - Oncology/Cardiovascular",
+      "location": "Foster City, CA",
+      "startDate": "2016-04",
+      "endDate": "2017-06"
+    },
+    {
+      "name": "Dohmen Life Science Services",
+      "position": "Senior Drug Information Associate",
+      "location": "Emeryville CA",
+      "startDate": "2015-12",
+      "endDate": "2016-04"
+    },
+    {
+      "name": "Dohmen Life Science Services",
+      "position": "Drug Information Associate",
+      "location": "Emeryville, CA",
+      "startDate": "2013-10",
+      "endDate": "2015-12"
+    },
+    {
+      "name": "Exelixis",
+      "position": "Drug Safety Associate II",
+      "location": "San Francisco Bay Area",
+      "startDate": "2013-01",
+      "endDate": "2013-10"
+    },
+    {
+      "name": "Kaiser Permanente",
+      "position": "Clinical Pharmacist",
+      "startDate": "2010-02",
+      "endDate": "2012-12"
+    },
+    {
+      "name": "Walgreens",
+      "position": "Pharmacist",
+      "location": "San Francisco, California, United States",
+      "startDate": "2004-06",
+      "endDate": "2012-09"
+    },
+    {
+      "name": "Kaiser Permanente",
+      "position": "Pharmacy Practice Resident (PGY1)",
+      "location": "Diablo Service Area, Northern California",
+      "startDate": "2008-07",
+      "endDate": "2009-07"
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Illinois Chicago",
+      "studyType": "Doctor of Pharmacy (Pharm.D.)",
+      "area": "Pharmacy"
+    }
+  ]
+}
