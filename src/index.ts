@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // TODO
 
 import fs from "node:fs";
@@ -149,7 +151,7 @@ export async function parseLinkedInPdf(
       // Split credentials after comma (e.g., ", PhD")
       const nameRaw = nameLine.text;
       if (/,/.test(nameRaw)) {
-        const [primary, ...rest] = nameRaw.split(',');
+        const [primary] = nameRaw.split(',');
         basics.name = primary.trim();
         // credential part ignored for now
       } else {
