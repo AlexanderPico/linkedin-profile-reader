@@ -26,6 +26,9 @@ describe('parseLinkedInPdf', () => {
         const expected = JSON.parse(fs.readFileSync(expectedPath, 'utf-8'));
         expect(result.work).toEqual(expected.work);
         expect(result.education).toEqual(expected.education);
+        if (expected.basics) {
+          expect(result.basics).toEqual(expected.basics);
+        }
       }
     }
   }, 60_000); // allow ample time for PDF parsing

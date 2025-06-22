@@ -1,8 +1,8 @@
 # LinkedIn-Profile-Reader
 
-Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **work** and **education** arrays.
+Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **basics**, **work**, and **education** arrays.
 
-Currently extracts the LinkedIn Experience and Education sections into JSON Resume `work` and `education` arrays.
+Currently extracts the LinkedIn Basics, Experience and Education sections into JSON Resume `basics`, `work` and `education` arrays.
 
 ## CLI usage
 

@@ -1,4 +1,19 @@
 {
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Elisa Park",
+    "summary": "Medical Information & Communications | Medical Affairs",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "elisapark01",
+        "url": "https://www.linkedin.com/in/elisapark01"
+      }
+    ]
+  },
   "work": [
     {
       "name": "Genentech",

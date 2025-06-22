@@ -1,4 +1,20 @@
 {
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Krishna Choudhary",
+    "summary": "Data Scientist | Biomedical Engineer | Every dataset has a story to tell",
+    "email": "kisna.bt.iitd@gmail.com",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "datamaster",
+        "url": "https://www.linkedin.com/in/datamaster"
+      }
+    ]
+  },
   "work": [
     {
       "name": "University of California, San Francisco",

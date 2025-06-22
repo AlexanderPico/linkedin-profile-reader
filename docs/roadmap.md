@@ -21,7 +21,7 @@
 
 ### 🚧 Feature Expansion 0.3.0 (NEXT)
 - [x] Parse Education section
-- [ ] Parse Basics section (name, contact, summary)
+- [x] Parse Basics section (name, contact, summary)
 - [ ] Parse Skills section
 - [ ] Parse Certificates section
 - [ ] Parse Languages section
@@ -50,4 +50,4 @@
 
 ---
 
-_Last updated: 2025-06-21_ 
+_Last updated: 2025-06-22_ 

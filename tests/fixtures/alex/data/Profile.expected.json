@@ -1,4 +1,22 @@
 {
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Alexander Pico",
+    "summary": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
+    "email": "alex.pico@gladstone.ucsf.edu",
+    "location": {
+      "city": "San Francisco",
+      "countryCode": "United States",
+      "region": "California"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "apico",
+        "url": "https://www.linkedin.com/in/apico"
+      }
+    ]
+  },
   "work": [
     {
       "name": "Gladstone Institutes",
