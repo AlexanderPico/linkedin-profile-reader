@@ -3,6 +3,7 @@ export default {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   extensionsToTreatAsEsm: ['.ts'],
+  setupFiles: ['<rootDir>/tests/jest.setup.ts'],
   transform: {
     '^.+\\.ts$': [ 'ts-jest', { useESM: true } ]
   },
