@@ -173,11 +173,7 @@ export async function parseLinkedInPdf(
       if (labelParts.length) {
         let lbl = labelParts.join(' ').trim();
         lbl = lbl.replace(/\s*\(LinkedIn\)$/i,'').trim();
-        if (/\|/.test(lbl)) {
-          basics.summary = lbl;
-        } else {
-          basics.label = lbl;
-        }
+        basics.summary = lbl;
       }
 
       const blob = topLines.map((l) => l.text).join(' ');
@@ -216,7 +212,7 @@ export async function parseLinkedInPdf(
       const scanMax = headerAfterIdxRel === -1 ? topLines.length : idxAfterName + headerAfterIdxRel;
       for (let i = nameIdx+1; i < scanMax; i++) {
         const t = topLines[i].text;
-        if ((basics.label && t===basics.label) || (basics.summary && t===basics.summary)) continue;
+        if ((basics.summary && t===basics.summary)) continue;
         if (/@|http|www\.|linkedin/i.test(t)) continue;
         if (/\|/.test(t)) continue;
         if (!/,/.test(t)) continue;
@@ -231,7 +227,7 @@ export async function parseLinkedInPdf(
       if (!locLine) {
         for (let i = nameIdx+1; i < scanMax; i++) {
           const t = topLines[i].text;
-          if ((basics.label && t===basics.label) || (basics.summary && t===basics.summary)) continue;
+          if ((basics.summary && t===basics.summary)) continue;
           if (/LinkedIn|www\.|http/i.test(t)) continue;
           if (/\|/.test(t)) continue;
           if (/Area$/i.test(t) || /(California|CA|United States)/i.test(t)) {
