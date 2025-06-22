@@ -226,5 +226,26 @@
       "startDate": "2008",
       "endDate": "2013"
     }
+  ],
+  "skills": [
+    {
+      "name": "Matlab"
+    },
+    {
+      "name": "Data Analysis"
+    },
+    {
+      "name": "C++"
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native or Bilingual"
+    },
+    {
+      "language": "Hindi",
+      "fluency": "Native or Bilingual"
+    }
   ]
 }

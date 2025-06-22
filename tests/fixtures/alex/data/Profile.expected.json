@@ -93,5 +93,30 @@
       "area": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
       "startDate": "2012"
     }
+  ],
+  "skills": [
+    {
+      "name": "MySQL"
+    },
+    {
+      "name": "PHP"
+    },
+    {
+      "name": "Linux"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Computing for Data Analysis"
+    },
+    {
+      "name": "Data Analysis"
+    },
+    {
+      "name": "Programming Languages"
+    },
+    {
+      "name": "Synapses, Neurons and Brains"
+    }
   ]
 }

@@ -89,5 +89,16 @@
             "startDate": "June 2022",
             "endDate": "August 2022"
         }
+    ],
+    "skills": [
+        {
+            "name": "Spoken English"
+        },
+        {
+            "name": "Data Analysis"
+        },
+        {
+            "name": "Data Entry"
+        }
     ]
 }

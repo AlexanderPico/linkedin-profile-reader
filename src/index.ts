@@ -46,6 +46,24 @@ export interface JSONResumeEducation {
   endDate?: string | null;
 }
 
+export interface JSONResumeSkill {
+  name: string;
+  level?: string;
+  keywords?: string[];
+}
+
+export interface JSONResumeCertificate {
+  name: string;
+  issuer?: string;
+  date?: string;
+  url?: string;
+}
+
+export interface JSONResumeLanguage {
+  language: string;
+  fluency?: string;
+}
+
 export interface JSONResumeLocation {
   address?: string;
   postalCode?: string;
@@ -69,6 +87,9 @@ export interface JSONResume {
   basics?: JSONResumeBasics;
   work: JSONResumeWork[];
   education: JSONResumeEducation[];
+  skills?: JSONResumeSkill[];
+  certificates?: JSONResumeCertificate[];
+  languages?: JSONResumeLanguage[];
 }
 
 /**
@@ -160,6 +181,7 @@ export async function parseLinkedInPdf(
 
   // Filter lines by column for content extraction
   const rightColumnLines = lines.filter(line => line.column === 'right');
+  const leftColumnLines = lines.filter(line => line.column === 'left');
 
   // --- Heuristic helpers ----------------------------------------------------
   const dateRe = /[A-Za-z]{3,9}\s+\d{4}\s*[–-]\s*(Present|[A-Za-z]{3,9}\s+\d{4})/;
@@ -702,6 +724,137 @@ export async function parseLinkedInPdf(
     }
   }
 
+  // ------------------- SKILLS PARSING (LEFT COLUMN) ------------------------
+  const skills: JSONResumeSkill[] = [];
+  const skillsHeaderIdx = leftColumnLines.findIndex((l) => /^(Top Skills|Skills)$/i.test(l.text));
+  
+  if (skillsHeaderIdx !== -1) {
+    let idx = skillsHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Certifications?|Publications?|Languages?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Skills are typically in smaller font (10.5) compared to headers (13) and summary text (12)
+      // Skip summary text (larger font, longer lines)
+      if (line.fontSize >= 12 && txt.length > 50) {
+        idx++;
+        continue;
+      }
+      
+      // This looks like a skill - shorter text, smaller font
+      if (line.fontSize <= 11 && txt.length <= 50) {
+        skills.push({
+          name: txt
+        });
+      }
+      
+      idx++;
+    }
+  }
+
+  // ------------------- CERTIFICATES PARSING (LEFT COLUMN) ------------------
+  const certificates: JSONResumeCertificate[] = [];
+  const certificatesHeaderIdx = leftColumnLines.findIndex((l) => /^(Certifications?|Licenses?)$/i.test(l.text));
+  
+  if (certificatesHeaderIdx !== -1) {
+    let idx = certificatesHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Top Skills|Skills|Publications?|Languages?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Certificates are typically in smaller font (10.5) compared to headers (13)
+      // Skip summary text (larger font, longer lines)
+      if (line.fontSize >= 12 && txt.length > 50) {
+        idx++;
+        continue;
+      }
+      
+      // This looks like a certificate - shorter text, smaller font
+      if (line.fontSize <= 11 && txt.length <= 100) {
+        certificates.push({
+          name: txt
+        });
+      }
+      
+      idx++;
+    }
+  }
+
+  // ------------------- LANGUAGES PARSING (LEFT COLUMN) ---------------------
+  const languages: JSONResumeLanguage[] = [];
+  const languagesHeaderIdx = leftColumnLines.findIndex((l) => /^Languages?$/i.test(l.text));
+  
+  if (languagesHeaderIdx !== -1) {
+    let idx = languagesHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Languages are typically in smaller font (10.5) compared to headers (13)
+      if (line.fontSize >= 12) {
+        idx++;
+        continue;
+      }
+      
+      // Look for language entries with potential fluency level
+      if (line.fontSize <= 11) {
+        let languageName = txt;
+        let fluency: string | undefined;
+        
+        // Check if fluency is in the same line (in parentheses)
+        const inlineMatch = txt.match(/^(.+?)\s*\(([^)]+)\)$/);
+        if (inlineMatch) {
+          languageName = inlineMatch[1].trim();
+          fluency = inlineMatch[2].trim();
+        } else {
+          // Check if next line might be fluency level (in parentheses)
+          if (idx + 1 < leftColumnLines.length) {
+            const nextLine = leftColumnLines[idx + 1];
+            const nextTxt = nextLine.text.trim();
+            if (/^\([^)]+\)$/.test(nextTxt) && nextLine.fontSize <= 11) {
+              fluency = nextTxt.replace(/[()]/g, '');
+              idx++; // consume the fluency line
+            }
+          }
+        }
+        
+        languages.push({
+          language: languageName,
+          ...(fluency ? { fluency } : {})
+        });
+      }
+      
+      idx++;
+    }
+  }
+
   // -------------------------------------------------------------------------
 
   const monthMap: Record<string, string> = {
@@ -750,5 +903,8 @@ export async function parseLinkedInPdf(
       startDate: e.start ?? undefined,
       endDate: e.end ?? undefined,
     })),
+    ...(skills.length > 0 ? { skills } : {}),
+    ...(certificates.length > 0 ? { certificates } : {}),
+    ...(languages.length > 0 ? { languages } : {}),
   };
 }

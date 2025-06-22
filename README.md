@@ -1,15 +1,18 @@
 # LinkedIn-Profile-Reader
 
-Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **basics**, **work**, and **education** arrays.
+Parse the PDF résumé exported by LinkedIn (`Profile.pdf`) and return structured JSON that follows the open-source [JSON Resume](https://jsonresume.org/) schema – currently populating the **basics**, **work**, **education**, **skills**, **certificates**, and **languages** arrays.
 
 **🎯 Recent Major Improvements (v0.3.0):**
 - **Fixed truncated content**: Work section now properly extends until Education section (no more arbitrary limits)
 - **Enhanced parsing accuracy**: Better column detection, location recognition, and content filtering
+- **Skills extraction**: Now parses Skills/Top Skills section from left column
+- **Certificates extraction**: Parses certificates and certifications from left column
+- **Languages extraction**: Parses languages with fluency levels from left column
 - **Improved data structure**: Workshop titles, data types, and technical content now properly separated into individual highlights
 - **Better location detection**: Support for major cities worldwide (Bangalore, Mumbai, etc.)
 - **Healthcare content recognition**: Medical terminology no longer incorrectly filtered out
 
-Currently extracts the LinkedIn Basics, Experience and Education sections into JSON Resume `basics`, `work` and `education` arrays.
+Currently extracts the LinkedIn Basics, Experience, Education, Skills, Certificates, and Languages sections into JSON Resume `basics`, `work`, `education`, `skills`, `certificates`, and `languages` arrays.
 
 ## CLI usage
 
@@ -26,7 +29,7 @@ cat Profile.pdf | parse-linkedin-pdf > profile.json
 ```ts
 import { parseLinkedInPdf } from 'linkedin-profile-reader';
 
-const { basics, work, education } = await parseLinkedInPdf('/path/to/Profile.pdf');
+const { basics, work, education, skills, certificates, languages } = await parseLinkedInPdf('/path/to/Profile.pdf');
 ```
 
 ```ts
@@ -58,6 +61,24 @@ interface JSONResumeBasics {
   location?: JSONResumeLocation;
   summary?: string;    // Professional summary
 }
+
+interface JSONResumeSkill {
+  name: string;        // Skill name (e.g., "Python", "Data Analysis")
+  level?: string;      // Skill level (future enhancement)
+  keywords?: string[]; // Related keywords (future enhancement)
+}
+
+interface JSONResumeCertificate {
+  name: string;        // Certificate name
+  issuer?: string;     // Issuing organization (future enhancement)
+  date?: string;       // Issue date (future enhancement)
+  url?: string;        // Certificate URL (future enhancement)
+}
+
+interface JSONResumeLanguage {
+  language: string;    // Language name (e.g., "English", "Spanish")
+  fluency?: string;    // Fluency level (e.g., "Native or Bilingual", "Professional")
+}
 ```
 
 ## Key Features
@@ -84,7 +105,9 @@ npm run build        # emit dist/ ESM build
 Pre-commit hooks format & lint staged files (husky + lint-staged).
 
 ## Roadmap
-* Skills, Certifications, and other sections parsing
+* Enhanced certificate parsing (issuer, dates, URLs)
+* Enhanced language parsing (proficiency levels)
+* Publications, Projects, and other sections parsing
 * Smarter heuristics / machine-learning rules
 * See [docs/roadmap.md](docs/roadmap.md) for detailed progress
 
