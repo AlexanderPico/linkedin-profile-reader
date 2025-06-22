@@ -17,7 +17,8 @@
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.js",
     "prepare": "husky install && npm run build",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "fixtures": "npm run build && node scripts/create-fixtures.mjs"
   },
   "keywords": [
     "linkedin",

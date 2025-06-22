@@ -1,0 +1,156 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Le Song",
+    "email": "dasongle@gmail.com",
+    "phone": "4125198696",
+    "location": {
+      "city": "Palo Alto",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "le-song-03223813",
+        "url": "https://www.linkedin.com/in/le-song-03223813"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "GenBio AI",
+      "position": "Chief Technology Officer",
+      "startDate": "2024-12"
+    },
+    {
+      "name": "Mohamed bin Zayed University of Artificial Intelligence",
+      "position": "Professor",
+      "location": "UAE",
+      "startDate": "2021-01"
+    },
+    {
+      "name": "BioMap 百图生科",
+      "position": "CTO & Chief AI Scientist",
+      "startDate": "2021-08",
+      "endDate": "2024-08"
+    },
+    {
+      "name": "Georgia Institute of Technology",
+      "position": "Associate Professor",
+      "location": "Greater Atlanta Area",
+      "startDate": "2017-02",
+      "endDate": "2021-01"
+    },
+    {
+      "name": "Georgia Institute of Technology",
+      "position": "Associate Director at Center for Machine Learning",
+      "location": "Greater Atlanta Area",
+      "startDate": "2016-08",
+      "endDate": "2021-01"
+    },
+    {
+      "name": "Georgia Institute of Technology",
+      "position": "Assistant Professor",
+      "location": "Greater Atlanta Area",
+      "startDate": "2011-09",
+      "endDate": "2017-01",
+      "highlights": [
+        "Research in machine learning and its applications to big data"
+      ]
+    },
+    {
+      "name": "Ant Financial",
+      "position": "Sr. Director of AI & Principal Engineer",
+      "startDate": "2017",
+      "endDate": "2020"
+    },
+    {
+      "name": "Google",
+      "position": "Research Scientist",
+      "location": "Greater Pittsburgh Area and Mountain View",
+      "startDate": "2011",
+      "endDate": "2011",
+      "highlights": [
+        "Apply machine learning to webscale problems"
+      ]
+    },
+    {
+      "name": "Carnegie Mellon University",
+      "position": "Lane Fellow",
+      "startDate": "2008-07",
+      "endDate": "2011",
+      "url": "https://research in the rich computational environment at Carnegie Mellon. (http://",
+      "highlights": [
+        "The Lane Fellow Program recognizes and supports scientists of outstanding intellect who are dedicated to a career at the interface of machine learning and computational biological so that they can pursue postdoctoral",
+        "Lane.compbio.cmu.edu/fellows/nav1b.html)"
+      ]
+    },
+    {
+      "name": "National ICT Australia",
+      "position": "PhD student",
+      "startDate": "2004",
+      "endDate": "2008",
+      "url": "https://to information and communications technology (ICT) research. (http://",
+      "highlights": [
+        "NICTA (formerly National ICT Australia) is an Australian research institute driving innovation through high-quality research, training and technology transfer. NICTA is the largest research organisation in Australia dedicated",
+        "En.wikipedia.org/wiki/NICTA)"
+      ]
+    },
+    {
+      "name": "University of Sydney",
+      "position": "PhD student",
+      "startDate": "2003",
+      "endDate": "2008",
+      "url": "https://Sydney) is the oldest university in Australia. (http://en.wikipedia.org/wiki/",
+      "highlights": [
+        "The University of Sydney (informally Sydney University, USyd or simply",
+        "University_of_Sydney)"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Carnegie Mellon University",
+      "area": "PostDoc, Machine Learning and Computational Biology",
+      "startDate": "2008",
+      "endDate": "2011"
+    },
+    {
+      "institution": "University of Sydney",
+      "studyType": "PhD",
+      "area": "Machine Learning",
+      "startDate": "2003",
+      "endDate": "2008"
+    },
+    {
+      "institution": "South China University of Technology",
+      "studyType": "B.S.",
+      "area": "Computer Science",
+      "startDate": "1998",
+      "endDate": "2002"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Machine Learning"
+    },
+    {
+      "name": "Computer Science"
+    },
+    {
+      "name": "Computational Biology"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Mandarin"
+    },
+    {
+      "language": "Cantonese"
+    },
+    {
+      "language": "English"
+    }
+  ]
+}

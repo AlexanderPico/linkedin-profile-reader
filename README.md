@@ -110,9 +110,24 @@ npm install          # install deps
 npm test             # run Jest test-suite
 npm run lint         # eslint + prettier
 npm run build        # emit dist/ ESM build
+npm run fixtures     # generate test fixtures from PDFs
 ```
 
 Pre-commit hooks format & lint staged files (husky + lint-staged).
+
+### Adding Test Fixtures
+
+To add new test cases:
+
+1. Place Profile.pdf files directly in the `tests/` directory (e.g., `tests/Profile.pdf`)
+2. Run `npm run fixtures` to automatically create fixture directories and expected JSON
+3. Run `npm test` to verify the new fixtures pass
+
+The fixture generator will automatically:
+- Parse PDFs to extract profile names and create meaningful fixture names (e.g., "John Doe" → `john`)
+- Move PDFs to proper directory structure (`tests/fixtures/{firstname}/data/Profile.pdf`)
+- Generate expected JSON files with schema validation
+- Handle name conflicts with last initials or numerical suffixes
 
 ## Roadmap
 * ✅ **JSON Resume Schema Validation**: Output now fully complies with JSON Resume schema
