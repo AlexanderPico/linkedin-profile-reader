@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable prettier/prettier */
 /* Jest setup: stub minimal browser globals needed by pdfjs-dist when running in Node */
 
 (global as any).DOMMatrix ??= class {};
