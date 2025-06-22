@@ -1,6 +1,7 @@
 {
   "name": "linkedin-profile-reader",
-  "version": "1.0.0",
+  "version": "0.3.0",
+  "description": "Parse LinkedIn Profile.pdf exports to JSON Resume format with enhanced parsing accuracy",
   "type": "module",
   "main": "./dist/index.js",
   "exports": {
@@ -18,10 +19,18 @@
     "prepare": "husky install && npm run build",
     "docs": "typedoc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "linkedin",
+    "pdf",
+    "parser",
+    "resume",
+    "json-resume",
+    "cv",
+    "profile",
+    "typescript"
+  ],
+  "author": "Alexander Pico",
+  "license": "MIT",
   "dependencies": {
     "pdfjs-dist": "^5.3.31"
   },

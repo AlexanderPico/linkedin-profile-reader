@@ -9,10 +9,12 @@ import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 export interface ExperiencePosition {
   title: string;
   company: string;
-  location: string;
+  location?: string;
   start: string; // e.g. "Jan 2020"
-  end: string | null; // null when "Present"
-  summary: string; // currently empty; reserved for future
+  end: string | null;
+  summary?: string;
+  url?: string;
+  highlights?: string[];
 }
 
 export interface RawEducationEntry {
@@ -32,6 +34,8 @@ export interface JSONResumeWork {
   startDate?: string | null; // YYYY or YYYY-MM
   endDate?: string | null;   // same format, null = present
   summary?: string;
+  url?: string;
+  highlights?: string[];
 }
 
 export interface JSONResumeEducation {
@@ -40,6 +44,24 @@ export interface JSONResumeEducation {
   area?: string;      // Field of study
   startDate?: string | null;
   endDate?: string | null;
+}
+
+export interface JSONResumeSkill {
+  name: string;
+  level?: string;
+  keywords?: string[];
+}
+
+export interface JSONResumeCertificate {
+  name: string;
+  issuer?: string;
+  date?: string;
+  url?: string;
+}
+
+export interface JSONResumeLanguage {
+  language: string;
+  fluency?: string;
 }
 
 export interface JSONResumeLocation {
@@ -65,6 +87,9 @@ export interface JSONResume {
   basics?: JSONResumeBasics;
   work: JSONResumeWork[];
   education: JSONResumeEducation[];
+  skills?: JSONResumeSkill[];
+  certificates?: JSONResumeCertificate[];
+  languages?: JSONResumeLanguage[];
 }
 
 /**
@@ -100,7 +125,7 @@ export async function parseLinkedInPdf(
   const clean = (text: string): string => text.replace(/\s+/g, " ").trim();
 
   // --- Gather all text items with position & fontSize -----------------------
-  type Line = { text: string; fontSize: number };
+  type Line = { text: string; fontSize: number; y: number; page: number; minX: number; maxX: number; column: 'left' | 'right' };
   const lines: Line[] = [];
 
   for (let p = 1; p <= doc.numPages; p++) {
@@ -110,24 +135,53 @@ export async function parseLinkedInPdf(
     const byY = new Map<number, { x: number; text: string; fontSize: number }[]>();
 
     content.items.forEach((it: any) => {
-      const y = round(it.transform[5], 1); // group by y position (rounded)
+      const yPos = round(it.transform[5], 1); // group by y position (rounded)
       const x = it.transform[4];
       const text = clean(it.str);
       if (!text) return;
       const fontSize = Math.hypot(it.transform[0], it.transform[1]);
-      if (!byY.has(y)) byY.set(y, []);
-      byY.get(y)!.push({ x, text, fontSize });
+      if (!byY.has(yPos)) byY.set(yPos, []);
+      byY.get(yPos)!.push({ x, text, fontSize });
     });
 
     // sort lines by y desc (top to bottom)
     const sortedYs = Array.from(byY.keys()).sort((a, b) => b - a);
-    sortedYs.forEach((y) => {
-      const items = byY.get(y)!.sort((a, b) => a.x - b.x);
+    sortedYs.forEach((yKey) => {
+      const items = byY.get(yKey)!.sort((a, b) => a.x - b.x);
       const lineText = items.map((i) => i.text).join(" ").trim();
       const maxFont = Math.max(...items.map((i) => i.fontSize));
-      lines.push({ text: lineText, fontSize: maxFont });
+      const minX = Math.min(...items.map((i) => i.x));
+      const maxX = Math.max(...items.map((i) => i.x));
+      lines.push({ text: lineText, fontSize: maxFont, y: yKey, page: p, minX, maxX, column: 'left' }); // column will be determined later
     });
   }
+
+  // After collecting all lines, compute baseline line spacing
+  const yDiffs: number[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const d = lines[i - 1].y - lines[i].y;
+    if (d > 0 && d < 40) yDiffs.push(d);
+  }
+  yDiffs.sort((a, b) => a - b);
+  const baselineGap = yDiffs.length ? yDiffs[Math.floor(yDiffs.length / 2)] : 12; // fallback 12pt
+
+  // --- Column Detection ---------------------------------------------------
+  // Detect two-column layout by analyzing X coordinates
+  const topLines = lines.slice(0, 50); // analyze first 50 lines
+  const xPositions = topLines.flatMap(line => [line.minX, line.maxX]);
+  xPositions.sort((a, b) => a - b);
+  const minX = Math.min(...xPositions);
+  const maxX = Math.max(...xPositions);
+  const columnBoundary = (minX + maxX) / 2;
+  
+  // Assign column based on X position
+  lines.forEach(line => {
+    line.column = line.minX < columnBoundary ? 'left' : 'right';
+  });
+
+  // Filter lines by column for content extraction
+  const rightColumnLines = lines.filter(line => line.column === 'right');
+  const leftColumnLines = lines.filter(line => line.column === 'left');
 
   // --- Heuristic helpers ----------------------------------------------------
   const dateRe = /[A-Za-z]{3,9}\s+\d{4}\s*[–-]\s*(Present|[A-Za-z]{3,9}\s+\d{4})/;
@@ -159,22 +213,7 @@ export async function parseLinkedInPdf(
       }
       const nameIdx = topLines.indexOf(nameLine);
 
-      // Headline / label
-      const labelParts: string[] = [];
-      for (let i = nameIdx + 1; i < topLines.length; i++) {
-        const txt = topLines[i].text;
-        if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
-        if (headerRe.test(txt)) break;
-        if (/@/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip contact/urls
-        if (txt.length < 3) continue;
-        labelParts.push(txt);
-        if (labelParts.length >= 2) break;
-      }
-      if (labelParts.length) {
-        let lbl = labelParts.join(' ').trim();
-        lbl = lbl.replace(/\s*\(LinkedIn\)$/i,'').trim();
-        basics.summary = lbl;
-      }
+
 
       const blob = topLines.map((l) => l.text).join(' ');
 
@@ -256,6 +295,45 @@ export async function parseLinkedInPdf(
       }
       if (profiles.length) (basics as any).profiles = profiles;
 
+      // Look for label/headline content (before Summary section)
+      const labelParts: string[] = [];
+      for (let i = nameIdx + 1; i < topLines.length; i++) {
+        const txt = topLines[i].text;
+        if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
+        if (headerRe.test(txt)) break;
+        if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip actual emails/urls
+        // Check if line is location-like (but can't use isLocation function yet as it's defined later)
+        const looksLikeLocation = /,/.test(txt) && /(United|States|California|Area|City|Town|Province|Region|District|[A-Z]{2}$)/i.test(txt);
+        if (looksLikeLocation) continue; // skip location lines
+        if (txt.length < 3) continue;
+        labelParts.push(txt);
+        if (labelParts.length >= 2) break;
+      }
+      if (labelParts.length) {
+        let lbl = labelParts.join(' ').trim();
+        lbl = lbl.replace(/\s*\(LinkedIn\)$/i,'').trim();
+        basics.label = lbl;
+      }
+
+      // Look for Summary section content (detailed summary) - only in right column
+      const rightTopLines = topLines.filter(l => l.column === 'right');
+      const summaryHeaderIdx = rightTopLines.findIndex(l => /^Summary$/i.test(l.text));
+      if (summaryHeaderIdx !== -1) {
+        const summaryParts: string[] = [];
+        for (let i = summaryHeaderIdx + 1; i < rightTopLines.length; i++) {
+          const txt = rightTopLines[i].text;
+          if (/^Experience$/i.test(txt)) break; // stop at Experience header
+          if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip emails/urls
+          // Skip very short lines unless they look like continuation words
+          if (txt.length < 8 && !/[.!?]$/.test(txt)) continue; // allow short lines ending with punctuation
+          if (rightTopLines[i].fontSize < 11.5) continue; // skip smaller font (likely skills)
+          summaryParts.push(txt);
+        }
+        if (summaryParts.length) {
+          basics.summary = summaryParts.join(' ').trim();
+        }
+      }
+
       // Fallback: check lines individually in case email split onto next line
       for (let i = 0; i < topLines.length; i++) {
         if (/@/.test(topLines[i].text)) {
@@ -280,19 +358,31 @@ export async function parseLinkedInPdf(
   }
 
   const isNoise = (line: string): boolean => {
-    return line === "" || /^Page \d+/i.test(line);
+    return line === "" || /^\s*[\u2022•\-*]?\s*Page \d+/i.test(line);
   };
   const isLocation = (line: string): boolean => {
     if (!line) return false;
+    if (line.length > 60) return false; // too long to be a location
     if (durationRe.test(line) || dateRe.test(line)) return false;
-    if (/,/.test(line)) return true;
+    const wordCount = line.trim().split(/\s+/).length;
+    if (wordCount > 8) return false; // locations are usually short
+    
+    // Exclude job titles and roles
+    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP)\b/i.test(line)) return false;
+    
+    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|[A-Z]{2}$)/i;
+    
+    // Major cities that should be recognized as locations
+    const majorCities = /^(Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad|Surat|Jaipur|Lucknow|Kanpur|Nagpur|Indore|Thane|Bhopal|Visakhapatnam|Pimpri|Patna|Vadodara|Ghaziabad|Ludhiana|Agra|Nashik|Faridabad|Meerut|Rajkot|Kalyan|Vasai|Varanasi|Srinagar|Aurangabad|Dhanbad|Amritsar|Navi Mumbai|Allahabad|Ranchi|Howrah|Coimbatore|Jabalpur|Gwalior|Vijayawada|Jodhpur|Madurai|Raipur|Kota|Guwahati|Chandigarh|Solapur|Hubli|Tiruchirappalli|Bareilly|Mysore|Tiruppur|Gurgaon|Aligarh|Jalandhar|Bhubaneswar|Salem|Warangal|Guntur|Bhiwandi|Saharanpur|Gorakhpur|Bikaner|Amravati|Noida|Jamshedpur|Bhilai|Cuttack|Firozabad|Kochi|Nellore|Bhavnagar|Dehradun|Durgapur|Asansol|Rourkela|Nanded|Kolhapur|Ajmer|Akola|Gulbarga|Jamnagar|Ujjain|Loni|Siliguri|Jhansi|Ulhasnagar|Jammu|Sangli|Mangalore|Erode|Belgaum|Ambattur|Tirunelveli|Malegaon|Gaya|Jalgaon|Udaipur|Maheshtala)$/i;
+    
+    if (/,/.test(line) && locationKeywords.test(line)) return true;
     if (/\bCampus\b/i.test(line)) return true;
     if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) return true; // city state
     if (/\b[A-Z]{2}\b$/.test(line)) return true; // state code at end
     if (/\bArea$/i.test(line)) return true;
+    if (majorCities.test(line.trim())) return true; // major city names
     return false;
   };
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const looksLikeCompany = (line: string): boolean => {
     if (!line) return false;
     if (dateRe.test(line) || durationRe.test(line) || isLocation(line)) return false;
@@ -300,14 +390,24 @@ export async function parseLinkedInPdf(
     return true;
   };
 
+
+
+  // Precompute section header indices for scoped parsing - use right column only
+  const experienceHeaderIdx = rightColumnLines.findIndex((l) => /^Experience\b/i.test(l.text));
+  const educationHeaderIdx = rightColumnLines.findIndex((l) => /^Education\b/i.test(l.text));
+
   // --- Main extraction loop -------------------------------------------------
   let currentCompany = "";
   const positions: ExperiencePosition[] = [];
   const education: RawEducationEntry[] = [];
   const seen = new Set<string>();
 
-  for (let idx = 0; idx < lines.length; idx++) {
-    const txt = lines[idx].text;
+  for (let idx = 0; idx < rightColumnLines.length; idx++) {
+    // Only consider lines within the Experience section boundaries
+    if (experienceHeaderIdx !== -1 && idx <= experienceHeaderIdx) continue; // not yet inside Experience
+    if (educationHeaderIdx !== -1 && idx >= educationHeaderIdx) break;      // reached Education (or later)
+
+    const txt = rightColumnLines[idx].text;
 
     if (!dateRe.test(txt)) continue;
 
@@ -316,25 +416,25 @@ export async function parseLinkedInPdf(
     const endVal = m ? m[2] : "";
     const end = /Present/i.test(endVal) ? null : endVal;
 
-    const dateFont = lines[idx].fontSize;
+    const dateFont = rightColumnLines[idx].fontSize;
 
     // Identify title lines above the date line with equal font size
     let tIdx = idx - 1;
     while (
       tIdx >= 0 &&
-      (isNoise(lines[tIdx].text) || lines[tIdx].fontSize <= dateFont + 0.1)
+      (isNoise(rightColumnLines[tIdx].text) || rightColumnLines[tIdx].fontSize <= dateFont + 0.1)
     ) {
       tIdx--;
     }
     if (tIdx < 0) continue;
 
-    const firstLine = lines[tIdx];
+    const firstLine = rightColumnLines[tIdx];
     const titleParts: string[] = [firstLine.text];
     const titleFont = firstLine.fontSize;
     tIdx--;
     // collect additional lines immediately above with same font size (within 0.2pt)
     while (tIdx >= 0) {
-      const lineObj = lines[tIdx];
+      const lineObj = rightColumnLines[tIdx];
       const ltxt = lineObj.text;
       const fSize = lineObj.fontSize;
 
@@ -351,7 +451,7 @@ export async function parseLinkedInPdf(
     let cIdx = tIdx;
     let companyFound = currentCompany; // fallback to last known
     while (cIdx >= 0) {
-      const l = lines[cIdx];
+      const l = rightColumnLines[cIdx];
       if (!isNoise(l.text) && !headerRe.test(l.text) && !dateRe.test(l.text) && !durationRe.test(l.text)) {
         if (l.fontSize > titleFont + 0.1) {
           companyFound = l.text;
@@ -364,15 +464,100 @@ export async function parseLinkedInPdf(
 
     // location line just after date
     let location = "";
-    for (let j = idx + 1; j <= idx + 5 && j < lines.length; j++) {
-      const lObj = lines[j];
+    let urlFound: string | undefined;
+    interface HL { text: string; bullet: boolean; gap: boolean; y: number; page: number; }
+    const highlightSegs: HL[] = [];
+    let gapSinceLast = false;
+    // Scan until next date line or education section (no arbitrary limit)
+    for (let j = idx + 1; j < rightColumnLines.length; j++) {
+      // Stop if we reach the Education section
+      if (educationHeaderIdx !== -1 && j >= educationHeaderIdx) break;
+      const lObj = rightColumnLines[j];
       const ltxt = lObj.text;
+      
+
+      
+      if (ltxt === '') { gapSinceLast = true; continue; }
+      if (/^Page \d+/i.test(ltxt)) { 
+        if (ltxt.includes('Critical care')) console.log(`DEBUG: Critical care line skipped as page number`);
+        gapSinceLast = false; continue; 
+      }
+      
+      // Check for location BEFORE other break conditions (locations are often in gray/smaller font)
+      if (!location && isLocation(ltxt) && lObj.fontSize >= dateFont - 0.5) { // Slightly more lenient for gray locations
+        location = ltxt;
+      }
+      
       if (dateRe.test(ltxt)) break; // next block starts
       if (headerRe.test(ltxt)) continue; // skip section headers
       if (lObj.fontSize > dateFont + 0.1) break; // assume new title block
-      if (isLocation(ltxt)) {
-        location = ltxt;
-        break;
+      if (!urlFound && ( /https?:\/\//i.test(ltxt) || /[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[^\s)]+/.test(ltxt) ) ) {
+        urlFound = ltxt.startsWith('http') ? ltxt : 'https://' + ltxt.replace(/^www\./i, '');
+        continue;
+      }
+      const wordCnt = ltxt.trim().split(/\s+/).length;
+      const bulletLine = /^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)])/u.test(ltxt);
+      const prevSeg = highlightSegs.length ? highlightSegs[highlightSegs.length-1] : undefined;
+      const prevY2 = highlightSegs.length ? highlightSegs[highlightSegs.length-1].y : undefined;
+      const largeGapCurrent = prevY2 !== undefined && (prevY2 - lObj.y) > baselineGap * 1.6;
+      const pageChange = prevSeg && prevSeg.page !== (rightColumnLines[j].page ?? 0);
+      const gapFlag = gapSinceLast || largeGapCurrent || (!!pageChange);
+      const continuation = prevSeg && !prevSeg.bullet && !prevSeg.gap && !gapFlag && prevSeg.page === rightColumnLines[j].page;
+      let textClean = ltxt.replace(/^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)](?=\s))\s*/, '').trim();
+      if (/^(Work involved|Responsibilities)[:\-]/i.test(textClean)) {
+        textClean = textClean.replace(/^(Work involved|Responsibilities)[:\-]\s*/i, '');
+      }
+      
+      // Skip URL-like content that's just domain names
+      if (/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(textClean) && !/\s/.test(textClean)) {
+        continue;
+      }
+      
+      // Skip only clearly problematic content (keeping minimal filtering since we now have column separation)
+      if (/WikiPathways|PathVisio/i.test(textClean) || // Alex's specific publication titles
+          (textClean.endsWith(':') && textClean.split(' ').length < 8)) { // Incomplete phrases ending with colon
+        continue;
+      }
+      // defer push until after conditions below
+      let isLocationLine = location === ltxt; // Check if this line was just set as location
+      
+      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1))) {
+        // add highlight segment now
+        highlightSegs.push({ text: textClean, bullet: bulletLine, gap: gapFlag, y: lObj.y, page: rightColumnLines[j].page });
+        if(pageChange) gapSinceLast = false;
+      }
+    }
+
+    if (!urlFound) {
+      const slug = currentCompany.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+      if (slug.length > 4) {
+        const urlRegex = new RegExp(`(?:https?:\/\/)?[A-Za-z0-9.-]*${slug}[A-Za-z0-9.-]*\.[A-Za-z]{2,}(?:\/[^\s)]+)?`, 'i');
+        const mLine = rightColumnLines.find(l => urlRegex.test(l.text));
+        if (mLine) {
+          const matches = mLine.text.match(urlRegex);
+          if (matches && matches.length) {
+            matches.sort((a,b)=>b.length-a.length);
+            const pick = matches[0];
+            urlFound = pick.startsWith('http')? pick : 'https://'+pick;
+          }
+        }
+      }
+    }
+
+    if (!urlFound) {
+      const caps = currentCompany.match(/[A-Z]/g);
+      const acronym = caps ? caps.join('').toLowerCase() : currentCompany.split(/\s+/).map(w=>w[0]).join('').toLowerCase();
+      if (acronym.length>=3) {
+        const urlRegex = new RegExp(`(?:https?:\\/\\/)?[A-Za-z0-9.-]*${acronym}[A-Za-z0-9.-]*\\.[A-Za-z]{2,}(?:\\/[^\s)]+)?`, 'i');
+        const mLine = rightColumnLines.find(l => urlRegex.test(l.text));
+        if (mLine) {
+          const matches = mLine.text.match(urlRegex);
+          if (matches && matches.length) {
+            matches.sort((a,b)=>b.length-a.length);
+            const pick = matches[0];
+            urlFound = pick.startsWith('http')? pick : 'https://'+pick;
+          }
+        }
       }
     }
 
@@ -380,39 +565,66 @@ export async function parseLinkedInPdf(
     if (seen.has(key)) continue;
     seen.add(key);
 
-    positions.push({ title, company: currentCompany, location, start, end, summary: "" });
+    const pos: ExperiencePosition = { title, company: currentCompany, start, end } as any;
+    if (location) pos.location = location;
+    if (urlFound) pos.url = urlFound;
+    if (highlightSegs.length) {
+      const merged: string[] = [];
+      highlightSegs.forEach((seg) => {
+        if (merged.length === 0 || seg.bullet || seg.gap) {
+          merged.push(seg.text);
+          return;
+        }
+        const prevText = merged[merged.length - 1].trim();
+        const startsLower = /^[a-z]/.test(seg.text);
+        const endPunct = /[.!?]$/;
+        const words = seg.text.split(/\s+/).length;
+        if (startsLower) {
+          merged[merged.length - 1] += ' ' + seg.text;
+        } else if (!endPunct.test(prevText) && words < 8) {
+          merged[merged.length - 1] += ' ' + seg.text;
+        } else {
+          merged.push(seg.text);
+        }
+      });
+      // Capitalize first letter of each highlight
+      pos.highlights = merged.map(highlight => 
+        highlight.charAt(0).toUpperCase() + highlight.slice(1)
+      );
+    }
+    positions.push(pos);
   }
 
   // ------------------- EDUCATION PARSING -----------------------------------
-  const eduHeaderIdx = lines.findIndex((l) => /^Education\b/i.test(l.text));
+  const eduHeaderIdx = rightColumnLines.findIndex((l) => /^Education\b/i.test(l.text));
   if (eduHeaderIdx !== -1) {
     let idx = eduHeaderIdx + 1;
-    while (idx < lines.length) {
+    while (idx < rightColumnLines.length) {
       // skip blank / noise lines
-      if (isNoise(lines[idx].text)) { idx++; continue; }
+      if (isNoise(rightColumnLines[idx].text)) { idx++; continue; }
 
       // break if we reach another major section
-      if (headerRe.test(lines[idx].text) && !/^Education\b/i.test(lines[idx].text)) {
+      if (headerRe.test(rightColumnLines[idx].text) && !/^Education\b/i.test(rightColumnLines[idx].text)) {
         break;
       }
 
-      const school = lines[idx].text.trim();
+      const school = rightColumnLines[idx].text.trim();
       idx++;
 
       // move to degree line
-      while (idx < lines.length && isNoise(lines[idx].text)) idx++;
-      if (idx >= lines.length) break;
+      while (idx < rightColumnLines.length && isNoise(rightColumnLines[idx].text)) idx++;
+      if (idx >= rightColumnLines.length) break;
 
-      let degreeFieldStr = lines[idx].text.trim();
+      let degreeFieldStr = rightColumnLines[idx].text.trim();
 
       // accumulate additional lines that belong to the same degree/field
-      const schoolFont = lines[idx - 1].fontSize; // font of school line
+      const schoolFont = rightColumnLines[idx - 1].fontSize; // font of school line
       let look = idx + 1;
-      while (look < lines.length) {
-        const t = lines[look].text.trim();
+      while (look < rightColumnLines.length) {
+        const t = rightColumnLines[look].text.trim();
         if (isNoise(t)) { look++; continue; }
         if (headerRe.test(t)) break;
-        if (lines[look].fontSize >= schoolFont - 0.01) break; // new school starts
+        if (rightColumnLines[look].fontSize >= schoolFont - 0.01) break; // new school starts
         // stop at date-only or year-range line (starts new block)
         if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) break;
         degreeFieldStr += ' ' + t;
@@ -423,18 +635,29 @@ export async function parseLinkedInPdf(
       // parse date range in degreeRaw or will fallback to separate line
       let start: string | undefined;
       let end: string | null | undefined;
-      const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
-      if (dateMatch) {
-        start = dateMatch[1];
-        const endVal = dateMatch[2];
-        end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
-        degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+      
+      // Look for date patterns like "(September 2024 - June 2028)" or "(June 2022 - August 2022)"
+      const fullDateMatch = degreeFieldStr.match(/·\s*\(([A-Za-z]+ \d{4})\s*-\s*([A-Za-z]+ \d{4}|Present)\)$/);
+      if (fullDateMatch) {
+        start = fullDateMatch[1];
+        const endVal = fullDateMatch[2];
+        end = /Present/i.test(endVal) ? null : endVal;
+        degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
+      } else {
+        // Fallback to original year-only pattern
+        const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
+        if (dateMatch) {
+          start = dateMatch[1];
+          const endVal = dateMatch[2];
+          end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
+          degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+        }
       }
 
       // remove trailing bullets / separators
       degreeFieldStr = degreeFieldStr.replace(/[\u2022•·]+$/,'').trim().replace(/,+$/,'');
 
-      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','MASTER','DOCTOR']);
+      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','MASTER','DOCTOR','SECONDARY']);
       let degree = '';
       let field: string | undefined;
       if (degreeFieldStr.includes(',')) {
@@ -448,6 +671,9 @@ export async function parseLinkedInPdf(
           field = rhsTrim || undefined;
         } else if (/Tech/i.test(lhsTrim)) {
           degree = lhsTrim.trim();
+          field = rhsTrim || undefined;
+        } else if (/Secondary Education/i.test(lhsTrim)) {
+          degree = lhsTrim;
           field = rhsTrim || undefined;
         } else {
           field = degreeFieldStr.trim();
@@ -463,6 +689,9 @@ export async function parseLinkedInPdf(
         if (degreeSet.has(firstTok)) {
           degree = firstTokRaw.replace(/\./g,'');
           field = degreeFieldStr.slice(firstTokRaw.length).trim().replace(/^,\s*/,'');
+        } else if (/Secondary Education/i.test(degreeFieldStr)) {
+          degree = "Secondary Education";
+          field = degreeFieldStr.replace(/Secondary Education,?\s*/i, '').trim() || undefined;
         } else {
           field = degreeFieldStr;
         }
@@ -470,9 +699,9 @@ export async function parseLinkedInPdf(
 
       if (!start) {
         let probe = idx + 1;
-        while (probe < lines.length && isNoise(lines[probe].text)) probe++;
-        if (probe < lines.length) {
-          const m = lines[probe].text.trim().match(/^[\u2022•·]?\s*\(?([0-9]{4})\)?$/);
+        while (probe < rightColumnLines.length && isNoise(rightColumnLines[probe].text)) probe++;
+        if (probe < rightColumnLines.length) {
+          const m = rightColumnLines[probe].text.trim().match(/^[\u2022•·]?\s*\(?([0-9]{4})\)?$/);
           if (m) {
             start = m[1];
             end = null;
@@ -491,6 +720,137 @@ export async function parseLinkedInPdf(
 
       education.push({ school, degree, field, start, end });
 
+      idx++;
+    }
+  }
+
+  // ------------------- SKILLS PARSING (LEFT COLUMN) ------------------------
+  const skills: JSONResumeSkill[] = [];
+  const skillsHeaderIdx = leftColumnLines.findIndex((l) => /^(Top Skills|Skills)$/i.test(l.text));
+  
+  if (skillsHeaderIdx !== -1) {
+    let idx = skillsHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Certifications?|Publications?|Languages?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Skills are typically in smaller font (10.5) compared to headers (13) and summary text (12)
+      // Skip summary text (larger font, longer lines)
+      if (line.fontSize >= 12 && txt.length > 50) {
+        idx++;
+        continue;
+      }
+      
+      // This looks like a skill - shorter text, smaller font
+      if (line.fontSize <= 11 && txt.length <= 50) {
+        skills.push({
+          name: txt
+        });
+      }
+      
+      idx++;
+    }
+  }
+
+  // ------------------- CERTIFICATES PARSING (LEFT COLUMN) ------------------
+  const certificates: JSONResumeCertificate[] = [];
+  const certificatesHeaderIdx = leftColumnLines.findIndex((l) => /^(Certifications?|Licenses?)$/i.test(l.text));
+  
+  if (certificatesHeaderIdx !== -1) {
+    let idx = certificatesHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Top Skills|Skills|Publications?|Languages?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Certificates are typically in smaller font (10.5) compared to headers (13)
+      // Skip summary text (larger font, longer lines)
+      if (line.fontSize >= 12 && txt.length > 50) {
+        idx++;
+        continue;
+      }
+      
+      // This looks like a certificate - shorter text, smaller font
+      if (line.fontSize <= 11 && txt.length <= 100) {
+        certificates.push({
+          name: txt
+        });
+      }
+      
+      idx++;
+    }
+  }
+
+  // ------------------- LANGUAGES PARSING (LEFT COLUMN) ---------------------
+  const languages: JSONResumeLanguage[] = [];
+  const languagesHeaderIdx = leftColumnLines.findIndex((l) => /^Languages?$/i.test(l.text));
+  
+  if (languagesHeaderIdx !== -1) {
+    let idx = languagesHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Languages are typically in smaller font (10.5) compared to headers (13)
+      if (line.fontSize >= 12) {
+        idx++;
+        continue;
+      }
+      
+      // Look for language entries with potential fluency level
+      if (line.fontSize <= 11) {
+        let languageName = txt;
+        let fluency: string | undefined;
+        
+        // Check if fluency is in the same line (in parentheses)
+        const inlineMatch = txt.match(/^(.+?)\s*\(([^)]+)\)$/);
+        if (inlineMatch) {
+          languageName = inlineMatch[1].trim();
+          fluency = inlineMatch[2].trim();
+        } else {
+          // Check if next line might be fluency level (in parentheses)
+          if (idx + 1 < leftColumnLines.length) {
+            const nextLine = leftColumnLines[idx + 1];
+            const nextTxt = nextLine.text.trim();
+            if (/^\([^)]+\)$/.test(nextTxt) && nextLine.fontSize <= 11) {
+              fluency = nextTxt.replace(/[()]/g, '');
+              idx++; // consume the fluency line
+            }
+          }
+        }
+        
+        languages.push({
+          language: languageName,
+          ...(fluency ? { fluency } : {})
+        });
+      }
+      
       idx++;
     }
   }
@@ -529,10 +889,12 @@ export async function parseLinkedInPdf(
     work: positions.map((p) => ({
       name: p.company,
       position: p.title,
-      location: p.location || undefined,
+      ...(p.location ? { location: p.location } : {}),
       startDate: toIso(p.start) ?? undefined,
       endDate: toIso(p.end) ?? null,
-      summary: p.summary || undefined,
+      ...(p.summary ? { summary: p.summary } : {}),
+      ...(p.url ? { url: p.url } : {}),
+      ...(p.highlights ? { highlights: p.highlights } : {}),
     })),
     education: education.map((e) => ({
       institution: e.school,
@@ -541,5 +903,8 @@ export async function parseLinkedInPdf(
       startDate: e.start ?? undefined,
       endDate: e.end ?? undefined,
     })),
+    ...(skills.length > 0 ? { skills } : {}),
+    ...(certificates.length > 0 ? { certificates } : {}),
+    ...(languages.length > 0 ? { languages } : {}),
   };
 }

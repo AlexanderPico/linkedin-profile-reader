@@ -2,7 +2,8 @@
   "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
   "basics": {
     "name": "Alexander Pico",
-    "summary": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
+    "label": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
+    "summary": "PhD in molecular biology and biophysics with bioinformatics experience in data mining, analysis, visualization and integration. Experience in managing software development to put tools in the hands of bench biologists. Expertise in pathway modeling and analysis, multiomics, polymorphisms, structural biology and ion channels.",
     "email": "alex.pico@gladstone.ucsf.edu",
     "location": {
       "city": "San Francisco",
@@ -54,19 +55,22 @@
       "name": "Cytoscape Consortium",
       "position": "Vice President",
       "startDate": "2013-04",
-      "endDate": null
+      "endDate": null,
+      "url": "https://cytoscapeconsortium.org"
     },
     {
       "name": "National Resource for Network Biology",
       "position": "Executive Director",
       "startDate": "2010-09",
-      "endDate": null
+      "endDate": null,
+      "url": "https://nrnb.org"
     },
     {
       "name": "National Resource for Network Biology",
       "position": "Google Summer of Code Org Admin",
       "startDate": "2007-02",
-      "endDate": null
+      "endDate": null,
+      "url": "https://nrnb.org/gsoc"
     }
   ],
   "education": [
@@ -88,6 +92,31 @@
       "institution": "Coursera",
       "area": "Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI",
       "startDate": "2012"
+    }
+  ],
+  "skills": [
+    {
+      "name": "MySQL"
+    },
+    {
+      "name": "PHP"
+    },
+    {
+      "name": "Linux"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Computing for Data Analysis"
+    },
+    {
+      "name": "Data Analysis"
+    },
+    {
+      "name": "Programming Languages"
+    },
+    {
+      "name": "Synapses, Neurons and Brains"
     }
   ]
 }
