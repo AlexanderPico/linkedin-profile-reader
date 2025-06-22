@@ -8,8 +8,8 @@ alwaysApply: false
 These rules apply to all milestones unless a milestone-specific `.mdc` overrides them.
 
 - **Important**
-    If you have a singular solution proposed, proceed with imlementing it. Do not ask to implement; just do it. If tests are present, then continue to iterate until tests pass. Do not stop for input; iterate until tests pass, then summarize.
-    
+    If you have a solution proposed (even if it is multiple steps), proceed with imlementing it. Do not ask to implement; just do it. If tests are present, then continue to iterate until tests pass. Do not stop for input; iterate until tests pass, then summarize.
+
 - **Roadmap as source-of-truth**  
    Create a `docs/roadmap.md` if it does not already exist and structure as a checkbox list you can manage covering milestones and tasks. Update `docs/roadmap.md` whenever tasks are started or completed.  Checkbox status must match the codebase.
 
