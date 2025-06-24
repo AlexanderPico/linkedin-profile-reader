@@ -8,10 +8,10 @@ describe('JSON Resume Schema Validation', () => {
   const fixtures = fs
     .readdirSync(FIXTURES_DIR)
     .filter((f) => fs.statSync(path.join(FIXTURES_DIR, f)).isDirectory());
-  
-  const testProfiles = fixtures.map(name => ({
+
+  const testProfiles = fixtures.map((name) => ({
     name,
-    path: `./tests/fixtures/${name}/data/Profile.pdf`
+    path: `./tests/fixtures/${name}/data/Profile.pdf`,
   }));
 
   test.each(testProfiles)(
