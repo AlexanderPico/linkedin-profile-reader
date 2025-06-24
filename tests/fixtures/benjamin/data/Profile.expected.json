@@ -1,104 +1,104 @@
 {
-    "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
-    "basics": {
-        "name": "Benjamin Gin",
-        "label": "-- Data Science and Statistic Student @ UCSB",
-        "summary": "Current Data Science and Statistics student at UCSB interested in computer programming with experience in Python, Java, HTML, and CSS. Open to new experiences in computer science, data science, and bioinformatics. Currently looking for work in the summer of 2025.",
-        "email": "ironfist565@gmail.com",
-        "location": {
-            "city": "San Francisco",
-            "region": "California",
-            "countryCode": "United States"
-        },
-        "profiles": [
-            {
-                "network": "LinkedIn",
-                "username": "benjamin-gin",
-                "url": "https://www.linkedin.com/in/benjamin-gin"
-            }
-        ]
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Benjamin Gin",
+    "email": "ironfist565@gmail.com",
+    "location": {
+      "city": "San Francisco",
+      "region": "California",
+      "countryCode": "United States"
     },
-    "work": [
-        {
-            "name": "Gladstone Institutes",
-            "position": "Bioinformatician",
-            "startDate": "2023-05",
-            "endDate": "2023-09",
-            "highlights": [
-                "Altered pipelines in r and introduced new methods such as harmony and samplewise-batch correction to ensure unbiased gene expressions",
-                "Created a thesis, review article, scientific poster, and scientific presentation on the comparison of samplewise-batch correction and harmony on genes expressed by mice affected by the apoe4 mutation",
-                "Developed and practiced the peer review process of scientific papers, then assisted in the publication of a paper on the gene expressions of Alzheimer's"
-            ]
-        },
-        {
-            "name": "Acterra",
-            "position": "Mobile App Technician and Content Developer",
-            "location": "San Francisco Bay Area",
-            "startDate": "2022-08",
-            "endDate": "2022-12",
-            "highlights": [
-                "Provided technical support for grassroots climate advocacy and climate solutions by creating and inputting wide-ranging and dynamic content for a mobile app (Climate App Now)",
-                "Engaged hundreds to thousands of users in simple daily actions to lower greenhouse gas emissions, e.g. lobbying legislators and making personal pledges.",
-                "Input 50 actions in total into the app database that were completed hundreds of times."
-            ]
-        },
-        {
-            "name": "Rising Sun Center for Opportunity",
-            "position": "Energy Specialist",
-            "location": "San Francisco Bay Area",
-            "startDate": "2022-06",
-            "endDate": "2022-08",
-            "highlights": [
-                "Utilize water and energy saving practices to replace inefficient measures with energy- and water-saving devices",
-                "Inform and deepen the communities understanding about water and energy conservation",
-                "Communicate with clients our process and procedure as well as practices to make a greener impact to the community"
-            ]
-        },
-        {
-            "name": "Anova Hackathon",
-            "position": "Program Participate",
-            "location": "San Francisco Bay Area",
-            "startDate": "2022-04",
-            "endDate": "2022-04",
-            "highlights": [
-                "Participated in computer science workshops aimed at helping high school students learn programming languages",
-                "Successfully created an app that allows consumers to adapt their calendar infrastructure over 24 hours",
-                "Successfully created a website that helps link people to suitable volunteer opportunities over 24 hours",
-                "Received an award for best social good website out of 27 teams"
-            ]
-        }
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "benjamin-gin",
+        "url": "https://www.linkedin.com/in/benjamin-gin"
+      }
     ],
-    "education": [
-        {
-            "institution": "UC Santa Barbara",
-            "studyType": "Bachelor of Science - BS",
-            "area": "Data Science and Statistics",
-            "startDate": "2024-09",
-            "endDate": "2028-06"
-        },
-        {
-            "institution": "George Washington High School",
-            "studyType": "Secondary Education",
-            "area": "Computer Science",
-            "startDate": "2020-08",
-            "endDate": "2024-06"
-        },
-        {
-            "institution": "Harvard Extension School",
-            "area": "Computer Science",
-            "startDate": "2022-06",
-            "endDate": "2022-08"
-        }
-    ],
-    "skills": [
-        {
-            "name": "Spoken English"
-        },
-        {
-            "name": "Data Analysis"
-        },
-        {
-            "name": "Data Entry"
-        }
-    ]
+    "label": "-- Data Science and Statistic Student @ UCSB",
+    "summary": "Current Data Science and Statistics student at UCSB interested in computer programming with experience in Python, Java, HTML, and CSS. Open to new experiences in computer science, data science, and bioinformatics. Currently looking for work in the summer of 2025."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatician",
+      "startDate": "2023-05",
+      "endDate": "2023-09",
+      "highlights": [
+        "Altered pipelines in r and introduced new methods such as harmony and samplewise-batch correction to ensure unbiased gene expressions",
+        "Created a thesis, review article, scientific poster, and scientific presentation on the comparison of samplewise-batch correction and harmony on genes expressed by mice affected by the apoe4 mutation",
+        "Developed and practiced the peer review process of scientific papers, then assisted in the publication of a paper on the gene expressions of Alzheimer's"
+      ]
+    },
+    {
+      "name": "Acterra",
+      "position": "Mobile App Technician and Content Developer",
+      "location": "San Francisco Bay Area",
+      "startDate": "2022-08",
+      "endDate": "2022-12",
+      "highlights": [
+        "Provided technical support for grassroots climate advocacy and climate solutions by creating and inputting wide-ranging and dynamic content for a mobile app (Climate App Now)",
+        "Engaged hundreds to thousands of users in simple daily actions to lower greenhouse gas emissions, e.g. lobbying legislators and making personal pledges.",
+        "Input 50 actions in total into the app database that were completed hundreds of times."
+      ]
+    },
+    {
+      "name": "Rising Sun Center for Opportunity",
+      "position": "Energy Specialist",
+      "location": "San Francisco Bay Area",
+      "startDate": "2022-06",
+      "endDate": "2022-08",
+      "highlights": [
+        "Utilize water and energy saving practices to replace inefficient measures with energy- and water-saving devices",
+        "Inform and deepen the communities understanding about water and energy conservation",
+        "Communicate with clients our process and procedure as well as practices to make a greener impact to the community"
+      ]
+    },
+    {
+      "name": "Anova Hackathon",
+      "position": "Program Participate",
+      "location": "San Francisco Bay Area",
+      "startDate": "2022-04",
+      "endDate": "2022-04",
+      "highlights": [
+        "Participated in computer science workshops aimed at helping high school students learn programming languages",
+        "Successfully created an app that allows consumers to adapt their calendar infrastructure over 24 hours",
+        "Successfully created a website that helps link people to suitable volunteer opportunities over 24 hours",
+        "Received an award for best social good website out of 27 teams"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "UC Santa Barbara",
+      "studyType": "Bachelor of Science - BS",
+      "area": "Data Science and Statistics",
+      "startDate": "2024-09",
+      "endDate": "2028-06"
+    },
+    {
+      "institution": "George Washington High School",
+      "studyType": "Secondary Education",
+      "area": "Computer Science",
+      "startDate": "2020-08",
+      "endDate": "2024-06"
+    },
+    {
+      "institution": "Harvard Extension School",
+      "area": "Computer Science",
+      "startDate": "2022-06",
+      "endDate": "2022-08"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Spoken English"
+    },
+    {
+      "name": "Data Analysis"
+    },
+    {
+      "name": "Data Entry"
+    }
+  ]
 }

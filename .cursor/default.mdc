@@ -14,14 +14,7 @@ These rules apply to all milestones unless a milestone-specific `.mdc` overrides
    Create a `docs/roadmap.md` if it does not already exist and structure as a checkbox list you can manage covering milestones and tasks. Update `docs/roadmap.md` whenever tasks are started or completed.  Checkbox status must match the codebase.
 
 - **Debug logging**  
-    Each script/component that needs verbose output should wrap `console.log` in a local `debug()` helper that only prints when the environment variable `DEBUG` contains a matching keyword.  
-    Example usage in a Node script:  
-    ```js
-    const log = (...a) => process.env.DEBUG?.includes('linkedin') && console.log('[linkedin]', ...a);
-    ```
-    This lets you run `DEBUG=linkedin node scripts/fetch-linkedin.js` during development without polluting CI logs.
-
-    And each script should include ample logging of key booleans and example variable values so the developer can track the logic and performance, especialy in new parts of the code under development, adding more outputs if troubles persist.
+    Each script/component that needs verbose output should wrap `console.log` in a local `debug()` helper that only prints when the environment variable `DEBUG` contains a matching keyword. And each script should include ample logging of key booleans and example variable values so the developer can track the logic and performance, especialy in new parts of the code under development, adding more outputs if troubles persist.
 
 - **Troubleshooting**
     If a particular function requires troubleshooting, then increase the logging to make it clear what is going on.

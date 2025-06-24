@@ -1,12 +1,18 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { parseLinkedInPdf } from '../dist/index.js';
 
 describe('JSON Resume Schema Validation', () => {
-  const testProfiles = [
-    { name: 'alex', path: './tests/fixtures/alex/data/Profile.pdf' },
-    { name: 'krishna', path: './tests/fixtures/krishna/data/Profile.pdf' },
-    { name: 'elisa', path: './tests/fixtures/elisa/data/Profile.pdf' },
-    { name: 'benjamin', path: './tests/fixtures/benjamin/data/Profile.pdf' },
-  ];
+  // Dynamically discover all fixture profiles
+  const FIXTURES_DIR = path.resolve('tests/fixtures');
+  const fixtures = fs
+    .readdirSync(FIXTURES_DIR)
+    .filter((f) => fs.statSync(path.join(FIXTURES_DIR, f)).isDirectory());
+  
+  const testProfiles = fixtures.map(name => ({
+    name,
+    path: `./tests/fixtures/${name}/data/Profile.pdf`
+  }));
 
   test.each(testProfiles)(
     '$name profile should be valid against JSON Resume schema',

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "LI Erran Li",
+    "email": "erranli@gmail.com",
+    "location": {
+      "city": "San Francisco",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "li-erran-li-552aa217",
+        "url": "https://www.linkedin.com/in/li-erran-li-552aa217"
+      }
+    ],
+    "label": "AWS AI at Amazon | ACM Fellow | IEEE Fellow",
+    "summary": "Hiring scientists and engineers in ML, CV, and NLP. Please feel free to message me!"
+  },
+  "work": [
+    {
+      "name": "Amazon Web Services (AWS)",
+      "position": "Head Of Science, HIL team",
+      "startDate": "2021-04"
+    },
+    {
+      "name": "Columbia University",
+      "position": "Adjunct Professor",
+      "startDate": "2012-01"
+    },
+    {
+      "name": "Amazon",
+      "position": "Alexa AI",
+      "startDate": "2020-03",
+      "endDate": "2021-04"
+    },
+    {
+      "name": "Scale AI",
+      "position": "Head of Machine Learning",
+      "location": "San Francisco, California",
+      "startDate": "2019-06",
+      "endDate": "2020-03"
+    },
+    {
+      "name": "Pony.ai",
+      "position": "Chief Scientist",
+      "location": "Fremont, California",
+      "startDate": "2018-05",
+      "endDate": "2019-05"
+    },
+    {
+      "name": "Uber ATG",
+      "position": "Perception team: deep learning, computer vision",
+      "startDate": "2017-04",
+      "endDate": "2018-05",
+      "highlights": [
+        "San Francisco"
+      ]
+    },
+    {
+      "name": "Uber",
+      "position": "Machine learning platform team",
+      "location": "San Francisco Bay Area",
+      "startDate": "2015-08",
+      "endDate": "2017-04",
+      "highlights": [
+        "Machine learning platform",
+        "Deep learning"
+      ]
+    },
+    {
+      "name": "Nokia Bell Labs",
+      "position": "MTS",
+      "startDate": "2001-08",
+      "endDate": "2015-07",
+      "highlights": [
+        "Big data, machine learning, distributed systems, cloud and mobile computing, networking"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Cornell University",
+      "studyType": "PhD",
+      "area": "Computer Science"
+    },
+    {
+      "institution": "Chinese Academy of Sciences",
+      "studyType": "Master's degree",
+      "area": "Computer Vision"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Deep Learning"
+    },
+    {
+      "name": "Machine Learning"
+    },
+    {
+      "name": "Computer Vision"
+    }
+  ]
+}

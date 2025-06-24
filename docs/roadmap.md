@@ -49,13 +49,13 @@
 - [x] **CLI Schema Check**: Added `--validate` flag to CLI for schema compliance checking
 
 ### ⏳ Release Preparation 0.5.0 (FUTURE)
+- [ ] Benchmark large number of PDFs
 - [ ] Publish first beta to npm (`npm publish --access public`)
 - [ ] Generate & upload documentation to GitHub Pages
 - [ ] Add semantic-release or changesets for version automation
 
 ### 📊 Quality & DX 0.6.0
 - [ ] Add code-coverage reporting to CI
-- [ ] Benchmark large PDFs; optimise performance & memory
 - [ ] Provide VS Code snippets / typings examples
 
 ### 🌐 Ecosystem & Integrations 1.0.0
