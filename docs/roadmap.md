@@ -48,13 +48,24 @@
 - [x] **Add Validation Tests**: Included schema validation in test suite
 - [x] **CLI Schema Check**: Added `--validate` flag to CLI for schema compliance checking
 
-### ⏳ Release Preparation 0.5.0 (FUTURE)
+### ✅ New Fixture Integration 0.5.0 (COMPLETED)
+- [x] **Added new test fixtures**: Integrated zhirui and zainab profiles
+- [x] **Fixed phone number parsing**: Improved detection to avoid false positives from:
+  - Year ranges (e.g., "2014 - 2019" no longer parsed as phone)
+  - LinkedIn username fragments (e.g., "49667449" in LinkedIn URLs)
+  - Split LinkedIn URLs across PDF lines
+- [x] **Enhanced location parsing**: Better separation of location vs. label/headline text
+- [x] **Improved label detection**: Academic/professional keywords now properly detected
+- [x] **Schema compliance**: Updated field names to match JSON Resume schema (countryCode vs country)
+- [x] **All tests passing**: 15/15 test cases now pass including new fixtures
+
+### ⏳ Release Preparation 0.6.0 (FUTURE)
 - [ ] Benchmark large number of PDFs
 - [ ] Publish first beta to npm (`npm publish --access public`)
 - [ ] Generate & upload documentation to GitHub Pages
 - [ ] Add semantic-release or changesets for version automation
 
-### 📊 Quality & DX 0.6.0
+### 📊 Quality & DX 0.7.0
 - [ ] Add code-coverage reporting to CI
 - [ ] Provide VS Code snippets / typings examples
 
@@ -84,6 +95,25 @@
 - Enhanced test coverage for edge cases and complex content structures
 - Better handling of diverse LinkedIn PDF formats and layouts
 
----
+## Recent New Fixture Integration (v0.5.0)
+
+### 🆕 **New Test Fixtures**
+- **Zhirui Hu**: Academic profile with computational biology/statistics/ML background
+- **Zainab Yusuf-Sada**: Administrative professional with project management experience
+
+### 🔧 **Phone Number Parsing Fixes**
+- **Year range exclusion**: Prevents date ranges like "2014 - 2019" from being parsed as phone numbers
+- **LinkedIn username filtering**: Avoids extracting phone-like numbers from LinkedIn usernames (e.g., "49667449" in "brianna-swanson-shrm-cp-49667449")
+- **Split URL handling**: Correctly handles LinkedIn URLs that are split across PDF lines
+
+### 🎯 **Location vs Label Parsing**
+- **Academic keyword detection**: Properly identifies academic/professional terms like "computational biology", "statistics", "machine learning" as labels rather than locations
+- **Location filtering**: Enhanced location detection to avoid academic/professional keywords
+- **Schema compliance**: Updated to use `countryCode` field instead of `country` per JSON Resume schema
+
+### ✅ **Test Results**
+- **15/15 tests passing**: All existing and new fixtures now parse correctly
+- **No regressions**: All previously working profiles continue to work as expected
+- **Schema validation**: All outputs comply with JSON Resume schema requirements
 
 _Last updated: 2025-01-27_ 

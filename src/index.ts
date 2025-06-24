@@ -300,8 +300,31 @@ export async function parseLinkedInPdf(
         }
       }
 
-      const phoneMatch = blob.match(/\+?\d[\d\s\-\(\)]{7,}\d/);
-      if (phoneMatch) basics.phone = phoneMatch[0];
+      // More specific phone regex that avoids date ranges and LinkedIn usernames
+      const phoneCandidate = blob.match(/(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|(?:\+?\d{1,3}[-.\s]?)?(?:\([0-9]{1,4}\)|[0-9]{1,4})[-.\s]?[0-9]{6,10}/);
+      // Only check if the phone candidate itself looks like a year range (not anywhere in the blob)
+      const isYearRangePattern = phoneCandidate && /^\d{4}\s*[-–]\s*\d{4}$/.test(phoneCandidate[0]);
+      
+      // Check if the phone candidate is actually part of a LinkedIn URL (handle split URLs)
+      let isLinkedInUsername = false;
+      if (phoneCandidate) {
+        // Check for complete LinkedIn URL
+        const linkedinUrlMatch = blob.match(/linkedin\.com\/in\/[^\s)]+/i);
+        // Check for split LinkedIn URL pattern (number followed by "(LinkedIn)")
+        const splitPattern = new RegExp(`\\b${phoneCandidate[0]}\\s*\\(LinkedIn\\)`, 'i');
+        
+        if (linkedinUrlMatch && linkedinUrlMatch[0].includes(phoneCandidate[0])) {
+          isLinkedInUsername = true;
+        } else if (splitPattern.test(blob)) {
+          isLinkedInUsername = true;
+        }
+        
+
+      }
+      
+      if (phoneCandidate && !isYearRangePattern && !isLinkedInUsername) {
+        basics.phone = phoneCandidate[0];
+      }
 
       // Find location: first comma line after name & label and not containing 'LinkedIn'
       let locLine: {text:string}|undefined;
@@ -318,6 +341,8 @@ export async function parseLinkedInPdf(
         if (/\d/.test(t)) continue; // avoid job title lines containing numbers
         // Skip job titles by checking for business terms
         if (/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(t)) continue;
+        // Skip label/headline text that contains academic/professional keywords
+        if (/\b(biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(t)) continue;
         locLine = topLines[i];
         break;
       }
@@ -378,9 +403,9 @@ export async function parseLinkedInPdf(
         const looksLikeLocation = (
           // Lines ending with Area patterns (but not job titles with CEO, LLC, etc.)
           /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
-          // Lines with comma and clear location indicators (but exclude job titles)
+          // Lines with comma and clear location indicators (but exclude job titles and academic terms)
           (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt) && 
-           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(txt))
+           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(txt))
         );
         if (looksLikeLocation) continue; // skip location lines
         // Skip fragments that look like LinkedIn URL parts
@@ -389,8 +414,9 @@ export async function parseLinkedInPdf(
         // Skip LinkedIn username fragments (like "swanson-shrm-cp-49667449")
         if (/^[a-z]+-[a-z]+-[a-z]+-\d+$/i.test(txt)) continue;
         if (txt.length < 3) continue;
+        // Add text to label parts, prioritizing academic/professional keywords
         labelParts.push(txt);
-        if (labelParts.length >= 2) break;
+        if (labelParts.length >= 3) break; // Allow more parts for complex labels
       }
       if (labelParts.length) {
         let lbl = labelParts.join(' ').trim();
