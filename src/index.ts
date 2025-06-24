@@ -237,10 +237,15 @@ export async function parseLinkedInPdf(
         if (curr.fontSize > prev.fontSize && curr.text.length > 3) return curr;
         return prev;
       }, topLines[0]);
-      // Split credentials after comma (e.g., ", PhD")
+      // Split credentials after comma or hyphen (e.g., ", PhD" or "- SHRM-CP")
       const nameRaw = nameLine.text;
       if (/,/.test(nameRaw)) {
         const [primary] = nameRaw.split(',');
+        basics.name = primary.trim();
+        // credential part ignored for now
+      } else if (/-\s+[A-Z]{2,}/.test(nameRaw)) {
+        // Handle hyphen-separated credentials like "- SHRM-CP"
+        const [primary] = nameRaw.split(/\s*-\s+[A-Z]/);
         basics.name = primary.trim();
         // credential part ignored for now
       } else {
@@ -311,11 +316,17 @@ export async function parseLinkedInPdf(
         if (!/,/.test(t)) continue;
         if (/LinkedIn/i.test(t)) continue;
         if (/\d/.test(t)) continue; // avoid job title lines containing numbers
+        // Skip job titles by checking for business terms
+        if (/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(t)) continue;
         locLine = topLines[i];
         break;
       }
       if (!locLine) {
-        locLine = topLines.slice(nameIdx+1, scanMax).find((l)=>/,/.test(l.text) && /(United|Area|[A-Z]{2})/i.test(l.text));
+        locLine = topLines.slice(nameIdx+1, scanMax).find((l)=>
+          /,/.test(l.text) && 
+          /(United|Area|[A-Z]{2})/i.test(l.text) &&
+          !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(l.text)
+        );
       }
       if (!locLine) {
         for (let i = nameIdx+1; i < scanMax; i++) {
@@ -323,9 +334,13 @@ export async function parseLinkedInPdf(
           if ((basics.summary && t===basics.summary)) continue;
           if (/LinkedIn|www\.|http/i.test(t)) continue;
           if (/\|/.test(t)) continue;
-          if (/Area$/i.test(t) || /(California|CA|United States)/i.test(t)) {
-            locLine = topLines[i];
-            break;
+          // Look for location patterns including Area endings and specific patterns
+          if (/Area$/i.test(t) || /(California|CA|United States|Raleigh-Durham-Chapel Hill)/i.test(t)) {
+            // Make sure it's not a job title by checking for business terms
+            if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(t)) {
+              locLine = topLines[i];
+              break;
+            }
           }
         }
       }
@@ -359,11 +374,20 @@ export async function parseLinkedInPdf(
         // Skip phone numbers
         if (/^\d+\s*\(Mobile\)$/i.test(txt) || /^\d{10,}$/i.test(txt)) continue;
         // Check if line is location-like (but can't use isLocation function yet as it's defined later)
-        const looksLikeLocation = /,/.test(txt) && /(United|States|California|Area|City|Town|Province|Region|District|[A-Z]{2}$)/i.test(txt);
+        // Be more specific about location detection to avoid job titles
+        const looksLikeLocation = (
+          // Lines ending with Area patterns (but not job titles with CEO, LLC, etc.)
+          /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
+          // Lines with comma and clear location indicators (but exclude job titles)
+          (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt) && 
+           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(txt))
+        );
         if (looksLikeLocation) continue; // skip location lines
         // Skip fragments that look like LinkedIn URL parts
         if (/^song-\d+\s*\(LinkedIn\)$/i.test(txt)) continue;
         if (/^[a-z]+-[a-z0-9]+\s*\(LinkedIn\)$/i.test(txt)) continue;
+        // Skip LinkedIn username fragments (like "swanson-shrm-cp-49667449")
+        if (/^[a-z]+-[a-z]+-[a-z]+-\d+$/i.test(txt)) continue;
         if (txt.length < 3) continue;
         labelParts.push(txt);
         if (labelParts.length >= 2) break;
@@ -428,7 +452,7 @@ export async function parseLinkedInPdf(
     if (wordCount > 8) return false; // locations are usually short
     
     // Exclude job titles and roles
-    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP)\b/i.test(line)) return false;
+    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP|PI)\b/i.test(line)) return false;
     
     const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Mountain View|Pittsburgh|[A-Z]{2}$)/i;
     
@@ -510,7 +534,30 @@ export async function parseLinkedInPdf(
       const l = rightColumnLines[cIdx];
       if (!isNoise(l.text) && !headerRe.test(l.text) && !dateRe.test(l.text) && !durationRe.test(l.text)) {
         if (l.fontSize > titleFont + 0.1) {
-          companyFound = l.text;
+          // Found the company line, but check if there are additional lines above that should be combined
+          let companyParts = [l.text];
+          let lookBack = cIdx - 1;
+          
+          // Look backwards for consecutive lines with similar font size that could be part of company name
+          while (lookBack >= 0) {
+            const prevLine = rightColumnLines[lookBack];
+            if (isNoise(prevLine.text) || headerRe.test(prevLine.text) || dateRe.test(prevLine.text) || durationRe.test(prevLine.text)) {
+              break;
+            }
+            
+            // If the previous line has similar font size and doesn't look like a title/position, include it
+            const fontDiff = Math.abs(prevLine.fontSize - l.fontSize);
+            if (fontDiff <= 0.5 && 
+                !/(^[A-Z][a-z]+ [A-Z][a-z]+$)|(Professor|Director|Manager|Engineer|Analyst|Specialist|Coordinator|Assistant|Associate|Senior|Lead|Head|Chief|VP|CEO|CTO|CFO)$/i.test(prevLine.text) &&
+                prevLine.text.length > 10) { // Avoid very short lines that might be fragments
+              companyParts.unshift(prevLine.text);
+              lookBack--;
+            } else {
+              break;
+            }
+          }
+          
+          companyFound = companyParts.join(' ');
           break;
         }
       }
@@ -556,13 +603,43 @@ export async function parseLinkedInPdf(
         }
       }
       
-      if (dateRe.test(processedText)) break; // next block starts
+      // Only break on date patterns that look like standalone date lines, not dates embedded in descriptive text
+      // Exclude: bullet points, lines with commas (like "Foundation, 2016–2025"), lines starting with lowercase, very long lines, or bare year ranges
+      if (dateRe.test(processedText) && 
+          !/^[•·\-*]\s*/.test(processedText) && 
+          !processedText.includes(',') &&
+          !/^[a-z]/.test(processedText) &&
+          processedText.split(/\s+/).length <= 6 &&
+          !/^\d{4}\s*[–-]\s*\d{4}$/.test(processedText.trim())) break; // next block starts
       if (headerRe.test(processedText)) continue; // skip section headers
       if (lObj.fontSize > dateFont + 0.1) break; // assume new title block
       if (!urlFound && ( /https?:\/\//i.test(ltxt) || /[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[^\s)]+/.test(ltxt) ) ) {
         // Avoid treating company names or partial text as URLs
         if (!ltxt.includes('Web Services') && !ltxt.includes('(AWS)') && ltxt.includes('.')) {
-          urlFound = ltxt.startsWith('http') ? ltxt : 'https://' + ltxt.replace(/^www\./i, '');
+          // Extract just the URL part from the text
+          const urlMatch = ltxt.match(/https?:\/\/[^\s)]+/i) || ltxt.match(/(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?/i);
+          if (urlMatch) {
+            let extractedUrl = urlMatch[0];
+            // Remove trailing punctuation that's not part of the URL
+            extractedUrl = extractedUrl.replace(/[.,;!?]+$/, '');
+            // Convert http to https and ensure protocol
+            if (extractedUrl.startsWith('http://')) {
+              urlFound = extractedUrl.replace('http://', 'https://');
+            } else if (extractedUrl.startsWith('https://')) {
+              urlFound = extractedUrl;
+            } else {
+              urlFound = 'https://' + extractedUrl.replace(/^www\./i, '');
+            }
+          } else {
+            // Convert http to https and ensure protocol
+            if (ltxt.startsWith('http://')) {
+              urlFound = ltxt.replace('http://', 'https://');
+            } else if (ltxt.startsWith('https://')) {
+              urlFound = ltxt;
+            } else {
+              urlFound = 'https://' + ltxt.replace(/^www\./i, '');
+            }
+          }
           continue;
         }
       }
@@ -608,6 +685,8 @@ export async function parseLinkedInPdf(
       }
     }
 
+    // Note: URL extraction now happens in the highlight processing loop above
+
     if (!urlFound) {
       const slug = currentCompany.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
       if (slug.length > 4) {
@@ -651,6 +730,17 @@ export async function parseLinkedInPdf(
 
     const key = title + start + currentCompany;
     if (seen.has(key)) continue;
+    
+    // Additional duplicate detection: check for same company + position with overlapping dates
+    const isDuplicate = positions.some(existing => 
+      existing.company === currentCompany && 
+      existing.title === title &&
+      // Check for overlapping or contained date ranges
+      ((existing.end === null) || // existing is ongoing, so any new position with same company/title is likely duplicate
+       (end !== null && existing.start <= start && (existing.end === null || start <= existing.end)))
+    );
+    if (isDuplicate) continue;
+    
     seen.add(key);
 
     const pos: ExperiencePosition = { title, company: currentCompany, start, end } as any;
@@ -667,9 +757,35 @@ export async function parseLinkedInPdf(
         const startsLower = /^[a-z]/.test(seg.text);
         const endPunct = /[.!?]$/;
         const words = seg.text.split(/\s+/).length;
+        
+        // Check for separator-based lists (~ or |) that should be merged
+        const hasSeparators = /[~|]/.test(prevText) || /^[~|]/.test(seg.text);
+        const isListContinuation = hasSeparators && !endPunct.test(prevText);
+        
+        // Check for proper noun continuation patterns
+        const isProperNounContinuation = !startsLower && !endPunct.test(prevText) && (
+          // Sentence fragments that clearly continue from previous text
+          /^(Research|Program|Conference|Day|Award|Training|Institute|University|College|School|Department|Center|Project|Study|Analysis)\b/i.test(seg.text) ||
+          // Text that starts with common continuation words
+          /^(as well as|and|or|including|such as|like|for example|e\.g\.|i\.e\.|—|–|-)/i.test(seg.text) ||
+          // Previous text ends with incomplete phrases that need continuation
+          /\b(and|the|of|in|at|for|with|to|from|by|on|Medical Student and|Anesthesia Residents'|Research Training|Student Research)$/i.test(prevText) ||
+          // Course/item lists: previous ends with comma and current starts with quoted item or continues a list
+          (/,\s*$/.test(prevText) && (/^['"\u201c\u201d]/.test(seg.text) || /^(and|or)\b/i.test(seg.text)))
+        );
+
+        
         if (startsLower) {
           merged[merged.length - 1] += ' ' + seg.text;
-        } else if (!endPunct.test(prevText) && words < 8) {
+        } else if (isListContinuation) {
+          // Merge separator-based lists, converting separators to commas
+          let combinedText = prevText + ' ' + seg.text;
+          // Clean up separators: replace ~ and | with commas, but avoid double commas
+          combinedText = combinedText.replace(/\s*[~|]\s*/g, ', ').replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/\s*,$/, '');
+          merged[merged.length - 1] = combinedText;
+        } else if (isProperNounContinuation) {
+          merged[merged.length - 1] += ' ' + seg.text;
+        } else if (!endPunct.test(prevText) && (words < 8 || /^[$£€¥₹]/.test(seg.text))) {
           // Be more conservative about merging - avoid merging distinct technical terms
           const prevWords = prevText.split(/\s+/).length;
           const bothShort = prevWords <= 3 && words <= 3;
@@ -686,10 +802,64 @@ export async function parseLinkedInPdf(
           merged.push(seg.text);
         }
       });
-      // Capitalize first letter of each highlight
-      pos.highlights = merged.map(highlight => 
-        highlight.charAt(0).toUpperCase() + highlight.slice(1)
-      );
+      
+      // Post-process to merge consecutive separator-based items
+      const finalMerged: string[] = [];
+      for (let i = 0; i < merged.length; i++) {
+        const current = merged[i];
+        
+        // Check if this and subsequent items are part of a separator-based list or company name continuation
+        const isListItem = (/[~|]/.test(current) && !current.includes('.') && !current.includes('!') && !current.includes('?')) ||
+                          (current.includes(',') && current.split(/\s+/).length > 5 && !current.includes('.') && !current.includes('!') && !current.includes('?'));
+        
+        if (isListItem) {
+          let listItems = [current];
+          let j = i + 1;
+          
+          // Collect consecutive items that are part of the same list
+          while (j < merged.length) {
+            const next = merged[j];
+            // Continue if it has separators, starts with separator, or looks like a continuation
+            if (/[~|]/.test(next) || /^[~|]/.test(next) || 
+                (!next.includes('.') && !next.includes('!') && !next.includes('?') && 
+                 next.split(/\s+/).length < 10 && /^[A-Z]/.test(next)) ||
+                // Also include common company/organization suffixes that got split
+                /^(Therapeutics|Solutions|Systems|Technologies|Institute|University|College|Corporation|Corp|Inc|LLC|Ltd|Group|Associates|Partners|Consulting|Services|Medical|Health|Healthcare|Pharmaceuticals|Biotech|Labs|Laboratory)(\s|,|$)/i.test(next)) {
+              listItems.push(next);
+              j++;
+            } else {
+              break;
+            }
+          }
+          
+          if (listItems.length > 1) {
+            // Merge all list items into one, converting separators to commas
+            let combinedList = listItems.join(' ');
+            combinedList = combinedList.replace(/\s*[~|]\s*/g, ', ')
+                                     .replace(/,\s*,/g, ',')
+                                     .replace(/^,\s*/, '')
+                                     .replace(/\s*,$/, '');
+            finalMerged.push(combinedList);
+            i = j - 1; // Skip the items we just merged
+          } else {
+            finalMerged.push(current);
+          }
+        } else {
+          finalMerged.push(current);
+        }
+      }
+      
+      // Capitalize first letter of each highlight and fix nested quotes
+      pos.highlights = finalMerged.map(highlight => {
+        let cleaned = highlight.charAt(0).toUpperCase() + highlight.slice(1);
+        // Convert all quotes (including Unicode smart quotes) to standard ASCII quotes to avoid JSON validation issues
+        // This prevents nested quote problems in JSON output
+        // Handle double quotes: " " " → ' '
+        cleaned = cleaned.replace(/[\u201c\u201d"""]([^\u201c\u201d"""]+)[\u201c\u201d"""]/g, "'$1'");
+        // Handle single smart quotes: ' ' → '
+        cleaned = cleaned.replace(/[\u2018\u2019'']/g, "'");
+        return cleaned;
+      });
     }
     positions.push(pos);
   }
@@ -787,7 +957,12 @@ export async function parseLinkedInPdf(
         const firstTok = firstTokRaw.replace(/\./g,'').toUpperCase();
         if (degreeSet.has(firstTok)) {
           degree = firstTokRaw.replace(/\./g,'');
-          field = degreeFieldStr.slice(firstTokRaw.length).trim().replace(/^,\s*/,'');
+          let remainingText = degreeFieldStr.slice(firstTokRaw.length).trim().replace(/^,\s*/,'');
+          // Handle "Bachelor of" pattern - remove the "of" preposition
+          if (firstTok === 'BACHELOR' && remainingText.startsWith('of ')) {
+            remainingText = remainingText.slice(3); // Remove "of "
+          }
+          field = remainingText;
         } else if (/Secondary Education/i.test(degreeFieldStr)) {
           degree = "Secondary Education";
           field = degreeFieldStr.replace(/Secondary Education,?\s*/i, '').trim() || undefined;
