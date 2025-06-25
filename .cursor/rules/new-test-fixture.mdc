@@ -9,9 +9,9 @@ When a new test fixture is added to the project, you should work through the fol
 
 2. Optionally write dedicated debugging scripts to facilitate iterative testing and implementation.
 
-3. Update the parsing code to address test failures, bringing the parsing output closer to the "expected." Note that the "expected" json has been maunally curated to defined the desired output. Do not alter the "expected" json. You can propose an edit to the json if you think the parsing output is actually an improvement upon the "expected", but this proposal must the presented to the user for approval.
+3. Update the parsing code to address test failures, bringing the parsing output closer to the "expected." Note that the "expected" json has been maunally curated to defined the desired output. Do not alter the "expected" json. You can propose an edit to the json if you think the parsing output is actually an improvement upon the "expected", but this proposal must the presented to the user for approval. Also note that minimal, conservative changes should be prioritized to avoid regressions and failures for other fixtures. Consider the purpose of existing regex and other heuristics, for example, before altering them. 
 
-4. Once the new test fixture passes, then run all test fixtures to identify any regressions or new failures. Continue to iteratively debug until all tests pass.
+4. Once the new test fixture passes, then run all test fixtures to identify any regressions or new failures. Consider opportunities to simply the parsing code and make it more robust for future fixture cases. If a regex is getting particularly long, for example, with cases handling each individual fixture, then clearly this won't scale well as our goal is to cover a hundred test fixtures and any future LinkedIn profile. Continue to iteratively debug until all tests pass.
 
 5. Confirm that schema, lint and formatting tests pass as well, such that the repo is ready for a new commit and push.
 

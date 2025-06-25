@@ -326,13 +326,20 @@ export async function parseLinkedInPdf(
         basics.phone = phoneCandidate[0];
       }
 
-      // Find location: first comma line after name & label and not containing 'LinkedIn'
+      // Location parsing: prefer right column content (where location typically appears)
       let locLine: {text:string}|undefined;
       const idxAfterName = nameIdx + 1;
       const headerAfterIdxRel = topLines.slice(idxAfterName).findIndex((l)=> headerRe.test(l.text) && !/^Contact$/i.test(l.text));
       const scanMax = headerAfterIdxRel === -1 ? topLines.length : idxAfterName + headerAfterIdxRel;
+      
+      // First try to find location in right column only
       for (let i = nameIdx+1; i < scanMax; i++) {
         const t = topLines[i].text;
+        const line = topLines[i];
+        
+        // Skip left column lines for location parsing
+        if (line.column === 'left') continue;
+        
         if ((basics.summary && t===basics.summary)) continue;
         if (/@|http|www\.|linkedin/i.test(t)) continue;
         if (/\|/.test(t)) continue;
@@ -346,8 +353,10 @@ export async function parseLinkedInPdf(
         locLine = topLines[i];
         break;
       }
+      // Fallback: try right column with more flexible patterns
       if (!locLine) {
         locLine = topLines.slice(nameIdx+1, scanMax).find((l)=>
+          l.column === 'right' && // Only right column
           /,/.test(l.text) && 
           /(United|Area|[A-Z]{2})/i.test(l.text) &&
           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(l.text)
@@ -356,6 +365,11 @@ export async function parseLinkedInPdf(
       if (!locLine) {
         for (let i = nameIdx+1; i < scanMax; i++) {
           const t = topLines[i].text;
+          const line = topLines[i];
+          
+          // Skip left column lines for location parsing
+          if (line.column === 'left') continue;
+          
           if ((basics.summary && t===basics.summary)) continue;
           if (/LinkedIn|www\.|http/i.test(t)) continue;
           if (/\|/.test(t)) continue;
@@ -363,6 +377,29 @@ export async function parseLinkedInPdf(
           if (/Area$/i.test(t) || /(California|CA|United States|Raleigh-Durham-Chapel Hill)/i.test(t)) {
             // Make sure it's not a job title by checking for business terms
             if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(t)) {
+              locLine = topLines[i];
+              break;
+            }
+          }
+        }
+      }
+      
+      // Final fallback: if no location found in right column, allow left column but with stricter filtering
+      if (!locLine) {
+        for (let i = nameIdx+1; i < scanMax; i++) {
+          const t = topLines[i].text;
+          const line = topLines[i];
+          
+          // Only consider left column as final fallback
+          if (line.column !== 'left') continue;
+          
+          if ((basics.summary && t===basics.summary)) continue;
+          if (/@|LinkedIn|www\.|http/i.test(t)) continue; // Stricter filtering for left column
+          if (/\|/.test(t)) continue;
+          
+          // Very strict location patterns for left column to avoid skills/languages leakage
+          if (/(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area)$/i.test(t)) {
+            if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Danish|Spanish|English|Machine Learning|Data Science|Python|JavaScript|React|Node|SQL)\b/i.test(t)) {
               locLine = topLines[i];
               break;
             }
@@ -389,10 +426,17 @@ export async function parseLinkedInPdf(
       }
       if (profiles.length) (basics as any).profiles = profiles;
 
-      // Look for label/headline content (before Summary section)
+      // Label parsing: prefer right column content (where headline typically appears)
       const labelParts: string[] = [];
+      
+      // First try right column only
       for (let i = nameIdx + 1; i < topLines.length; i++) {
         const txt = topLines[i].text;
+        const line = topLines[i];
+        
+        // Skip left column lines for label parsing
+        if (line.column === 'left') continue;
+        
         if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
         if (headerRe.test(txt)) break;
         if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip actual emails/urls
@@ -417,6 +461,39 @@ export async function parseLinkedInPdf(
         // Add text to label parts, prioritizing academic/professional keywords
         labelParts.push(txt);
         if (labelParts.length >= 3) break; // Allow more parts for complex labels
+      }
+      
+      // Fallback: if no label found in right column, try left column with stricter filtering
+      if (labelParts.length === 0) {
+        for (let i = nameIdx + 1; i < topLines.length; i++) {
+          const txt = topLines[i].text;
+          const line = topLines[i];
+          
+          // Only consider left column as fallback
+          if (line.column !== 'left') continue;
+          
+          if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
+          if (headerRe.test(txt)) break;
+          if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue;
+          if (/^\d+\s*\(Mobile\)$/i.test(txt) || /^\d{10,}$/i.test(txt)) continue;
+          
+          // Stricter filtering for left column to avoid skills/languages
+          if (/(Danish|Spanish|English|French|German|Italian|Portuguese|Chinese|Japanese|Korean|Arabic|Hindi|Russian|Machine Learning|Data Science|Python|JavaScript|React|Node|SQL|MySQL|PHP|Linux|AWS|Docker|Kubernetes|Git|TypeScript|Java|C\+\+|HTML|CSS|Angular|Vue|MongoDB|PostgreSQL|Redis|Apache|Nginx|Jenkins|Terraform|Ansible|Puppet|Chef|Vagrant|VirtualBox|VMware|Hyper-V|Citrix|Microsoft|Office|Excel|PowerPoint|Word|Outlook|Teams|Slack|Zoom|Skype|WhatsApp|Telegram|Signal|Discord|Reddit|Twitter|Facebook|Instagram|LinkedIn|YouTube|TikTok|Snapchat|Pinterest|Tumblr|Flickr|Vimeo|Netflix|Spotify|Apple|Google|Amazon|Facebook|Microsoft|Oracle|IBM|SAP|Salesforce|Adobe|Autodesk|Intuit|PayPal|eBay|Airbnb|Uber|Lyft|Tesla|SpaceX|NASA|Boeing|Lockheed|Raytheon|General|Electric|Ford|GM|Toyota|Honda|Nissan|BMW|Mercedes|Audi|Volkswagen|Porsche|Ferrari|Lamborghini|Maserati|Bentley|Rolls|Royce|Jaguar|Land|Rover|Mini|Fiat|Alfa|Romeo|Peugeot|Renault|Citroen|Skoda|Seat|Opel|Vauxhall|Volvo|Saab|Subaru|Mazda|Mitsubishi|Suzuki|Isuzu|Daihatsu|Acura|Infiniti|Lexus|Genesis|Cadillac|Lincoln|Buick|Chevrolet|GMC|Dodge|Chrysler|Jeep|Ram|Ford|Mercury|Pontiac|Oldsmobile|Saturn|Hummer|Scion)$/i.test(txt)) continue;
+          
+          const looksLikeLocation = (
+            /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
+            (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt))
+          );
+          if (looksLikeLocation) continue;
+          
+          if (/^song-\d+\s*\(LinkedIn\)$/i.test(txt)) continue;
+          if (/^[a-z]+-[a-z0-9]+\s*\(LinkedIn\)$/i.test(txt)) continue;
+          if (/^[a-z]+-[a-z]+-[a-z]+-\d+$/i.test(txt)) continue;
+          if (txt.length < 3) continue;
+          
+          labelParts.push(txt);
+          if (labelParts.length >= 3) break;
+        }
       }
       if (labelParts.length) {
         let lbl = labelParts.join(' ').trim();
