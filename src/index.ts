@@ -926,7 +926,7 @@ export async function parseLinkedInPdf(
     if (urlFound) pos.url = urlFound;
     if (highlightSegs.length) {
       const merged: string[] = [];
-      highlightSegs.forEach((seg, segIdx) => {
+      highlightSegs.forEach((seg) => {
               if (merged.length === 0 || seg.bullet || seg.gap) {
         merged.push(seg.text);
         return;
@@ -1072,7 +1072,6 @@ export async function parseLinkedInPdf(
       let degreeFieldStr = rightColumnLines[idx].text.trim();
       
       // accumulate additional lines that belong to the same degree/field
-      const degreeFont = rightColumnLines[idx].fontSize; // font of degree line
       const schoolFont = rightColumnLines[idx - 1].fontSize; // font of school line
       let look = idx + 1;
       while (look < rightColumnLines.length) {
