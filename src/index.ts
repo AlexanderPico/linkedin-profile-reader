@@ -198,11 +198,26 @@ export async function parseLinkedInPdf(
   // --- Column Detection ---------------------------------------------------
   // Detect two-column layout by analyzing X coordinates
   const topLines = lines.slice(0, 50); // analyze first 50 lines
-  const xPositions = topLines.flatMap(line => [line.minX, line.maxX]);
-  xPositions.sort((a, b) => a - b);
-  const minX = Math.min(...xPositions);
-  const maxX = Math.max(...xPositions);
-  const columnBoundary = (minX + maxX) / 2;
+  const xMidpoints = topLines.map(line => (line.minX + line.maxX) / 2);
+  xMidpoints.sort((a, b) => a - b);
+  
+  // Find the largest gap between consecutive x-positions to determine column boundary
+  let largestGap = 0;
+  let columnBoundary = 0;
+  for (let i = 1; i < xMidpoints.length; i++) {
+    const gap = xMidpoints[i] - xMidpoints[i-1];
+    if (gap > largestGap) {
+      largestGap = gap;
+      columnBoundary = (xMidpoints[i] + xMidpoints[i-1]) / 2;
+    }
+  }
+  
+  // Fallback to simple method if gap-based approach fails
+  if (largestGap < 50) { // No significant gap found
+    const minX = Math.min(...xMidpoints);
+    const maxX = Math.max(...xMidpoints);
+    columnBoundary = (minX + maxX) / 2;
+  }
   
   // Assign column based on X position
   lines.forEach(line => {
@@ -603,7 +618,7 @@ export async function parseLinkedInPdf(
     // Exclude job titles and roles using pattern-based detection
     if (isBusinessTermOrTitle(line)) return false;
     
-    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Mountain View|Pittsburgh|[A-Z]{2}$)/i;
+    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Mountain View|Pittsburgh)/i;
     
     // Pattern-based major city detection instead of hardcoded list
     const isMajorCity = (text: string): boolean => {
@@ -627,6 +642,13 @@ export async function parseLinkedInPdf(
     
     if (/,/.test(line) && locationKeywords.test(line)) return true;
     if (/\bCampus\b/i.test(line)) return true;
+    if (/\bOffice\b/i.test(line)) return true;
+    if (/\bCenter\b/i.test(line)) return true;
+    // Handle comma-separated locations where any part is a major city
+    if (/,/.test(line)) {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.some(part => isMajorCity(part))) return true;
+    }
     // City + State pattern, but exclude common non-state abbreviations
     if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) {
       // Extract the potential state code
@@ -659,6 +681,8 @@ export async function parseLinkedInPdf(
   const positions: ExperiencePosition[] = [];
   const education: RawEducationEntry[] = [];
   const seen = new Set<string>();
+  
+
 
   for (let idx = 0; idx < rightColumnLines.length; idx++) {
     // Only consider lines within the Experience section boundaries
@@ -856,7 +880,7 @@ export async function parseLinkedInPdf(
       
 
       
-      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1))) {
+      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1 && !isLocation(textClean)))) {
         // add highlight segment now
         highlightSegs.push({ text: textClean, bullet: bulletLine, gap: gapFlag, y: lObj.y, page: rightColumnLines[j].page });
         if(pageChange) gapSinceLast = false;
