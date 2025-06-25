@@ -213,6 +213,52 @@ export async function parseLinkedInPdf(
   const rightColumnLines = lines.filter(line => line.column === 'right');
   const leftColumnLines = lines.filter(line => line.column === 'left');
 
+  // --- Content Classification Helpers --------------------------------------
+  
+  // Robust pattern-based classification instead of hardcoded lists
+  const isSkillOrLanguage = (text: string): boolean => {
+    if (!text || text.length < 2) return false;
+    
+    // Pattern-based detection for programming languages/technologies
+    if (/^[A-Z][a-z]*(\+\+|#|\.js|\.py)?$/i.test(text.trim())) return true; // C++, C#, Node.js, etc.
+    if (/^[A-Z]{2,6}$/i.test(text.trim())) return true; // SQL, AWS, HTML, CSS, etc.
+    if (/\b(Learning|Science|Development|Engineering|Programming)\b/i.test(text)) return true;
+    
+    // Pattern for common language names (but not when part of longer text)
+    const languagePattern = /^(English|Spanish|French|German|Italian|Portuguese|Chinese|Japanese|Korean|Arabic|Hindi|Russian|Dutch|Swedish|Norwegian|Danish|Finnish|Polish|Czech|Hungarian|Romanian|Bulgarian|Croatian|Serbian|Slovak|Slovenian|Estonian|Latvian|Lithuanian|Mandarin|Cantonese|Tamil|Telugu|Bengali|Gujarati|Marathi|Punjabi|Urdu|Thai|Vietnamese|Indonesian|Malay|Tagalog|Swahili|Amharic|Yoruba|Igbo|Hausa|Zulu|Afrikaans|Hebrew|Turkish|Greek|Ukrainian|Belarusian|Kazakh|Uzbek|Kyrgyz|Tajik|Turkmen|Mongolian|Tibetan|Burmese|Khmer|Lao|Sinhala|Nepali|Pashto|Dari|Farsi|Kurdish|Armenian|Georgian|Azerbaijani|Albanian|Macedonian|Bosnian|Montenegrin|Icelandic|Faroese|Irish|Welsh|Scottish|Basque|Catalan|Galician|Maltese|Luxembourgish)$/i.test(text.trim());
+    
+    return languagePattern;
+  };
+
+  const isLocationPattern = (text: string): boolean => {
+    if (!text || text.length < 3) return false;
+    
+    // Pattern-based location detection
+    if (/\bArea$/i.test(text)) return true; // Any "Area" ending
+    if (/\b(Greater|Metro)\s+.+\s+Area$/i.test(text)) return true; // Greater/Metro + Area
+    if (/\bBay\s+Area$/i.test(text)) return true; // Any Bay Area
+    if (/,\s*(CA|NY|TX|FL|WA|OR|AZ|CO|IL|PA|OH|MI|GA|NC|SC|VA|MA|MD|NJ|CT|RI|DE|NH|VT|ME|HI|AK|NV|UT|ID|MT|WY|ND|SD|NE|KS|OK|AR|LA|MS|AL|TN|KY|IN|WV|MO|IA|MN|WI|DC)$/i.test(text)) return true; // State codes
+    if (/,\s*(United States|USA|California|New York|Texas|Florida|Washington|Oregon|Arizona|Colorado)$/i.test(text)) return true; // Common states/countries
+    if (/\b(Campus|University|College)\b/i.test(text)) return true; // Educational locations
+    
+    return false;
+  };
+
+  const isBusinessTermOrTitle = (text: string): boolean => {
+    if (!text) return false;
+    
+    // Job titles and roles (more specific)
+    if (/\b(CEO|CTO|CFO|COO|VP|SVP|EVP|President|Director|Manager|Lead|Head|Chief|Principal|Senior|Associate|Assistant|Coordinator|Specialist|Analyst|Engineer|Scientist|Developer|Consultant|Advisor|Executive)\b/i.test(text)) return true;
+    
+    // Company suffixes (only at end of text to avoid false positives)
+    if (/\b(LLC|Inc|Corp|Company|Corporation|Ltd|Limited|Solutions|Systems|Technologies|Services|Consulting|Group|Associates|Partners|Enterprises|Holdings|Ventures|Capital|Investments|Management|Advisory)$/i.test(text)) return true;
+    
+    // Avoid matching academic/research terms that could be locations
+    // Don't match: Lab, Laboratory, Center, Centre, Institute, Foundation, Organization, University, College, Hospital, Clinic
+    
+    return false;
+  };
+
   // --- Heuristic helpers ----------------------------------------------------
   const dateRe = /(?:[A-Za-z]{3,9}\s+\d{4}|\d{4})\s*[–-]\s*(?:Present|[A-Za-z]{3,9}\s+\d{4}|\d{4})/;
   const durationRe = /\d+\s+(?:yr|yrs|year|years|mos?|months?)/i;
@@ -270,18 +316,23 @@ export async function parseLinkedInPdf(
       basics.email = preferred;
 
       // Try LinkedIn URL patterns - check for split pattern first
-      const urlPart1Match = blob.match(/(?:www\.)?linkedin\.com\/in\/([^\s]+)/i);
+      const urlPart1Match = blob.match(/(?:www\.)?linkedin\.com\/in\/([^\s]*)/i);
       const urlPart2Match = blob.match(/([a-z0-9-]+)\s*\(LinkedIn\)/i);
       // Use split pattern if:
       // 1. First part ends with hyphen (natural split like "li-erran-")
       // 2. OR first part looks like incomplete username and second part is short continuation
+      // 3. OR first part has empty username (like "www.linkedin.com/in/") and second part has the full username
       const isHyphenSplit = urlPart1Match && urlPart1Match[1].endsWith('-');
       const isWordSplit = urlPart1Match && urlPart2Match && 
                          urlPart1Match[1].length >= 5 && // reasonable username length
                          urlPart2Match[1].length <= 10 && // short continuation
                          /^[a-z]+$/.test(urlPart2Match[1]); // only letters (not location like "States")
+      const isEmptyUsernameSplit = urlPart1Match && urlPart2Match && 
+                                  urlPart1Match[1] === '' && // empty username in first part
+                                  urlPart2Match[1].length >= 3 && // reasonable full username length
+                                  /^[a-z0-9-]+$/i.test(urlPart2Match[1]); // valid username characters
       
-      if (urlPart1Match && urlPart2Match && (isHyphenSplit || isWordSplit)) {
+      if (urlPart1Match && urlPart2Match && (isHyphenSplit || isWordSplit || isEmptyUsernameSplit)) {
         const username = urlPart1Match[1] + urlPart2Match[1];
         const url = `https://www.linkedin.com/in/${username}`;
         profiles.push({ network: 'LinkedIn', username, url });
@@ -347,7 +398,7 @@ export async function parseLinkedInPdf(
         if (/LinkedIn/i.test(t)) continue;
         if (/\d/.test(t)) continue; // avoid job title lines containing numbers
         // Skip job titles by checking for business terms
-        if (/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(t)) continue;
+        if (isBusinessTermOrTitle(t)) continue;
         // Skip label/headline text that contains academic/professional keywords
         if (/\b(biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(t)) continue;
         locLine = topLines[i];
@@ -359,7 +410,7 @@ export async function parseLinkedInPdf(
           l.column === 'right' && // Only right column
           /,/.test(l.text) && 
           /(United|Area|[A-Z]{2})/i.test(l.text) &&
-          !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(l.text)
+          !isBusinessTermOrTitle(l.text)
         );
       }
       if (!locLine) {
@@ -373,10 +424,10 @@ export async function parseLinkedInPdf(
           if ((basics.summary && t===basics.summary)) continue;
           if (/LinkedIn|www\.|http/i.test(t)) continue;
           if (/\|/.test(t)) continue;
-          // Look for location patterns including Area endings and specific patterns
-          if (/Area$/i.test(t) || /(California|CA|United States|Raleigh-Durham-Chapel Hill)/i.test(t)) {
+          // Look for location patterns
+          if (isLocationPattern(t)) {
             // Make sure it's not a job title by checking for business terms
-            if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(t)) {
+            if (!isBusinessTermOrTitle(t)) {
               locLine = topLines[i];
               break;
             }
@@ -478,17 +529,12 @@ export async function parseLinkedInPdf(
           if (/^\d+\s*\(Mobile\)$/i.test(txt) || /^\d{10,}$/i.test(txt)) continue;
           
           // Stricter filtering for left column to avoid skills/languages
-          if (/(Danish|Spanish|English|French|German|Italian|Portuguese|Chinese|Japanese|Korean|Arabic|Hindi|Russian|Machine Learning|Data Science|Python|JavaScript|React|Node|SQL|MySQL|PHP|Linux|AWS|Docker|Kubernetes|Git|TypeScript|Java|C\+\+|HTML|CSS|Angular|Vue|MongoDB|PostgreSQL|Redis|Apache|Nginx|Jenkins|Terraform|Ansible|Puppet|Chef|Vagrant|VirtualBox|VMware|Hyper-V|Citrix|Microsoft|Office|Excel|PowerPoint|Word|Outlook|Teams|Slack|Zoom|Skype|WhatsApp|Telegram|Signal|Discord|Reddit|Twitter|Facebook|Instagram|LinkedIn|YouTube|TikTok|Snapchat|Pinterest|Tumblr|Flickr|Vimeo|Netflix|Spotify|Apple|Google|Amazon|Facebook|Microsoft|Oracle|IBM|SAP|Salesforce|Adobe|Autodesk|Intuit|PayPal|eBay|Airbnb|Uber|Lyft|Tesla|SpaceX|NASA|Boeing|Lockheed|Raytheon|General|Electric|Ford|GM|Toyota|Honda|Nissan|BMW|Mercedes|Audi|Volkswagen|Porsche|Ferrari|Lamborghini|Maserati|Bentley|Rolls|Royce|Jaguar|Land|Rover|Mini|Fiat|Alfa|Romeo|Peugeot|Renault|Citroen|Skoda|Seat|Opel|Vauxhall|Volvo|Saab|Subaru|Mazda|Mitsubishi|Suzuki|Isuzu|Daihatsu|Acura|Infiniti|Lexus|Genesis|Cadillac|Lincoln|Buick|Chevrolet|GMC|Dodge|Chrysler|Jeep|Ram|Ford|Mercury|Pontiac|Oldsmobile|Saturn|Hummer|Scion)$/i.test(txt)) continue;
+          if (isSkillOrLanguage(txt) || isBusinessTermOrTitle(txt)) continue;
           
-          const looksLikeLocation = (
-            /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
-            (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt))
-          );
-          if (looksLikeLocation) continue;
+          if (isLocationPattern(txt)) continue;
           
-          if (/^song-\d+\s*\(LinkedIn\)$/i.test(txt)) continue;
-          if (/^[a-z]+-[a-z0-9]+\s*\(LinkedIn\)$/i.test(txt)) continue;
-          if (/^[a-z]+-[a-z]+-[a-z]+-\d+$/i.test(txt)) continue;
+          // Skip LinkedIn username fragments
+          if (/\(LinkedIn\)$/i.test(txt) || /^[a-z0-9-]+\d{4,}$/i.test(txt)) continue;
           if (txt.length < 3) continue;
           
           labelParts.push(txt);
@@ -554,21 +600,50 @@ export async function parseLinkedInPdf(
     const wordCount = line.trim().split(/\s+/).length;
     if (wordCount > 8) return false; // locations are usually short
     
-    // Exclude job titles and roles
-    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP|PI)\b/i.test(line)) return false;
+    // Exclude job titles and roles using pattern-based detection
+    if (isBusinessTermOrTitle(line)) return false;
     
     const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Mountain View|Pittsburgh|[A-Z]{2}$)/i;
     
-    // Major cities that should be recognized as locations (including UAE and Greater Atlanta Area for Le's profile)
-    const majorCities = /^(UAE|Greater Atlanta Area|Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad|Surat|Jaipur|Lucknow|Kanpur|Nagpur|Indore|Thane|Bhopal|Visakhapatnam|Pimpri|Patna|Vadodara|Ghaziabad|Ludhiana|Agra|Nashik|Faridabad|Meerut|Rajkot|Kalyan|Vasai|Varanasi|Srinagar|Aurangabad|Dhanbad|Amritsar|Navi Mumbai|Allahabad|Ranchi|Howrah|Coimbatore|Jabalpur|Gwalior|Vijayawada|Jodhpur|Madurai|Raipur|Kota|Guwahati|Chandigarh|Solapur|Hubli|Tiruchirappalli|Bareilly|Mysore|Tiruppur|Gurgaon|Aligarh|Jalandhar|Bhubaneswar|Salem|Warangal|Guntur|Bhiwandi|Saharanpur|Gorakhpur|Bikaner|Amravati|Noida|Jamshedpur|Bhilai|Cuttack|Firozabad|Kochi|Nellore|Bhavnagar|Dehradun|Durgapur|Asansol|Rourkela|Nanded|Kolhapur|Ajmer|Akola|Gulbarga|Jamnagar|Ujjain|Loni|Siliguri|Jhansi|Ulhasnagar|Jammu|Sangli|Mangalore|Erode|Belgaum|Ambattur|Tirunelveli|Malegaon|Gaya|Jalgaon|Udaipur|Maheshtala)$/i;
+    // Pattern-based major city detection instead of hardcoded list
+    const isMajorCity = (text: string): boolean => {
+      // UAE and other short country/region codes
+      if (/^(UAE|USA|UK|EU|NYC|LA|SF|DC)$/i.test(text.trim())) return true;
+      
+      // Greater + City + Area pattern
+      if (/^Greater\s+[A-Z][a-z]+\s+Area$/i.test(text.trim())) return true;
+      
+      // City + Area pattern (any city name)
+      if (/^[A-Z][a-z]+\s+Area$/i.test(text.trim())) return true;
+      
+      // Multiple location pattern (like "Pittsburgh Area and Mountain View")
+      if (/\s+Area\s+and\s+[A-Z][a-z]+/i.test(text)) return true;
+      
+      // Indian cities pattern (many end with specific suffixes)
+      if (/^(Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad)$/i.test(text.trim())) return true;
+      
+      return false;
+    };
     
     if (/,/.test(line) && locationKeywords.test(line)) return true;
     if (/\bCampus\b/i.test(line)) return true;
-    if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) return true; // city state
+    // City + State pattern, but exclude common non-state abbreviations
+    if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) {
+      // Extract the potential state code
+      const stateMatch = line.match(/\b[A-Z]{2}\b/);
+      if (stateMatch) {
+        const potentialState = stateMatch[0];
+        // Exclude common non-state abbreviations
+        const nonStateAbbrevs = /^(PI|VP|MD|PhD|DDS|DVM|RN|CPA|CEO|CTO|CFO|COO|HR|IT|PR|QA|UI|UX|AI|ML|AR|VR|3D|2D|ID|IP|OS|DB|JS|CSS|HTML|XML|JSON|PDF|API|SDK|CRM|ERP|B2B|B2C|SaaS|PaaS|IaaS|IoT|GPS|GPS|USB|RAM|CPU|GPU|SSD|HDD|LCD|LED|OLED|4K|HD|FHD|UHD|MP3|MP4|AVI|MOV|JPG|PNG|GIF|SVG|CSV|TSV|XLSX|DOCX|PPTX|ZIP|RAR|TAR|GZ)$/i;
+        if (nonStateAbbrevs.test(potentialState)) {
+          return false; // Not a location
+        }
+      }
+      return true;
+    }
     if (/\b[A-Z]{2}\b$/.test(line)) return true; // state code at end
     if (/\bArea$/i.test(line)) return true;
-    if (/\b(Greater\s+)?Pittsburgh\s+Area\s+and\s+Mountain\s+View/i.test(line)) return true; // specific pattern for Le's Google position
-    if (majorCities.test(line.trim())) return true; // major city names
+    if (isMajorCity(line.trim())) return true; // major city names
     return false;
   };
 
@@ -851,22 +926,26 @@ export async function parseLinkedInPdf(
     if (urlFound) pos.url = urlFound;
     if (highlightSegs.length) {
       const merged: string[] = [];
-      highlightSegs.forEach((seg) => {
-        if (merged.length === 0 || seg.bullet || seg.gap) {
-          merged.push(seg.text);
-          return;
-        }
+      highlightSegs.forEach((seg, segIdx) => {
+              if (merged.length === 0 || seg.bullet || seg.gap) {
+        merged.push(seg.text);
+        return;
+      }
         const prevText = merged[merged.length - 1].trim();
         const startsLower = /^[a-z]/.test(seg.text);
         const endPunct = /[.!?]$/;
+        // Don't treat abbreviations as sentence endings
+        const isAbbreviation = /\b(Dr|Mr|Mrs|Ms|Prof|Inc|Corp|Ltd|Co|vs|etc|Jr|Sr|PhD|MD|DDS|DVM|Esq|CPA|MBA|BA|BS|MA|MS|Ph\.D|M\.D|B\.A|B\.S|M\.A|M\.S)\.$/.test(prevText);
+        const actuallyEnds = endPunct.test(prevText) && !isAbbreviation;
         const words = seg.text.split(/\s+/).length;
+
         
         // Check for separator-based lists (~ or |) that should be merged
         const hasSeparators = /[~|]/.test(prevText) || /^[~|]/.test(seg.text);
-        const isListContinuation = hasSeparators && !endPunct.test(prevText);
+        const isListContinuation = hasSeparators && !actuallyEnds;
         
         // Check for proper noun continuation patterns
-        const isProperNounContinuation = !startsLower && !endPunct.test(prevText) && (
+        const isProperNounContinuation = !startsLower && !actuallyEnds && (
           // Sentence fragments that clearly continue from previous text
           /^(Research|Program|Conference|Day|Award|Training|Institute|University|College|School|Department|Center|Project|Study|Analysis)\b/i.test(seg.text) ||
           // Text that starts with common continuation words
@@ -888,8 +967,11 @@ export async function parseLinkedInPdf(
           merged[merged.length - 1] = combinedText;
         } else if (isProperNounContinuation) {
           merged[merged.length - 1] += ' ' + seg.text;
-        } else if (!endPunct.test(prevText) && (words < 8 || /^[$£€¥₹]/.test(seg.text))) {
-          // Be more conservative about merging - avoid merging distinct technical terms
+        } else if (!actuallyEnds && (words < 8 || isAbbreviation || /^[$£€¥₹]/.test(seg.text))) {
+          // Merge if text doesn't actually end AND either:
+          // 1. The next segment is short (< 8 words), OR
+          // 2. The previous text ended with an abbreviation (like "Dr."), OR
+          // 3. The next segment starts with a currency symbol
           const prevWords = prevText.split(/\s+/).length;
           const bothShort = prevWords <= 3 && words <= 3;
           const similarTerms = /\b(machine|learning|deep|platform|team|data|science|engineering|software|development)\b/i.test(prevText) && 
@@ -988,19 +1070,39 @@ export async function parseLinkedInPdf(
       if (idx >= rightColumnLines.length) break;
 
       let degreeFieldStr = rightColumnLines[idx].text.trim();
-
+      
       // accumulate additional lines that belong to the same degree/field
+      const degreeFont = rightColumnLines[idx].fontSize; // font of degree line
       const schoolFont = rightColumnLines[idx - 1].fontSize; // font of school line
       let look = idx + 1;
       while (look < rightColumnLines.length) {
         const t = rightColumnLines[look].text.trim();
-        if (isNoise(t)) { look++; continue; }
-        if (headerRe.test(t)) break;
-        if (rightColumnLines[look].fontSize >= schoolFont - 0.01) break; // new school starts
-        // stop at date-only or year-range line (starts new block)
-        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) break;
+        if (isNoise(t)) { 
+          look++; continue; 
+        }
+        if (headerRe.test(t)) {
+          break;
+        }
+        // Break if we hit a line that looks like a new school
+        // Schools can be traditional institutions or online platforms
+        const isTraditionalSchool = /\b(University|College|Institute|School|Academy)\b/i.test(t);
+        const isOnlinePlatform = /\b(Coursera|edX|Udacity|Khan Academy|MIT OpenCourseWare|Stanford Online|Harvard Extension|Berkeley Extension)\b/i.test(t);
+        const hasSchoolFont = rightColumnLines[look].fontSize >= schoolFont - 0.1;
+        const looksLikeSchool = hasSchoolFont && (isTraditionalSchool || isOnlinePlatform) && t.length > 3;
+        
+        if (looksLikeSchool) {
+          break; // new school starts
+        }
+        
+        // Include date lines in the accumulation instead of breaking on them
+        // This allows proper parsing of patterns like "BA (Honors), Statistics, Molecular & Cell Biology (Neurobiology) · (2015 - 2018)"
         degreeFieldStr += ' ' + t;
         look++;
+        
+        // Stop after date line (but include it first)
+        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) {
+          break;
+        }
       }
       idx = look - 1; // last consumed line for this entry
 
@@ -1016,13 +1118,22 @@ export async function parseLinkedInPdf(
         end = /Present/i.test(endVal) ? null : endVal;
         degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
       } else {
-        // Fallback to original year-only pattern
-        const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
-        if (dateMatch) {
-          start = dateMatch[1];
-          const endVal = dateMatch[2];
-          end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
-          degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+        // Look for year-only patterns like "· (2015 - 2018)"
+        const yearOnlyMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*(\d{4}|Present)\)$/);
+        if (yearOnlyMatch) {
+          start = yearOnlyMatch[1];
+          const endVal = yearOnlyMatch[2];
+          end = /Present/i.test(endVal) ? null : endVal;
+          degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
+        } else {
+          // Fallback to original year-only pattern
+          const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
+          if (dateMatch) {
+            start = dateMatch[1];
+            const endVal = dateMatch[2];
+            end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
+            degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+          }
         }
       }
 
