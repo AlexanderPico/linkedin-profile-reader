@@ -265,6 +265,9 @@ export async function parseLinkedInPdf(
     // Job titles and roles (more specific)
     if (/\b(CEO|CTO|CFO|COO|VP|SVP|EVP|President|Director|Manager|Lead|Head|Chief|Principal|Senior|Associate|Assistant|Coordinator|Specialist|Analyst|Engineer|Scientist|Developer|Consultant|Advisor|Executive)\b/i.test(text)) return true;
     
+    // Academic titles and roles
+    if (/\b(Postdoctoral|Postdoc|Scholar|Researcher|Research|Professor|Instructor|Lecturer|Fellow|Student|Graduate|Undergraduate|Doctoral|PhD|Masters|Bachelor)\b/i.test(text)) return true;
+    
     // Company suffixes (only at end of text to avoid false positives)
     if (/\b(LLC|Inc|Corp|Company|Corporation|Ltd|Limited|Solutions|Systems|Technologies|Services|Consulting|Group|Associates|Partners|Enterprises|Holdings|Ventures|Capital|Investments|Management|Advisory)$/i.test(text)) return true;
     
@@ -515,7 +518,7 @@ export async function parseLinkedInPdf(
           /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
           // Lines with comma and clear location indicators (but exclude job titles and academic terms)
           (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt) && 
-           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(txt))
+           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Postdoctoral|Postdoc|Scholar|Researcher|Research|Professor|Instructor|Lecturer|Fellow|biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(txt))
         );
         if (looksLikeLocation) continue; // skip location lines
         // Skip fragments that look like LinkedIn URL parts
@@ -641,6 +644,8 @@ export async function parseLinkedInPdf(
     };
     
     if (/,/.test(line) && locationKeywords.test(line)) return true;
+    // Recognize standalone country names and regions
+    if (/^(United States|United Kingdom|Canada|Australia|Germany|France|Italy|Spain|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Ireland|Portugal|Greece|Poland|Czech Republic|Hungary|Romania|Bulgaria|Croatia|Slovenia|Slovakia|Estonia|Latvia|Lithuania|Luxembourg|Malta|Cyprus|Iceland|Liechtenstein|Monaco|San Marino|Vatican City|Andorra|Japan|South Korea|China|India|Singapore|Malaysia|Thailand|Philippines|Indonesia|Vietnam|Taiwan|Hong Kong|Macau|New Zealand|Brazil|Argentina|Chile|Colombia|Peru|Ecuador|Uruguay|Paraguay|Bolivia|Venezuela|Guyana|Suriname|French Guiana|Mexico|Costa Rica|Panama|Guatemala|Honduras|El Salvador|Nicaragua|Belize|Jamaica|Cuba|Dominican Republic|Haiti|Trinidad and Tobago|Barbados|Bahamas|Puerto Rico|South Africa|Nigeria|Kenya|Ghana|Egypt|Morocco|Tunisia|Algeria|Libya|Sudan|Ethiopia|Tanzania|Uganda|Rwanda|Botswana|Namibia|Zambia|Zimbabwe|Mozambique|Madagascar|Mauritius|Seychelles|Israel|Turkey|Saudi Arabia|UAE|Qatar|Kuwait|Bahrain|Oman|Jordan|Lebanon|Syria|Iraq|Iran|Afghanistan|Pakistan|Bangladesh|Sri Lanka|Nepal|Bhutan|Maldives|Myanmar|Cambodia|Laos|Brunei|Mongolia|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Armenia|Azerbaijan|Georgia|Russia|Ukraine|Belarus|Moldova|Serbia|Montenegro|Bosnia and Herzegovina|North Macedonia|Albania|Kosovo|California|New York|Texas|Florida|Illinois|Pennsylvania|Ohio|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming)$/i.test(line.trim())) return true;
     if (/\bCampus\b/i.test(line)) return true;
     if (/\bOffice\b/i.test(line)) return true;
     if (/\bCenter\b/i.test(line)) return true;
@@ -1141,21 +1146,30 @@ export async function parseLinkedInPdf(
         end = /Present/i.test(endVal) ? null : endVal;
         degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
       } else {
-        // Look for year-only patterns like "· (2015 - 2018)"
-        const yearOnlyMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*(\d{4}|Present)\)$/);
-        if (yearOnlyMatch) {
-          start = yearOnlyMatch[1];
-          const endVal = yearOnlyMatch[2];
+        // Look for mixed patterns like "· (2019 - December 2023)" (year-only start, month-year end)
+        const mixedDateMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*([A-Za-z]+ \d{4}|Present)\)$/);
+        if (mixedDateMatch) {
+          start = mixedDateMatch[1];
+          const endVal = mixedDateMatch[2];
           end = /Present/i.test(endVal) ? null : endVal;
           degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
         } else {
-          // Fallback to original year-only pattern
-          const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
-          if (dateMatch) {
-            start = dateMatch[1];
-            const endVal = dateMatch[2];
-            end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
-            degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+          // Look for year-only patterns like "· (2015 - 2018)"
+          const yearOnlyMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*(\d{4}|Present)\)$/);
+          if (yearOnlyMatch) {
+            start = yearOnlyMatch[1];
+            const endVal = yearOnlyMatch[2];
+            end = /Present/i.test(endVal) ? null : endVal;
+            degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
+          } else {
+            // Fallback to original year-only pattern
+            const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
+            if (dateMatch) {
+              start = dateMatch[1];
+              const endVal = dateMatch[2];
+              end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
+              degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+            }
           }
         }
       }
@@ -1203,6 +1217,9 @@ export async function parseLinkedInPdf(
         } else if (/Secondary Education/i.test(degreeFieldStr)) {
           degree = "Secondary Education";
           field = degreeFieldStr.replace(/Secondary Education,?\s*/i, '').trim() || undefined;
+        } else if (/^HS Diploma$/i.test(degreeFieldStr)) {
+          degree = "HS Diploma";
+          field = undefined;
         } else {
           field = degreeFieldStr;
         }

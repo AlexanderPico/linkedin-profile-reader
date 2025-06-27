@@ -68,6 +68,26 @@
 - [x] **Enhanced column separation**: Strengthened architectural separation between left/right column content
 - [x] **Preserved functionality**: All core parsing functionality maintained while improving code structure
 
+### ✅ Enhanced Location Detection 0.5.2 (COMPLETED)
+- [x] **Added irma test fixture**: Integrated new profile with event management background
+- [x] **Fixed location parsing edge cases**: Enhanced `isLocation()` function to properly detect:
+  - Office-based locations (e.g., "UCSB Community Housing Office")
+  - Center-based locations (e.g., "Grinberg Lab, UCSF Memory and Aging Center")
+  - International city, region patterns (e.g., "New Delhi, Delhi")
+- [x] **Improved highlight vs location classification**: Refined logic to prevent valid locations from being misclassified as highlights
+- [x] **Fixed false positives**: Corrected overly broad location keyword patterns that incorrectly matched company names ending in uppercase letters
+- [x] **All tests passing**: 18/18 test cases now pass including irma fixture with no regressions
+
+### ✅ Enhanced Location Detection 0.5.2 (COMPLETED)
+- [x] **Added irma test fixture**: Integrated new profile with event management background
+- [x] **Fixed location parsing edge cases**: Enhanced `isLocation()` function to properly detect:
+  - Office-based locations (e.g., "UCSB Community Housing Office")
+  - Center-based locations (e.g., "Grinberg Lab, UCSF Memory and Aging Center") 
+  - International city, region patterns (e.g., "New Delhi, Delhi")
+- [x] **Improved highlight vs location classification**: Refined logic to prevent valid locations from being misclassified as highlights
+- [x] **Fixed false positives**: Corrected overly broad location keyword patterns that incorrectly matched company names ending in uppercase letters
+- [x] **All tests passing**: 18/18 test cases now pass including irma fixture with no regressions
+
 ### ⏳ Release Preparation 0.6.0 (FUTURE)
 - [ ] Benchmark large number of PDFs
 - [ ] Publish first beta to npm (`npm publish --access public`)
@@ -172,5 +192,43 @@
 - **No functionality loss**: All core parsing capabilities maintained
 - **Minor edge case adjustments**: Some test fixtures updated to reflect improved parsing accuracy
 - **Robust foundation**: Better prepared for handling diverse LinkedIn profile formats
+
+## Enhanced Location Detection (v0.5.2)
+
+### ✅ **Irma Fixture Integration**
+- **Added irma test fixture**: Successfully integrated new profile with event management background
+- **Fixed location detection gaps**: Enhanced `isLocation()` function to handle missing patterns:
+  - **Office locations**: Added support for workplace locations ending with "Office" (e.g., "UCSB Community Housing Office")
+  - **Center locations**: Added support for institutional locations ending with "Center" (e.g., "Grinberg Lab, UCSF Memory and Aging Center")
+  - **International locations**: Added comma-separated city detection for global locations (e.g., "New Delhi, Delhi")
+
+### 🔧 **Location Parsing Improvements**
+- **Prevented false positives**: Fixed overly broad location keyword patterns that incorrectly matched company names ending in uppercase letters (e.g., "CVENT")
+- **Improved classification logic**: Refined highlight vs location detection to prevent valid locations from being misclassified as job highlights
+- **Better international support**: Enhanced location detection for non-US city, region patterns using major city recognition
+
+### ✅ **Test Results**
+- **18/18 tests passing**: All fixtures now parse correctly including the new irma profile
+- **No regressions**: All existing fixtures continue to work as expected
+- **Comprehensive location coverage**: Parser now handles diverse location formats from academic, corporate, and international contexts
+
+## Enhanced Location Detection (v0.5.2)
+
+### ✅ **Irma Fixture Integration**
+- **Added irma test fixture**: Successfully integrated new profile with event management background  
+- **Fixed location detection gaps**: Enhanced `isLocation()` function to handle missing patterns:
+  - **Office locations**: Added support for workplace locations ending with "Office" (e.g., "UCSB Community Housing Office")
+  - **Center locations**: Added support for institutional locations ending with "Center" (e.g., "Grinberg Lab, UCSF Memory and Aging Center")
+  - **International locations**: Added comma-separated city detection for global locations (e.g., "New Delhi, Delhi")
+
+### 🔧 **Location Parsing Improvements**  
+- **Prevented false positives**: Fixed overly broad location keyword patterns that incorrectly matched company names ending in uppercase letters (e.g., "CVENT")
+- **Improved classification logic**: Refined highlight vs location detection to prevent valid locations from being misclassified as job highlights
+- **Better international support**: Enhanced location detection for non-US city, region patterns using major city recognition
+
+### ✅ **Test Results**
+- **18/18 tests passing**: All fixtures now parse correctly including the new irma profile
+- **No regressions**: All existing fixtures continue to work as expected  
+- **Comprehensive location coverage**: Parser now handles diverse location formats from academic, corporate, and international contexts
 
 _Last updated: 2025-01-27_
