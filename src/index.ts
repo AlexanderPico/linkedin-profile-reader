@@ -1039,7 +1039,6 @@ export async function parseLinkedInPdf(
         // Don't treat abbreviations as sentence endings
         const isAbbreviation = /\b(Dr|Mr|Mrs|Ms|Prof|Inc|Corp|Ltd|Co|vs|etc|Jr|Sr|PhD|MD|DDS|DVM|Esq|CPA|MBA|BA|BS|MA|MS|Ph\.D|M\.D|B\.A|B\.S|M\.A|M\.S)\.$/.test(prevText);
         const actuallyEnds = endPunct.test(prevText) && !isAbbreviation;
-        const words = seg.text.split(/\s+/).length;
         
         // Check if this segment should be merged based on sentence completion patterns
         // Key insight: Only merge when there are clear indicators of incomplete sentences
