@@ -1,0 +1,85 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Eric Weitz",
+    "email": "eric.m.weitz@gmail.com",
+    "location": {
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "weitz",
+        "url": "https://www.linkedin.com/in/weitz"
+      }
+    ],
+    "label": "Principal Software Engineer at Broad Institute of MIT and Harvard"
+  },
+  "work": [
+    {
+      "name": "Broad Institute of MIT and Harvard",
+      "position": "Principal Software Engineer",
+      "startDate": "2024-11"
+    },
+    {
+      "name": "Broad Institute of MIT and Harvard",
+      "position": "Senior Software Engineer",
+      "location": "Cambridge, Massachusetts, United States",
+      "startDate": "2017-09",
+      "endDate": "2024-11"
+    },
+    {
+      "name": "National Center for Biotechnology Information (NCBI)",
+      "position": "Web Application Developer",
+      "location": "Bethesda, Maryland",
+      "startDate": "2012-08",
+      "endDate": "2017-09"
+    },
+    {
+      "name": "Artfact (now Invaluable)",
+      "position": "Web Developer",
+      "location": "Boston, Massachusetts",
+      "startDate": "2010-05",
+      "endDate": "2012-08"
+    },
+    {
+      "name": "Computational Biology Laboratory at University of Massachusetts Amherst",
+      "position": "Undergraduate Research Assistant",
+      "location": "Amherst, Massachusetts",
+      "startDate": "2008-01",
+      "endDate": "2009-08"
+    },
+    {
+      "name": "Kronos",
+      "position": "Software Engineering Intern",
+      "location": "Chelmsford, Massachusetts",
+      "startDate": "2006-05",
+      "endDate": "2007-08"
+    },
+    {
+      "name": "UMass Center for Public Policy and Administration",
+      "position": "Web Developer",
+      "location": "Amherst, Massachusetts",
+      "startDate": "2006-02",
+      "endDate": "2007-02"
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Massachusetts, Amherst",
+      "studyType": "Bachelor of Science (BS)",
+      "area": "Biochemistry and Molecular Biology"
+    }
+  ],
+  "skills": [
+    {
+      "name": "JavaScript"
+    },
+    {
+      "name": "Java"
+    },
+    {
+      "name": "HTML"
+    }
+  ]
+}

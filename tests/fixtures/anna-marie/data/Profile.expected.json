@@ -1,0 +1,112 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Anna-Marie Rooney",
+    "email": "annamarierooney@yahoo.com",
+    "location": {
+      "city": "San Diego",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "annamarierooney",
+        "url": "https://www.linkedin.com/in/annamarierooney"
+      }
+    ],
+    "label": "Vice President, Communications at Gladstone Institutes",
+    "summary": "Strategic communications leader with 30+ years of experience driving brand visibility, engagement, and impact across philanthropic, public affairs, and mission-driven organizations. I partner with executives and teams to shape narratives that inform, inspire, and activate audiences—from internal stakeholders to the global public. Skilled in turning complexity into clarity, navigating change with confidence, and leading high-performing teams. I thrive in fast-paced environments and bring a collaborative, solution-oriented mindset to every challenge. Passionate about work that makes a difference. Focused on purpose, people, and progress. Core strengths: Executive communications | Media & PR strategy | Crisis & issues management | Brand & reputation | Internal comms | Social & digital strategy | CSR | Cross-functional leadership"
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Vice President Communications",
+      "location": "San Francisco Bay Area",
+      "startDate": "2023-08",
+      "highlights": [
+        "As Vice President of Communications at Gladstone Institutes, I lead strategic communications efforts to elevate the organization's visibility, support its scientific mission, and foster meaningful engagement with diverse audiences.",
+        "My role encompasses a wide range of responsibilities, including: Shaping and executing integrated communication strategies that reflect Gladstone's leadership in biomedical research and its commitment to solving the world's most challenging diseases.",
+        "Overseeing media relations, brand management, digital strategy, and executive communications to ensure consistency, clarity, and impact across all channels.",
+        "Collaborating with scientists and leadership to translate complex discoveries into compelling stories that resonate with the public, policymakers, donors, and the broader scientific community.",
+        "Guiding crisis communication and internal communication to align messaging and support an inclusive, informed organizational culture.",
+        "Leading a talented communications team dedicated to innovation, excellence, and storytelling that drives scientific understanding and societal impact.",
+        "With a deep belief in the power of science communication to inspire change, I'm proud to help advance Gladstone's mission and share the groundbreaking work of its researchers with the world."
+      ]
+    },
+    {
+      "name": "Scripps Research",
+      "position": "Vice President of Marketing & Communications",
+      "location": "Greater San Diego Area",
+      "startDate": "2017-11",
+      "endDate": "2023-08",
+      "highlights": [
+        "As Vice President of Marketing and Communications at Scripps Research, I led a high-performing team responsible for all internal and external communications across the institute. I spearheaded the development and implementation of the organization's first-ever comprehensive communications strategy—designed to establish, elevate, and safeguard Scripps Research's brand reputation on a global scale.",
+        "In 2018, I oversaw the institute's first full rebranding effort in more than three decades, which included a new logo, tagline, and brand identity guidelines— marking a significant milestone in modernizing and unifying the organization's visual and strategic presence.",
+        "Beyond brand strategy, I served as a key ambassador, fostering strong relationships between institute leadership, faculty, donors, and other critical stakeholders, reinforcing trust and alignment in support of Scripps Research's scientific mission."
+      ]
+    },
+    {
+      "name": "Salk Institute for Biological Studies",
+      "position": "Executive Director of Communications",
+      "location": "La Jolla, California",
+      "startDate": "2013-09",
+      "endDate": "2017-10",
+      "highlights": [
+        "As Executive Director of Communications at the Salk Institute, I led the institute's comprehensive communications strategy, overseeing all facets of external and internal outreach—including publications, media relations, social media, marketing, digital content, multimedia production, and the creation of key annual collateral materials."
+      ]
+    },
+    {
+      "name": "The San Diego Foundation",
+      "position": "Vice President, Marketing and External Affairs",
+      "startDate": "2007-07",
+      "endDate": "2013-08",
+      "highlights": [
+        "As Chief Marketing Officer for The San Diego Foundation—the region's largest community foundation—I led the development and execution of integrated marketing and communications strategies designed to position the Foundation as a leader in philanthropy and civic engagement. My responsibilities spanned oversight of all branding, messaging, media relations, digital marketing, and public outreach initiatives.",
+        "As a member of the Executive Leadership Team, I played a central role in shaping organizational strategy, policy, and planning. I also worked closely with the Board of Governors and Executive Committees, providing strategic counsel and leading key department-specific initiatives aligned with the Foundation's long-term vision.",
+        "Key accomplishments include leading the marketing and public relations efforts for the landmark Our Greater San Diego Vision initiative—an unprecedented regional campaign that engaged over 30,000 participants, generated $3.5 million in media value, and achieved over 386 million media impressions.",
+        "Under my leadership, the marketing team increased the Foundation's brand awareness from 37% to 51% through targeted, multi-channel campaigns.",
+        "The Foundation also earned national recognition as the first community foundation in the country to launch an iPhone app, setting a precedent for digital innovation in the philanthropic sector."
+      ]
+    },
+    {
+      "name": "KB Home",
+      "position": "Director of Marketing",
+      "startDate": "1996-06",
+      "endDate": "2003-03",
+      "highlights": [
+        "Reporting to the Vice President of Marketing, I led all marketing and public relations initiatives at both the corporate and local levels, with a strategic focus on increasing brand visibility and driving targeted traffic to new home communities.",
+        "I managed high-impact national cross-promotional campaigns with major brands, including Target, 'got milk?', Scholastic, Regis and Kelly, and the widely successful Simpsons Home Giveaway in partnership with FOX— a campaign that significantly boosted consumer engagement and brand recognition."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Denver",
+      "studyType": "Bachelor of Science",
+      "area": "Mass Communications"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Public Relations"
+    },
+    {
+      "name": "Copywriting"
+    },
+    {
+      "name": "Advertising"
+    }
+  ],
+  "awards": [
+    {
+      "title": "Recognized as one of San Diego's Top Marketing Professionals by the SDBJ"
+    },
+    {
+      "title": "Recognized as a Woman Who Impacts San Diego"
+    },
+    {
+      "title": "Recognized as a Woman Who Means Business"
+    }
+  ]
+}
