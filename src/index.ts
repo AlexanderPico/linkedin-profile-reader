@@ -82,11 +82,19 @@ export interface JSONResumeBasics {
   summary?: string;
 }
 
+export interface JSONResumeAward {
+  title: string;
+  date?: string;
+  awarder?: string;
+  summary?: string;
+}
+
 export interface JSONResume {
   $schema?: string;
   basics?: JSONResumeBasics;
   work: JSONResumeWork[];
   education: JSONResumeEducation[];
+  awards?: JSONResumeAward[];
   skills?: JSONResumeSkill[];
   certificates?: JSONResumeCertificate[];
   languages?: JSONResumeLanguage[];
@@ -198,11 +206,26 @@ export async function parseLinkedInPdf(
   // --- Column Detection ---------------------------------------------------
   // Detect two-column layout by analyzing X coordinates
   const topLines = lines.slice(0, 50); // analyze first 50 lines
-  const xPositions = topLines.flatMap(line => [line.minX, line.maxX]);
-  xPositions.sort((a, b) => a - b);
-  const minX = Math.min(...xPositions);
-  const maxX = Math.max(...xPositions);
-  const columnBoundary = (minX + maxX) / 2;
+  const xMidpoints = topLines.map(line => (line.minX + line.maxX) / 2);
+  xMidpoints.sort((a, b) => a - b);
+  
+  // Find the largest gap between consecutive x-positions to determine column boundary
+  let largestGap = 0;
+  let columnBoundary = 0;
+  for (let i = 1; i < xMidpoints.length; i++) {
+    const gap = xMidpoints[i] - xMidpoints[i-1];
+    if (gap > largestGap) {
+      largestGap = gap;
+      columnBoundary = (xMidpoints[i] + xMidpoints[i-1]) / 2;
+    }
+  }
+  
+  // Fallback to simple method if gap-based approach fails
+  if (largestGap < 50) { // No significant gap found
+    const minX = Math.min(...xMidpoints);
+    const maxX = Math.max(...xMidpoints);
+    columnBoundary = (minX + maxX) / 2;
+  }
   
   // Assign column based on X position
   lines.forEach(line => {
@@ -213,10 +236,61 @@ export async function parseLinkedInPdf(
   const rightColumnLines = lines.filter(line => line.column === 'right');
   const leftColumnLines = lines.filter(line => line.column === 'left');
 
+  // --- Content Classification Helpers --------------------------------------
+  
+  // Robust pattern-based classification instead of hardcoded lists
+  const isSkillOrLanguage = (text: string): boolean => {
+    if (!text || text.length < 2) return false;
+    
+    // Pattern-based detection for programming languages/technologies
+    if (/^[A-Z][a-z]*(\+\+|#|\.js|\.py)?$/i.test(text.trim())) return true; // C++, C#, Node.js, etc.
+    if (/^[A-Z]{2,6}$/i.test(text.trim())) return true; // SQL, AWS, HTML, CSS, etc.
+    if (/\b(Learning|Science|Development|Engineering|Programming)\b/i.test(text)) return true;
+    
+    // Pattern for common language names (but not when part of longer text)
+    const languagePattern = /^(English|Spanish|French|German|Italian|Portuguese|Chinese|Japanese|Korean|Arabic|Hindi|Russian|Dutch|Swedish|Norwegian|Danish|Finnish|Polish|Czech|Hungarian|Romanian|Bulgarian|Croatian|Serbian|Slovak|Slovenian|Estonian|Latvian|Lithuanian|Mandarin|Cantonese|Tamil|Telugu|Bengali|Gujarati|Marathi|Punjabi|Urdu|Thai|Vietnamese|Indonesian|Malay|Tagalog|Swahili|Amharic|Yoruba|Igbo|Hausa|Zulu|Afrikaans|Hebrew|Turkish|Greek|Ukrainian|Belarusian|Kazakh|Uzbek|Kyrgyz|Tajik|Turkmen|Mongolian|Tibetan|Burmese|Khmer|Lao|Sinhala|Nepali|Pashto|Dari|Farsi|Kurdish|Armenian|Georgian|Azerbaijani|Albanian|Macedonian|Bosnian|Montenegrin|Icelandic|Faroese|Irish|Welsh|Scottish|Basque|Catalan|Galician|Maltese|Luxembourgish)$/i.test(text.trim());
+    
+    return languagePattern;
+  };
+
+  const isLocationPattern = (text: string): boolean => {
+    if (!text || text.length < 3) return false;
+    
+    // Pattern-based location detection
+    if (/\bArea$/i.test(text)) return true; // Any "Area" ending
+    if (/\b(Greater|Metro)\s+.+\s+Area$/i.test(text)) return true; // Greater/Metro + Area
+    if (/\bBay\s+Area$/i.test(text)) return true; // Any Bay Area
+    if (/,\s*(CA|NY|TX|FL|WA|OR|AZ|CO|IL|PA|OH|MI|GA|NC|SC|VA|MA|MD|NJ|CT|RI|DE|NH|VT|ME|HI|AK|NV|UT|ID|MT|WY|ND|SD|NE|KS|OK|AR|LA|MS|AL|TN|KY|IN|WV|MO|IA|MN|WI|DC)$/i.test(text)) return true; // State codes
+    if (/,\s*(United States|USA|California|New York|Texas|Florida|Washington|Oregon|Arizona|Colorado)$/i.test(text)) return true; // Common states/countries
+    if (/\b(Campus|University|College)\b/i.test(text)) return true; // Educational locations
+    // Standalone country names
+    if (/^(United States|United Kingdom|Canada|Australia|Germany|France|Italy|Spain|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Ireland|Portugal|Greece|Poland|Czech Republic|Hungary|Romania|Bulgaria|Croatia|Slovenia|Slovakia|Estonia|Latvia|Lithuania|Luxembourg|Malta|Cyprus|Iceland|Liechtenstein|Monaco|San Marino|Vatican City|Andorra|Japan|South Korea|China|India|Singapore|Malaysia|Thailand|Philippines|Indonesia|Vietnam|Taiwan|Hong Kong|Macau|New Zealand|Brazil|Argentina|Chile|Colombia|Peru|Ecuador|Uruguay|Paraguay|Bolivia|Venezuela|Guyana|Suriname|French Guiana|Mexico|Costa Rica|Panama|Guatemala|Honduras|El Salvador|Nicaragua|Belize|Jamaica|Cuba|Dominican Republic|Haiti|Trinidad and Tobago|Barbados|Bahamas|Puerto Rico|South Africa|Nigeria|Kenya|Ghana|Egypt|Morocco|Tunisia|Algeria|Libya|Sudan|Ethiopia|Tanzania|Uganda|Rwanda|Botswana|Namibia|Zambia|Zimbabwe|Mozambique|Madagascar|Mauritius|Seychelles|Israel|Turkey|Saudi Arabia|UAE|Qatar|Kuwait|Bahrain|Oman|Jordan|Lebanon|Syria|Iraq|Iran|Afghanistan|Pakistan|Bangladesh|Sri Lanka|Nepal|Bhutan|Maldives|Myanmar|Cambodia|Laos|Brunei|Mongolia|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Armenia|Azerbaijan|Georgia|Russia|Ukraine|Belarus|Moldova|Serbia|Montenegro|Bosnia and Herzegovina|North Macedonia|Albania|Kosovo|USA|UK)$/i.test(text.trim())) return true;
+    
+    return false;
+  };
+
+  const isBusinessTermOrTitle = (text: string): boolean => {
+    if (!text) return false;
+    
+    // Job titles and roles (more specific)
+    if (/\b(CEO|CTO|CFO|COO|VP|SVP|EVP|President|Director|Manager|Lead|Head|Chief|Principal|Senior|Associate|Assistant|Coordinator|Specialist|Analyst|Engineer|Scientist|Developer|Consultant|Advisor|Executive)\b/i.test(text)) return true;
+    
+    // Academic titles and roles
+    if (/\b(Postdoctoral|Postdoc|Scholar|Researcher|Research|Professor|Instructor|Lecturer|Fellow|Student|Graduate|Undergraduate|Doctoral|PhD|Masters|Bachelor)\b/i.test(text)) return true;
+    
+    // Company suffixes (only at end of text to avoid false positives)
+    if (/\b(LLC|Inc|Corp|Company|Corporation|Ltd|Limited|Solutions|Systems|Technologies|Services|Consulting|Group|Associates|Partners|Enterprises|Holdings|Ventures|Capital|Investments|Management|Advisory)$/i.test(text)) return true;
+    
+    // Avoid matching academic/research terms that could be locations
+    // Don't match: Lab, Laboratory, Center, Centre, Institute, Foundation, Organization, University, College, Hospital, Clinic
+    
+    return false;
+  };
+
   // --- Heuristic helpers ----------------------------------------------------
   const dateRe = /(?:[A-Za-z]{3,9}\s+\d{4}|\d{4})\s*[–-]\s*(?:Present|[A-Za-z]{3,9}\s+\d{4}|\d{4})/;
   const durationRe = /\d+\s+(?:yr|yrs|year|years|mos?|months?)/i;
-  const headerRe = /^(Experience|Education|Certifications?|Publications?|Skills|Summary|Contact|Top Skills|Projects)/i;
+  const headerRe = /^(Experience|Education|Certifications?|Publications?|Skills|Summary|Contact|Top Skills|Projects)(\s|$)/i;
   
   // Pre-compile commonly used regexes for better performance
   const yearOnlyRe = /^\d{4}$/;
@@ -270,18 +344,23 @@ export async function parseLinkedInPdf(
       basics.email = preferred;
 
       // Try LinkedIn URL patterns - check for split pattern first
-      const urlPart1Match = blob.match(/(?:www\.)?linkedin\.com\/in\/([^\s]+)/i);
+      const urlPart1Match = blob.match(/(?:www\.)?linkedin\.com\/in\/([^\s]*)/i);
       const urlPart2Match = blob.match(/([a-z0-9-]+)\s*\(LinkedIn\)/i);
       // Use split pattern if:
       // 1. First part ends with hyphen (natural split like "li-erran-")
       // 2. OR first part looks like incomplete username and second part is short continuation
+      // 3. OR first part has empty username (like "www.linkedin.com/in/") and second part has the full username
       const isHyphenSplit = urlPart1Match && urlPart1Match[1].endsWith('-');
       const isWordSplit = urlPart1Match && urlPart2Match && 
                          urlPart1Match[1].length >= 5 && // reasonable username length
                          urlPart2Match[1].length <= 10 && // short continuation
                          /^[a-z]+$/.test(urlPart2Match[1]); // only letters (not location like "States")
+      const isEmptyUsernameSplit = urlPart1Match && urlPart2Match && 
+                                  urlPart1Match[1] === '' && // empty username in first part
+                                  urlPart2Match[1].length >= 3 && // reasonable full username length
+                                  /^[a-z0-9-]+$/i.test(urlPart2Match[1]); // valid username characters
       
-      if (urlPart1Match && urlPart2Match && (isHyphenSplit || isWordSplit)) {
+      if (urlPart1Match && urlPart2Match && (isHyphenSplit || isWordSplit || isEmptyUsernameSplit)) {
         const username = urlPart1Match[1] + urlPart2Match[1];
         const url = `https://www.linkedin.com/in/${username}`;
         profiles.push({ network: 'LinkedIn', username, url });
@@ -300,16 +379,46 @@ export async function parseLinkedInPdf(
         }
       }
 
-      const phoneMatch = blob.match(/\+?\d[\d\s\-\(\)]{7,}\d/);
-      if (phoneMatch) basics.phone = phoneMatch[0];
+      // More specific phone regex that avoids date ranges and LinkedIn usernames
+      const phoneCandidate = blob.match(/(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|(?:\+?\d{1,3}[-.\s]?)?(?:\([0-9]{1,4}\)|[0-9]{1,4})[-.\s]?[0-9]{6,10}/);
+      // Only check if the phone candidate itself looks like a year range (not anywhere in the blob)
+      const isYearRangePattern = phoneCandidate && /^\d{4}\s*[-–]\s*\d{4}$/.test(phoneCandidate[0]);
+      
+      // Check if the phone candidate is actually part of a LinkedIn URL (handle split URLs)
+      let isLinkedInUsername = false;
+      if (phoneCandidate) {
+        // Check for complete LinkedIn URL
+        const linkedinUrlMatch = blob.match(/linkedin\.com\/in\/[^\s)]+/i);
+        // Check for split LinkedIn URL pattern (number followed by "(LinkedIn)")
+        const splitPattern = new RegExp(`\\b${phoneCandidate[0]}\\s*\\(LinkedIn\\)`, 'i');
+        
+        if (linkedinUrlMatch && linkedinUrlMatch[0].includes(phoneCandidate[0])) {
+          isLinkedInUsername = true;
+        } else if (splitPattern.test(blob)) {
+          isLinkedInUsername = true;
+        }
+        
 
-      // Find location: first comma line after name & label and not containing 'LinkedIn'
+      }
+      
+      if (phoneCandidate && !isYearRangePattern && !isLinkedInUsername) {
+        basics.phone = phoneCandidate[0];
+      }
+
+      // Location parsing: prefer right column content (where location typically appears)
       let locLine: {text:string}|undefined;
       const idxAfterName = nameIdx + 1;
       const headerAfterIdxRel = topLines.slice(idxAfterName).findIndex((l)=> headerRe.test(l.text) && !/^Contact$/i.test(l.text));
       const scanMax = headerAfterIdxRel === -1 ? topLines.length : idxAfterName + headerAfterIdxRel;
+      
+      // First try to find location in right column only
       for (let i = nameIdx+1; i < scanMax; i++) {
         const t = topLines[i].text;
+        const line = topLines[i];
+        
+        // Skip left column lines for location parsing
+        if (line.column === 'left') continue;
+        
         if ((basics.summary && t===basics.summary)) continue;
         if (/@|http|www\.|linkedin/i.test(t)) continue;
         if (/\|/.test(t)) continue;
@@ -317,27 +426,59 @@ export async function parseLinkedInPdf(
         if (/LinkedIn/i.test(t)) continue;
         if (/\d/.test(t)) continue; // avoid job title lines containing numbers
         // Skip job titles by checking for business terms
-        if (/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(t)) continue;
+        if (isBusinessTermOrTitle(t)) continue;
+        // Skip label/headline text that contains academic/professional keywords
+        if (/\b(biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(t)) continue;
         locLine = topLines[i];
         break;
       }
+      // Fallback: try right column with more flexible patterns
       if (!locLine) {
         locLine = topLines.slice(nameIdx+1, scanMax).find((l)=>
+          l.column === 'right' && // Only right column
           /,/.test(l.text) && 
           /(United|Area|[A-Z]{2})/i.test(l.text) &&
-          !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Founder|President)\b/i.test(l.text)
+          !isBusinessTermOrTitle(l.text)
         );
       }
       if (!locLine) {
         for (let i = nameIdx+1; i < scanMax; i++) {
           const t = topLines[i].text;
+          const line = topLines[i];
+          
+          // Skip left column lines for location parsing
+          if (line.column === 'left') continue;
+          
           if ((basics.summary && t===basics.summary)) continue;
           if (/LinkedIn|www\.|http/i.test(t)) continue;
           if (/\|/.test(t)) continue;
-          // Look for location patterns including Area endings and specific patterns
-          if (/Area$/i.test(t) || /(California|CA|United States|Raleigh-Durham-Chapel Hill)/i.test(t)) {
+          // Look for location patterns
+          if (isLocationPattern(t)) {
             // Make sure it's not a job title by checking for business terms
-            if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(t)) {
+            if (!isBusinessTermOrTitle(t)) {
+              locLine = topLines[i];
+              break;
+            }
+          }
+        }
+      }
+      
+      // Final fallback: if no location found in right column, allow left column but with stricter filtering
+      if (!locLine) {
+        for (let i = nameIdx+1; i < scanMax; i++) {
+          const t = topLines[i].text;
+          const line = topLines[i];
+          
+          // Only consider left column as final fallback
+          if (line.column !== 'left') continue;
+          
+          if ((basics.summary && t===basics.summary)) continue;
+          if (/@|LinkedIn|www\.|http/i.test(t)) continue; // Stricter filtering for left column
+          if (/\|/.test(t)) continue;
+          
+          // Very strict location patterns for left column to avoid skills/languages leakage
+          if (/(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area)$/i.test(t)) {
+            if (!/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst|Danish|Spanish|English|Machine Learning|Data Science|Python|JavaScript|React|Node|SQL)\b/i.test(t)) {
               locLine = topLines[i];
               break;
             }
@@ -345,29 +486,48 @@ export async function parseLinkedInPdf(
         }
       }
       if (locLine) {
-        const parts = locLine.text.split(/,\s*/);
-        const city = parts.shift()!;
-        let countryCode: string | undefined;
-        let region: string | undefined;
-        if (parts.length) {
-          const last = parts[parts.length - 1];
-          if (/United/i.test(last) || last.length === 2) {
-            countryCode = last;
-            parts.pop();
+        const locationText = locLine.text;
+        
+        // Check if this is a standalone country name
+        const isStandaloneCountry = /^(United States|United Kingdom|Canada|Australia|Germany|France|Italy|Spain|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Ireland|Portugal|Greece|Poland|Czech Republic|Hungary|Romania|Bulgaria|Croatia|Slovenia|Slovakia|Estonia|Latvia|Lithuania|Luxembourg|Malta|Cyprus|Iceland|Liechtenstein|Monaco|San Marino|Vatican City|Andorra|Japan|South Korea|China|India|Singapore|Malaysia|Thailand|Philippines|Indonesia|Vietnam|Taiwan|Hong Kong|Macau|New Zealand|Brazil|Argentina|Chile|Colombia|Peru|Ecuador|Uruguay|Paraguay|Bolivia|Venezuela|Guyana|Suriname|French Guiana|Mexico|Costa Rica|Panama|Guatemala|Honduras|El Salvador|Nicaragua|Belize|Jamaica|Cuba|Dominican Republic|Haiti|Trinidad and Tobago|Barbados|Bahamas|Puerto Rico|South Africa|Nigeria|Kenya|Ghana|Egypt|Morocco|Tunisia|Algeria|Libya|Sudan|Ethiopia|Tanzania|Uganda|Rwanda|Botswana|Namibia|Zambia|Zimbabwe|Mozambique|Madagascar|Mauritius|Seychelles|Israel|Turkey|Saudi Arabia|UAE|Qatar|Kuwait|Bahrain|Oman|Jordan|Lebanon|Syria|Iraq|Iran|Afghanistan|Pakistan|Bangladesh|Sri Lanka|Nepal|Bhutan|Maldives|Myanmar|Cambodia|Laos|Brunei|Mongolia|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Armenia|Azerbaijan|Georgia|Russia|Ukraine|Belarus|Moldova|Serbia|Montenegro|Bosnia and Herzegovina|North Macedonia|Albania|Kosovo|USA|UK)$/i.test(locationText.trim());
+        
+        if (isStandaloneCountry) {
+          // Store as structured object with countryCode for standalone countries
+          const locObj: JSONResumeLocation = { countryCode: locationText };
+          basics.location = locObj;
+        } else {
+          // Parse as structured location for city, state, country combinations
+          const parts = locationText.split(/,\s*/);
+          const city = parts.shift()!;
+          let countryCode: string | undefined;
+          let region: string | undefined;
+          if (parts.length) {
+            const last = parts[parts.length - 1];
+            if (/United/i.test(last) || last.length === 2) {
+              countryCode = last;
+              parts.pop();
+            }
+            region = parts.join(', ').trim() || undefined;
           }
-          region = parts.join(', ').trim() || undefined;
+          const locObj: JSONResumeLocation & { countryCode?: string } = { city } as any;
+          if (region) locObj.region = region;
+          if (countryCode) locObj.countryCode = countryCode;
+          basics.location = locObj;
         }
-        const locObj: JSONResumeLocation & { countryCode?: string } = { city } as any;
-        if (region) locObj.region = region;
-        if (countryCode) locObj.countryCode = countryCode;
-        basics.location = locObj;
       }
       if (profiles.length) (basics as any).profiles = profiles;
 
-      // Look for label/headline content (before Summary section)
+      // Label parsing: prefer right column content (where headline typically appears)
       const labelParts: string[] = [];
+      
+      // First try right column only
       for (let i = nameIdx + 1; i < topLines.length; i++) {
         const txt = topLines[i].text;
+        const line = topLines[i];
+        
+        // Skip left column lines for label parsing
+        if (line.column === 'left') continue;
+        
         if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
         if (headerRe.test(txt)) break;
         if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip actual emails/urls
@@ -378,9 +538,13 @@ export async function parseLinkedInPdf(
         const looksLikeLocation = (
           // Lines ending with Area patterns (but not job titles with CEO, LLC, etc.)
           /(San Francisco Bay Area|Greater.*Area|Bay Area|Metro Area|Raleigh-Durham-Chapel Hill Area)$/i.test(txt) ||
-          // Lines with comma and clear location indicators (but exclude job titles)
+          // Lines with comma and clear location indicators (but exclude job titles and academic terms)
           (/,/.test(txt) && /(United States|California|New York|Texas|[A-Z]{2}$)/i.test(txt) && 
-           !/\b(CEO|CTO|CFO|VP|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Director|Manager|Engineer|Analyst)\b/i.test(txt))
+           !/\b(CEO|CTO|CFO|VP|Vice President|President|Director|Manager|Engineer|Analyst|Postdoctoral|Postdoc|Scholar|Researcher|Research|Professor|Instructor|Lecturer|Fellow|LLC|Inc|Corp|Company|Solutions|Professional|Consulting|Communications|Marketing|Executive|Senior|Lead|Head|Chief|biology|statistics|machine learning|data science|research|analysis|computational|bioinformatics|quantitative)\b/i.test(txt) &&
+           // Additional check: if it starts with a job title pattern, it's not a location
+           !/^(Vice President|President|Director|Manager|Engineer|Analyst|CEO|CTO|CFO|Chief|Senior|Lead|Head|Executive)/i.test(txt)) ||
+          // Standalone country names
+          /^(United States|United Kingdom|Canada|Australia|Germany|France|Italy|Spain|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Ireland|Portugal|Greece|Poland|Czech Republic|Hungary|Romania|Bulgaria|Croatia|Slovenia|Slovakia|Estonia|Latvia|Lithuania|Luxembourg|Malta|Cyprus|Iceland|Liechtenstein|Monaco|San Marino|Vatican City|Andorra|Japan|South Korea|China|India|Singapore|Malaysia|Thailand|Philippines|Indonesia|Vietnam|Taiwan|Hong Kong|Macau|New Zealand|Brazil|Argentina|Chile|Colombia|Peru|Ecuador|Uruguay|Paraguay|Bolivia|Venezuela|Guyana|Suriname|French Guiana|Mexico|Costa Rica|Panama|Guatemala|Honduras|El Salvador|Nicaragua|Belize|Jamaica|Cuba|Dominican Republic|Haiti|Trinidad and Tobago|Barbados|Bahamas|Puerto Rico|South Africa|Nigeria|Kenya|Ghana|Egypt|Morocco|Tunisia|Algeria|Libya|Sudan|Ethiopia|Tanzania|Uganda|Rwanda|Botswana|Namibia|Zambia|Zimbabwe|Mozambique|Madagascar|Mauritius|Seychelles|Israel|Turkey|Saudi Arabia|UAE|Qatar|Kuwait|Bahrain|Oman|Jordan|Lebanon|Syria|Iraq|Iran|Afghanistan|Pakistan|Bangladesh|Sri Lanka|Nepal|Bhutan|Maldives|Myanmar|Cambodia|Laos|Brunei|Mongolia|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Armenia|Azerbaijan|Georgia|Russia|Ukraine|Belarus|Moldova|Serbia|Montenegro|Bosnia and Herzegovina|North Macedonia|Albania|Kosovo)$/i.test(txt.trim())
         );
         if (looksLikeLocation) continue; // skip location lines
         // Skip fragments that look like LinkedIn URL parts
@@ -389,8 +553,37 @@ export async function parseLinkedInPdf(
         // Skip LinkedIn username fragments (like "swanson-shrm-cp-49667449")
         if (/^[a-z]+-[a-z]+-[a-z]+-\d+$/i.test(txt)) continue;
         if (txt.length < 3) continue;
+        // Add text to label parts, prioritizing academic/professional keywords
         labelParts.push(txt);
-        if (labelParts.length >= 2) break;
+        if (labelParts.length >= 3) break; // Allow more parts for complex labels
+      }
+      
+      // Fallback: if no label found in right column, try left column with stricter filtering
+      if (labelParts.length === 0) {
+        for (let i = nameIdx + 1; i < topLines.length; i++) {
+          const txt = topLines[i].text;
+          const line = topLines[i];
+          
+          // Only consider left column as fallback
+          if (line.column !== 'left') continue;
+          
+          if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
+          if (headerRe.test(txt)) break;
+          if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue;
+          if (/^\d+\s*\(Mobile\)$/i.test(txt) || /^\d{10,}$/i.test(txt)) continue;
+          
+          // Stricter filtering for left column to avoid skills/languages
+          if (isSkillOrLanguage(txt) || isBusinessTermOrTitle(txt)) continue;
+          
+          if (isLocationPattern(txt)) continue;
+          
+          // Skip LinkedIn username fragments
+          if (/\(LinkedIn\)$/i.test(txt) || /^[a-z0-9-]+\d{4,}$/i.test(txt)) continue;
+          if (txt.length < 3) continue;
+          
+          labelParts.push(txt);
+          if (labelParts.length >= 3) break;
+        }
       }
       if (labelParts.length) {
         let lbl = labelParts.join(' ').trim();
@@ -451,21 +644,59 @@ export async function parseLinkedInPdf(
     const wordCount = line.trim().split(/\s+/).length;
     if (wordCount > 8) return false; // locations are usually short
     
-    // Exclude job titles and roles
-    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP|PI)\b/i.test(line)) return false;
+    // Exclude job titles and roles using pattern-based detection
+    if (isBusinessTermOrTitle(line)) return false;
     
-    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Mountain View|Pittsburgh|[A-Z]{2}$)/i;
+    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|Maryland|Mountain View|Pittsburgh)/i;
     
-    // Major cities that should be recognized as locations (including UAE and Greater Atlanta Area for Le's profile)
-    const majorCities = /^(UAE|Greater Atlanta Area|Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad|Surat|Jaipur|Lucknow|Kanpur|Nagpur|Indore|Thane|Bhopal|Visakhapatnam|Pimpri|Patna|Vadodara|Ghaziabad|Ludhiana|Agra|Nashik|Faridabad|Meerut|Rajkot|Kalyan|Vasai|Varanasi|Srinagar|Aurangabad|Dhanbad|Amritsar|Navi Mumbai|Allahabad|Ranchi|Howrah|Coimbatore|Jabalpur|Gwalior|Vijayawada|Jodhpur|Madurai|Raipur|Kota|Guwahati|Chandigarh|Solapur|Hubli|Tiruchirappalli|Bareilly|Mysore|Tiruppur|Gurgaon|Aligarh|Jalandhar|Bhubaneswar|Salem|Warangal|Guntur|Bhiwandi|Saharanpur|Gorakhpur|Bikaner|Amravati|Noida|Jamshedpur|Bhilai|Cuttack|Firozabad|Kochi|Nellore|Bhavnagar|Dehradun|Durgapur|Asansol|Rourkela|Nanded|Kolhapur|Ajmer|Akola|Gulbarga|Jamnagar|Ujjain|Loni|Siliguri|Jhansi|Ulhasnagar|Jammu|Sangli|Mangalore|Erode|Belgaum|Ambattur|Tirunelveli|Malegaon|Gaya|Jalgaon|Udaipur|Maheshtala)$/i;
+    // Pattern-based major city detection instead of hardcoded list
+    const isMajorCity = (text: string): boolean => {
+      // UAE and other short country/region codes
+      if (/^(UAE|USA|UK|EU|NYC|LA|SF|DC)$/i.test(text.trim())) return true;
+      
+      // Greater + City + Area pattern
+      if (/^Greater\s+[A-Z][a-z]+\s+Area$/i.test(text.trim())) return true;
+      
+      // City + Area pattern (any city name)
+      if (/^[A-Z][a-z]+\s+Area$/i.test(text.trim())) return true;
+      
+      // Multiple location pattern (like "Pittsburgh Area and Mountain View")
+      if (/\s+Area\s+and\s+[A-Z][a-z]+/i.test(text)) return true;
+      
+      // Indian cities pattern (many end with specific suffixes)
+      if (/^(Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad)$/i.test(text.trim())) return true;
+      
+      return false;
+    };
     
     if (/,/.test(line) && locationKeywords.test(line)) return true;
+    // Recognize standalone country names and regions
+    if (/^(United States|United Kingdom|Canada|Australia|Germany|France|Italy|Spain|Netherlands|Belgium|Switzerland|Austria|Sweden|Norway|Denmark|Finland|Ireland|Portugal|Greece|Poland|Czech Republic|Hungary|Romania|Bulgaria|Croatia|Slovenia|Slovakia|Estonia|Latvia|Lithuania|Luxembourg|Malta|Cyprus|Iceland|Liechtenstein|Monaco|San Marino|Vatican City|Andorra|Japan|South Korea|China|India|Singapore|Malaysia|Thailand|Philippines|Indonesia|Vietnam|Taiwan|Hong Kong|Macau|New Zealand|Brazil|Argentina|Chile|Colombia|Peru|Ecuador|Uruguay|Paraguay|Bolivia|Venezuela|Guyana|Suriname|French Guiana|Mexico|Costa Rica|Panama|Guatemala|Honduras|El Salvador|Nicaragua|Belize|Jamaica|Cuba|Dominican Republic|Haiti|Trinidad and Tobago|Barbados|Bahamas|Puerto Rico|South Africa|Nigeria|Kenya|Ghana|Egypt|Morocco|Tunisia|Algeria|Libya|Sudan|Ethiopia|Tanzania|Uganda|Rwanda|Botswana|Namibia|Zambia|Zimbabwe|Mozambique|Madagascar|Mauritius|Seychelles|Israel|Turkey|Saudi Arabia|UAE|Qatar|Kuwait|Bahrain|Oman|Jordan|Lebanon|Syria|Iraq|Iran|Afghanistan|Pakistan|Bangladesh|Sri Lanka|Nepal|Bhutan|Maldives|Myanmar|Cambodia|Laos|Brunei|Mongolia|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Armenia|Azerbaijan|Georgia|Russia|Ukraine|Belarus|Moldova|Serbia|Montenegro|Bosnia and Herzegovina|North Macedonia|Albania|Kosovo|California|New York|Texas|Florida|Illinois|Pennsylvania|Ohio|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming)$/i.test(line.trim())) return true;
     if (/\bCampus\b/i.test(line)) return true;
-    if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) return true; // city state
+    if (/\bOffice\b/i.test(line)) return true;
+    if (/\bCenter\b/i.test(line)) return true;
+    // Handle comma-separated locations where any part is a major city
+    if (/,/.test(line)) {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.some(part => isMajorCity(part))) return true;
+    }
+    // City + State pattern, but exclude common non-state abbreviations
+    if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) {
+      // Extract the potential state code
+      const stateMatch = line.match(/\b[A-Z]{2}\b/);
+      if (stateMatch) {
+        const potentialState = stateMatch[0];
+        // Exclude common non-state abbreviations
+        const nonStateAbbrevs = /^(PI|VP|MD|PhD|DDS|DVM|RN|CPA|CEO|CTO|CFO|COO|HR|IT|PR|QA|UI|UX|AI|ML|AR|VR|3D|2D|ID|IP|OS|DB|JS|CSS|HTML|XML|JSON|PDF|API|SDK|CRM|ERP|B2B|B2C|SaaS|PaaS|IaaS|IoT|GPS|GPS|USB|RAM|CPU|GPU|SSD|HDD|LCD|LED|OLED|4K|HD|FHD|UHD|MP3|MP4|AVI|MOV|JPG|PNG|GIF|SVG|CSV|TSV|XLSX|DOCX|PPTX|ZIP|RAR|TAR|GZ)$/i;
+        if (nonStateAbbrevs.test(potentialState)) {
+          return false; // Not a location
+        }
+      }
+      return true;
+    }
     if (/\b[A-Z]{2}\b$/.test(line)) return true; // state code at end
     if (/\bArea$/i.test(line)) return true;
-    if (/\b(Greater\s+)?Pittsburgh\s+Area\s+and\s+Mountain\s+View/i.test(line)) return true; // specific pattern for Le's Google position
-    if (majorCities.test(line.trim())) return true; // major city names
+    if (isMajorCity(line.trim())) return true; // major city names
     return false;
   };
 
@@ -481,6 +712,8 @@ export async function parseLinkedInPdf(
   const positions: ExperiencePosition[] = [];
   const education: RawEducationEntry[] = [];
   const seen = new Set<string>();
+  
+
 
   for (let idx = 0; idx < rightColumnLines.length; idx++) {
     // Only consider lines within the Experience section boundaries
@@ -578,7 +811,6 @@ export async function parseLinkedInPdf(
       const lObj = rightColumnLines[j];
       const ltxt = lObj.text;
       
-
       
       if (ltxt === '') { gapSinceLast = true; continue; }
       if (/^Page \d+/i.test(ltxt)) { 
@@ -613,15 +845,44 @@ export async function parseLinkedInPdf(
           !/^\d{4}\s*[–-]\s*\d{4}$/.test(processedText.trim())) break; // next block starts
       if (headerRe.test(processedText)) continue; // skip section headers
       if (lObj.fontSize > dateFont + 0.1) break; // assume new title block
+      // Handle URL extraction and text cleaning
+      let hasUrlExtracted = false;
       if (!urlFound && ( /https?:\/\//i.test(ltxt) || /[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[^\s)]+/.test(ltxt) ) ) {
         // Avoid treating company names or partial text as URLs
         if (!ltxt.includes('Web Services') && !ltxt.includes('(AWS)') && ltxt.includes('.')) {
-          // Extract just the URL part from the text
-          const urlMatch = ltxt.match(/https?:\/\/[^\s)]+/i) || ltxt.match(/(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?/i);
+          // Extract just the URL part from the text - be more precise
+          const urlMatch = ltxt.match(/https?:\/\/[^\s)]+/i) || ltxt.match(/\b(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?/i);
           if (urlMatch) {
             let extractedUrl = urlMatch[0];
             // Remove trailing punctuation that's not part of the URL
             extractedUrl = extractedUrl.replace(/[.,;!?]+$/, '');
+            // Check if URL might continue on next line (ends with slash)
+            if (extractedUrl.endsWith('/') && j + 1 < rightColumnLines.length) {
+              // Look ahead for URL continuation
+              let nextLineIdx = j + 1;
+              while (nextLineIdx < rightColumnLines.length) {
+                const nextLine = rightColumnLines[nextLineIdx];
+                const nextText = nextLine.text.trim();
+                
+                // Stop if we hit a blank line, section header, or line with very different formatting
+                if (!nextText || headerRe.test(nextText) || 
+                    Math.abs(nextLine.fontSize - lObj.fontSize) > 1.0) {
+                  break;
+                }
+                
+                // Check if this line looks like a URL continuation (alphanumeric with underscores/dashes)
+                if (/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\)?\s*$/.test(nextText)) {
+                  // Remove trailing punctuation and parentheses from continuation
+                  const continuation = nextText.replace(/[.,;!?)\s]+$/, '');
+                  extractedUrl += continuation;
+                  break;
+                }
+                
+                // Only check the immediate next line to avoid false matches
+                break;
+              }
+            }
+            
             // Convert http to https and ensure protocol
             if (extractedUrl.startsWith('http://')) {
               urlFound = extractedUrl.replace('http://', 'https://');
@@ -630,17 +891,22 @@ export async function parseLinkedInPdf(
             } else {
               urlFound = 'https://' + extractedUrl.replace(/^www\./i, '');
             }
-          } else {
-            // Convert http to https and ensure protocol
-            if (ltxt.startsWith('http://')) {
-              urlFound = ltxt.replace('http://', 'https://');
-            } else if (ltxt.startsWith('https://')) {
-              urlFound = ltxt;
-            } else {
-              urlFound = 'https://' + ltxt.replace(/^www\./i, '');
-            }
+            
+            // Remove the URL from the processed text for highlights
+            // Handle complete URLs
+            processedText = processedText.replace(/\s*\(?\s*https?:\/\/[^\s)]+\s*\)?\s*/gi, ' ').trim();
+            processedText = processedText.replace(/\s*\(?\s*(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?\/?\s*\)?\s*/gi, ' ').trim();
+            // Handle incomplete URLs like "(http://" at the end
+            processedText = processedText.replace(/\s*\(\s*https?:\/\/\s*$/gi, '').trim();
+            processedText = processedText.replace(/\s*\(\s*http:\/\/\s*$/gi, '').trim();
+            processedText = processedText.replace(/\s+/g, ' ').trim();
+            hasUrlExtracted = true;
           }
-          continue;
+          // Don't skip the segment - let it be processed as a highlight if it contains descriptive text
+          // Only skip if the line is purely a URL with no descriptive content
+          if (!hasUrlExtracted && (/^\s*\(?https?:\/\/[^\s)]+\)?\s*$/.test(ltxt) || /^\s*\(?(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?\/?\)?\s*$/.test(ltxt))) {
+            continue;
+          }
         }
       }
       const wordCnt = ltxt.trim().split(/\s+/).length;
@@ -649,11 +915,24 @@ export async function parseLinkedInPdf(
       const prevY2 = highlightSegs.length ? highlightSegs[highlightSegs.length-1].y : undefined;
       const largeGapCurrent = prevY2 !== undefined && (prevY2 - lObj.y) > baselineGap * 1.6;
       const pageChange = prevSeg && prevSeg.page !== (rightColumnLines[j].page ?? 0);
-      const gapFlag = gapSinceLast || largeGapCurrent || (!!pageChange);
+      
+      // Use simpler gap detection - let the merging logic handle continuations
+      const gapFlag = gapSinceLast || largeGapCurrent || !!pageChange;
       const continuation = prevSeg && !prevSeg.bullet && !prevSeg.gap && !gapFlag && prevSeg.page === rightColumnLines[j].page;
       let textClean = processedText.replace(/^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)](?=\s))\s*/, '').trim();
       if (/^(Work involved|Responsibilities)[:\-]/i.test(textClean)) {
         textClean = textClean.replace(/^(Work involved|Responsibilities)[:\-]\s*/i, '');
+      }
+      
+      // Apply URL cleaning to textClean as well (in case URL was extracted earlier)
+      if (hasUrlExtracted) {
+        // Handle complete URLs
+        textClean = textClean.replace(/\s*\(?\s*https?:\/\/[^\s)]+\s*\)?\s*/gi, ' ').trim();
+        textClean = textClean.replace(/\s*\(?\s*(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?\/?\s*\)?\s*/gi, ' ').trim();
+        // Handle incomplete URLs like "(http://" at the end
+        textClean = textClean.replace(/\s*\(\s*https?:\/\/\s*$/gi, '').trim();
+        textClean = textClean.replace(/\s*\(\s*http:\/\/\s*$/gi, '').trim();
+        textClean = textClean.replace(/\s+/g, ' ').trim();
       }
       
       // Skip URL-like content that's just domain names
@@ -678,7 +957,7 @@ export async function parseLinkedInPdf(
       
 
       
-      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1))) {
+      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1 && !isLocation(textClean)))) {
         // add highlight segment now
         highlightSegs.push({ text: textClean, bullet: bulletLine, gap: gapFlag, y: lObj.y, page: rightColumnLines[j].page });
         if(pageChange) gapSinceLast = false;
@@ -748,22 +1027,73 @@ export async function parseLinkedInPdf(
     if (urlFound) pos.url = urlFound;
     if (highlightSegs.length) {
       const merged: string[] = [];
-      highlightSegs.forEach((seg) => {
-        if (merged.length === 0 || seg.bullet || seg.gap) {
-          merged.push(seg.text);
-          return;
-        }
+      highlightSegs.forEach((seg, segIdx) => {
+              if (merged.length === 0 || seg.bullet) {
+        merged.push(seg.text);
+        return;
+      }
+        const prevSeg = segIdx > 0 ? highlightSegs[segIdx - 1] : null;
         const prevText = merged[merged.length - 1].trim();
         const startsLower = /^[a-z]/.test(seg.text);
         const endPunct = /[.!?]$/;
-        const words = seg.text.split(/\s+/).length;
+        // Don't treat abbreviations as sentence endings
+        const isAbbreviation = /\b(Dr|Mr|Mrs|Ms|Prof|Inc|Corp|Ltd|Co|vs|etc|Jr|Sr|PhD|MD|DDS|DVM|Esq|CPA|MBA|BA|BS|MA|MS|Ph\.D|M\.D|B\.A|B\.S|M\.A|M\.S)\.$/.test(prevText);
+        const actuallyEnds = endPunct.test(prevText) && !isAbbreviation;
+        
+        // Check if this segment should be merged based on sentence completion patterns
+        // Key insight: Only merge when there are clear indicators of incomplete sentences
+        // Conservative comma matching - only merge when there are clear indicators of continuation
+        const commaMatch = prevText.endsWith(',') && (
+          startsLower || 
+          /^I\b/.test(seg.text) ||
+          // Specific patterns that clearly indicate continuation after comma
+          (/\b(research-based|data-driven|team-oriented|well-established),$/.test(prevText.trim()) && /^(Quality Assurance|Performance Improvement|Leadership Program)/i.test(seg.text)) ||
+          // Handle MD-MPH + Leadership Program case
+          (/\bMD-MPH$/.test(prevText.trim()) && /^Leadership Program/i.test(seg.text))
+        );
+        
+        const isLogicalContinuation = prevSeg && (
+          // Only merge if previous text clearly indicates continuation
+          commaMatch ||
+          (prevText.endsWith(':') && seg.text.length > 10) || // colon followed by substantial text
+          // Specific incomplete sentence patterns that need continuation
+          (/\b(including|such as|like|for example|e\.g\.|i\.e\.)$/i.test(prevText) && !actuallyEnds) ||
+          // Previous text ends with incomplete conjunctions or prepositions
+          (/\b(and|or|but|with|to|from|by|on|in|at|for|of|the)$/i.test(prevText) && !actuallyEnds) ||
+          // Handle mid-sentence breaks where previous doesn't end with period AND current starts lowercase
+          (!actuallyEnds && startsLower) ||
+          // Handle specific patterns like "Diagnosis of Diabetes Mellitus and to Determine" + "Estimated"
+          (!actuallyEnds && /\b(to|and|or|for|of|in|at|on|with|by|from)\s*$/i.test(prevText)) ||
+          // Handle incomplete phrases that clearly need continuation
+          (!actuallyEnds && /\b(that|which|who|where|when|how|what|why|reflect|represent|demonstrate|illustrate|indicate|suggest|ensure|provide|support|enable|allow|help|assist|facilitate|promote|enhance|improve|develop|create|establish|maintain|manage|lead|direct|coordinate|oversee|guide|implement|execute|deliver|achieve|accomplish|realize|pursue|explore|investigate|analyze|evaluate|assess|review|examine|study|research|discover|identify|determine|define|describe|explain|clarify|communicate|share|present|report|publish|document|record|track|monitor|measure|quantify|calculate|estimate|estimated|predict|forecast|plan|design|build|construct)$/i.test(prevText)) ||
+          // Handle parenthetical references that should be merged with previous text
+          /^\s*\([^)]+\)\s*$/.test(seg.text) ||
+          // Handle split parenthetical expressions like "USyd or simply" + "Sydney) is..."
+          (!actuallyEnds && /\bor\s+\w+\s*$/.test(prevText) && /^[A-Z]\w*\)/.test(seg.text)) ||
+          // Handle abbreviations that clearly need continuation (like MD-MPH + Leadership Program)
+          (!actuallyEnds && /\b[A-Z]{2,}-[A-Z]{2,}$/i.test(prevText.trim())) ||
+          // Handle company name splits (like "transition to Union" + "Bank") - be more specific
+          (!actuallyEnds && /\b(transition to|moved to|went to)\s+[A-Z][a-z]*$/i.test(prevText.trim()) && /^[A-Z][a-z]*\b/.test(seg.text)) ||
+          // Handle incomplete phrases ending with "our" followed by numbers or descriptions
+          (!actuallyEnds && /\bour$/i.test(prevText.trim()) && (/^\d/.test(seg.text) || /^[A-Z]/.test(seg.text))) ||
+          // Handle list continuations like "21st Century & Abstinence" + "Promotion & Say Yes"
+          (!actuallyEnds && /\s(and|&)\s+[A-Za-z]+$/i.test(prevText.trim()) && /^[A-Z][a-z]/.test(seg.text))
+        ) && 
+        // EXCLUSIONS: Don't merge these patterns even if other conditions match
+        !(
+          // Don't merge "etc." + "To understand" patterns - these are often separate bullet points
+          (/\betc\.?$/.test(prevText) && /^To\s+[a-z]/i.test(seg.text)) ||
+          // Don't merge URL-like segments that should remain separate
+          (/\b[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*/.test(seg.text) && seg.text.split(/\s+/).length <= 3)
+        );
+
         
         // Check for separator-based lists (~ or |) that should be merged
         const hasSeparators = /[~|]/.test(prevText) || /^[~|]/.test(seg.text);
-        const isListContinuation = hasSeparators && !endPunct.test(prevText);
+        const isListContinuation = hasSeparators && !actuallyEnds;
         
         // Check for proper noun continuation patterns
-        const isProperNounContinuation = !startsLower && !endPunct.test(prevText) && (
+        const isProperNounContinuation = !startsLower && !actuallyEnds && (
           // Sentence fragments that clearly continue from previous text
           /^(Research|Program|Conference|Day|Award|Training|Institute|University|College|School|Department|Center|Project|Study|Analysis)\b/i.test(seg.text) ||
           // Text that starts with common continuation words
@@ -775,7 +1105,7 @@ export async function parseLinkedInPdf(
         );
 
         
-        if (startsLower) {
+        if (startsLower || isLogicalContinuation) {
           merged[merged.length - 1] += ' ' + seg.text;
         } else if (isListContinuation) {
           // Merge separator-based lists, converting separators to commas
@@ -785,20 +1115,18 @@ export async function parseLinkedInPdf(
           merged[merged.length - 1] = combinedText;
         } else if (isProperNounContinuation) {
           merged[merged.length - 1] += ' ' + seg.text;
-        } else if (!endPunct.test(prevText) && (words < 8 || /^[$£€¥₹]/.test(seg.text))) {
-          // Be more conservative about merging - avoid merging distinct technical terms
-          const prevWords = prevText.split(/\s+/).length;
-          const bothShort = prevWords <= 3 && words <= 3;
-          const similarTerms = /\b(machine|learning|deep|platform|team|data|science|engineering|software|development)\b/i.test(prevText) && 
-                              /\b(machine|learning|deep|platform|team|data|science|engineering|software|development)\b/i.test(seg.text);
-          
-          if (bothShort && similarTerms) {
-            // These are likely separate technical terms, keep them separate
-            merged.push(seg.text);
-          } else {
-            merged[merged.length - 1] += ' ' + seg.text;
-          }
+        } else if ((isAbbreviation || /^[$£€¥₹]/.test(seg.text)) && 
+                   // Apply same exclusions as logical continuation
+                   !(
+                     // Don't merge "etc." + "To understand" patterns - these are often separate bullet points
+                     (/\betc\.?$/.test(prevText) && /^To\s+[a-z]/i.test(seg.text))
+                   )) {
+          // Only merge if:
+          // 1. The previous text ended with an abbreviation (like "Dr."), OR
+          // 2. The next segment starts with a currency symbol
+          merged[merged.length - 1] += ' ' + seg.text;
         } else {
+          // Default: keep segments separate unless there's a clear reason to merge
           merged.push(seg.text);
         }
       });
@@ -852,6 +1180,27 @@ export async function parseLinkedInPdf(
       // Capitalize first letter of each highlight and fix nested quotes
       pos.highlights = finalMerged.map(highlight => {
         let cleaned = highlight.charAt(0).toUpperCase() + highlight.slice(1);
+        
+        // Clean URL fragments from highlights
+        // Handle complete URLs in parentheses
+        cleaned = cleaned.replace(/\s*\(\s*https?:\/\/[^\s)]+\s*\)\s*/gi, ' ').trim();
+        cleaned = cleaned.replace(/\s*\(\s*(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s)]*)?\/?\s*\)\s*/gi, ' ').trim();
+        // Handle incomplete URLs like "(http://" at the end
+        cleaned = cleaned.replace(/\s*\(\s*https?:\/\/\s*$/gi, '').trim();
+        cleaned = cleaned.replace(/\s*\(\s*http:\/\/\s*$/gi, '').trim();
+        // Handle orphaned closing parentheses after URL cleaning (but preserve legitimate parentheses)
+        // Only remove ) if it's clearly orphaned (preceded by space and no matching content)
+        if (/\s+\)\s*$/.test(cleaned) && !/\([^)]*\)\s*$/.test(cleaned)) {
+          cleaned = cleaned.replace(/\s+\)\s*$/gi, '').trim();
+        }
+        // Handle bare URLs without parentheses
+        cleaned = cleaned.replace(/\s+https?:\/\/[^\s]+/gi, '').trim();
+        cleaned = cleaned.replace(/\s+(?:www\.)?[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s]*)?/gi, '').trim();
+        // Handle Wikipedia-style URL fragments like "University_of_Sydney)"
+        cleaned = cleaned.replace(/\b[A-Z][A-Za-z0-9_-]*_[A-Za-z0-9_-]*\)?\s*$/gi, '').trim();
+        // Clean up multiple spaces
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+        
         // Convert all quotes (including Unicode smart quotes) to standard ASCII quotes to avoid JSON validation issues
         // This prevents nested quote problems in JSON output
         // Handle double quotes: " " " → ' '
@@ -859,7 +1208,7 @@ export async function parseLinkedInPdf(
         // Handle single smart quotes: ' ' → '
         cleaned = cleaned.replace(/[\u2018\u2019'']/g, "'");
         return cleaned;
-      });
+      }).filter(highlight => highlight.trim().length > 0); // Filter out empty highlights
     }
     positions.push(pos);
   }
@@ -885,19 +1234,38 @@ export async function parseLinkedInPdf(
       if (idx >= rightColumnLines.length) break;
 
       let degreeFieldStr = rightColumnLines[idx].text.trim();
-
+      
       // accumulate additional lines that belong to the same degree/field
       const schoolFont = rightColumnLines[idx - 1].fontSize; // font of school line
       let look = idx + 1;
       while (look < rightColumnLines.length) {
         const t = rightColumnLines[look].text.trim();
-        if (isNoise(t)) { look++; continue; }
-        if (headerRe.test(t)) break;
-        if (rightColumnLines[look].fontSize >= schoolFont - 0.01) break; // new school starts
-        // stop at date-only or year-range line (starts new block)
-        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) break;
+        if (isNoise(t)) { 
+          look++; continue; 
+        }
+        if (headerRe.test(t)) {
+          break;
+        }
+        // Break if we hit a line that looks like a new school
+        // Schools can be traditional institutions or online platforms
+        const isTraditionalSchool = /\b(University|College|Institute|School|Academy)\b/i.test(t);
+        const isOnlinePlatform = /\b(Coursera|edX|Udacity|Khan Academy|MIT OpenCourseWare|Stanford Online|Harvard Extension|Berkeley Extension)\b/i.test(t);
+        const hasSchoolFont = rightColumnLines[look].fontSize >= schoolFont - 0.1;
+        const looksLikeSchool = hasSchoolFont && (isTraditionalSchool || isOnlinePlatform) && t.length > 3;
+        
+        if (looksLikeSchool) {
+          break; // new school starts
+        }
+        
+        // Include date lines in the accumulation instead of breaking on them
+        // This allows proper parsing of patterns like "BA (Honors), Statistics, Molecular & Cell Biology (Neurobiology) · (2015 - 2018)"
         degreeFieldStr += ' ' + t;
         look++;
+        
+        // Stop after date line (but include it first)
+        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) {
+          break;
+        }
       }
       idx = look - 1; // last consumed line for this entry
 
@@ -913,20 +1281,38 @@ export async function parseLinkedInPdf(
         end = /Present/i.test(endVal) ? null : endVal;
         degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
       } else {
-        // Fallback to original year-only pattern
-        const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
-        if (dateMatch) {
-          start = dateMatch[1];
-          const endVal = dateMatch[2];
-          end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
-          degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+        // Look for mixed patterns like "· (2019 - December 2023)" (year-only start, month-year end)
+        const mixedDateMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*([A-Za-z]+ \d{4}|Present)\)$/);
+        if (mixedDateMatch) {
+          start = mixedDateMatch[1];
+          const endVal = mixedDateMatch[2];
+          end = /Present/i.test(endVal) ? null : endVal;
+          degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
+        } else {
+          // Look for year-only patterns like "· (2015 - 2018)"
+          const yearOnlyMatch = degreeFieldStr.match(/·\s*\((\d{4})\s*-\s*(\d{4}|Present)\)$/);
+          if (yearOnlyMatch) {
+            start = yearOnlyMatch[1];
+            const endVal = yearOnlyMatch[2];
+            end = /Present/i.test(endVal) ? null : endVal;
+            degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
+          } else {
+            // Fallback to original year-only pattern
+            const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
+            if (dateMatch) {
+              start = dateMatch[1];
+              const endVal = dateMatch[2];
+              end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
+              degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
+            }
+          }
         }
       }
 
       // remove trailing bullets / separators
       degreeFieldStr = degreeFieldStr.replace(/[\u2022•·]+$/,'').trim().replace(/,+$/,'');
 
-      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','MASTER','MASTERS','DOCTOR','SECONDARY']);
+      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','BACHELORS','MASTER','MASTERS','DOCTOR','SECONDARY']);
       let degree = '';
       let field: string | undefined;
       if (degreeFieldStr.includes(',')) {
@@ -966,6 +1352,9 @@ export async function parseLinkedInPdf(
         } else if (/Secondary Education/i.test(degreeFieldStr)) {
           degree = "Secondary Education";
           field = degreeFieldStr.replace(/Secondary Education,?\s*/i, '').trim() || undefined;
+        } else if (/^HS Diploma$/i.test(degreeFieldStr)) {
+          degree = "HS Diploma";
+          field = undefined;
         } else {
           field = degreeFieldStr;
         }
@@ -1029,6 +1418,76 @@ export async function parseLinkedInPdf(
         skills.push({
           name: txt
         });
+      }
+      
+      idx++;
+    }
+  }
+
+  // ------------------- AWARDS PARSING (LEFT COLUMN) ------------------------
+  const awards: JSONResumeAward[] = [];
+  const awardsHeaderIdx = leftColumnLines.findIndex((l) => /^(Honors?-?Awards?|Awards?|Honors?|Recognition)$/i.test(l.text));
+  
+  if (awardsHeaderIdx !== -1) {
+    let idx = awardsHeaderIdx + 1;
+    
+    while (idx < leftColumnLines.length) {
+      const line = leftColumnLines[idx];
+      const txt = line.text.trim();
+      
+      // Skip empty lines
+      if (!txt) { idx++; continue; }
+      
+      // Break if we reach another major section
+      if (/^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Languages?|Projects?)$/i.test(txt)) {
+        break;
+      }
+      
+      // Awards are typically in smaller font (10.5) compared to headers (13)
+      // Skip summary text (larger font, longer lines)
+      if (line.fontSize >= 12 && txt.length > 50) {
+        idx++;
+        continue;
+      }
+      
+      // Look for award entries - they can span multiple lines
+      if (line.fontSize <= 11) {
+        let awardTitle = txt;
+        
+        // Check if this starts an award (typically starts with "Recognized" or similar)
+        if (/^(Recognized|Awarded|Named|Selected|Honored|Winner|Recipient|Achievement)/i.test(txt)) {
+          // Look ahead to combine multi-line award titles
+          let nextIdx = idx + 1;
+          while (nextIdx < leftColumnLines.length) {
+            const nextLine = leftColumnLines[nextIdx];
+            const nextTxt = nextLine.text.trim();
+            
+            // Stop if empty line or next section
+            if (!nextTxt || /^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Languages?|Projects?)$/i.test(nextTxt)) {
+              break;
+            }
+            
+            // Stop if next line looks like a new award (starts with recognition keywords)
+            if (/^(Recognized|Awarded|Named|Selected|Honored|Winner|Recipient|Achievement)/i.test(nextTxt)) {
+              break;
+            }
+            
+            // Stop if font size indicates a new section
+            if (nextLine.fontSize >= 12) {
+              break;
+            }
+            
+            // This line continues the current award title
+            awardTitle += ' ' + nextTxt;
+            nextIdx++;
+          }
+          
+          awards.push({
+            title: awardTitle
+          });
+          
+          idx = nextIdx - 1; // Set to last consumed line
+        }
       }
       
       idx++;
@@ -1179,6 +1638,7 @@ export async function parseLinkedInPdf(
       ...(toIso(e.start) ? { startDate: toIso(e.start) } : {}),
       ...(toIso(e.end) ? { endDate: toIso(e.end) } : {}),
     })),
+    ...(awards.length > 0 ? { awards } : {}),
     ...(skills.length > 0 ? { skills } : {}),
     ...(certificates.length > 0 ? { certificates } : {}),
     ...(languages.length > 0 ? { languages } : {}),

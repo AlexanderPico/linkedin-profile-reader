@@ -1,0 +1,124 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Irma Hernandez",
+    "email": "irmah525@gmail.com",
+    "location": {
+      "city": "San Francisco",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "irma-hernandez-b8330a5a",
+        "url": "https://www.linkedin.com/in/irma-hernandez-b8330a5a"
+      }
+    ],
+    "label": "Senior Events Manager at Gladstone Institutes",
+    "summary": "Experienced Event Manager with a demonstrated history of working in the leisure, travel & tourism industry. Skilled in Project Management, Marketing, Budget Management, Customer Service, and Adobe Creative Suite. Highly organized professional with a Bachelor of Arts (B.A.) focused in Spanish and Sociology from UCSB."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Senior Events Manager",
+      "location": "San Francisco, California, United States",
+      "startDate": "2024-10"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Events Manager",
+      "location": "San Francisco, California, United States",
+      "startDate": "2022-06",
+      "endDate": "2024-10"
+    },
+    {
+      "name": "University of California, Hastings College of the Law",
+      "position": "Academic Projects and Events Manager",
+      "location": "San Francisco, California, United States",
+      "startDate": "2020-08",
+      "endDate": "2022-06"
+    },
+    {
+      "name": "PIER 39",
+      "position": "Event Coordinator",
+      "startDate": "2018-10",
+      "endDate": "2020-05"
+    },
+    {
+      "name": "PIER 39",
+      "position": "Leasing & Marketing Coordinator",
+      "startDate": "2017-05",
+      "endDate": "2018-10"
+    },
+    {
+      "name": "PIER 39",
+      "position": "Leasing & Marketing Assistant",
+      "startDate": "2016-05",
+      "endDate": "2017-05"
+    },
+    {
+      "name": "Oakland Athletics",
+      "position": "Game Day Ticket Services Agent",
+      "location": "Oakland, CA",
+      "startDate": "2015-03",
+      "endDate": "2017-09"
+    },
+    {
+      "name": "San Francisco 49ers",
+      "position": "Event Marketing Intern",
+      "location": "Santa Clara, CA",
+      "startDate": "2014-05",
+      "endDate": "2016-02"
+    },
+    {
+      "name": "UCSB Intercollegiate Athletics",
+      "position": "Marketing/Promotions Intern",
+      "startDate": "2012-11",
+      "endDate": "2014-06"
+    },
+    {
+      "name": "UCSB Men's Soccer",
+      "position": "Marketing/Accounting Intern",
+      "startDate": "2012-04",
+      "endDate": "2014-06"
+    },
+    {
+      "name": "UCSB - Housing and Residential Services",
+      "position": "Joan Mortell Intern",
+      "location": "UCSB Community Housing Office",
+      "startDate": "2013-05",
+      "endDate": "2014-05"
+    }
+  ],
+  "education": [
+    {
+      "institution": "UCSB",
+      "studyType": "Bachelor of Arts (B.A.)",
+      "area": "Spanish and Sociology",
+      "startDate": "2010",
+      "endDate": "2014"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Microsoft Office"
+    },
+    {
+      "name": "iWork"
+    },
+    {
+      "name": "Macintosh Applications"
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native or Bilingual"
+    },
+    {
+      "language": "Spanish",
+      "fluency": "Native or Bilingual"
+    }
+  ]
+}

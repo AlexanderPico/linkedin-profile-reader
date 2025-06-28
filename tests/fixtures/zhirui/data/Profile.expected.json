@@ -1,0 +1,61 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Zhirui Hu",
+    "email": "xyz111131@gmail.com",
+    "location": {
+      "city": "Berkeley",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "zhirui-hu-30331b1aa",
+        "url": "https://www.linkedin.com/in/zhirui-hu-30331b1aa"
+      }
+    ],
+    "label": "Computational biology, Statistics, Machine learning",
+    "summary": "I have experience in both the biotech and financial industries, where I have observed that statistical and machine learning models for pattern and knowledge discovery share remarkable similarities across these fields."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatics Fellow",
+      "location": "San Francisco Bay Area",
+      "startDate": "2022-08"
+    },
+    {
+      "name": "Tsinghua University",
+      "position": "Assistant Professor",
+      "startDate": "2021-03",
+      "endDate": "2022-07"
+    },
+    {
+      "name": "The Voleon Group",
+      "position": "Quantitative Researcher",
+      "startDate": "2019-10",
+      "endDate": "2021-02"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Harvard University",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Statistics",
+      "startDate": "2014",
+      "endDate": "2019"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Machine Learning"
+    },
+    {
+      "name": "Phylogenetics"
+    },
+    {
+      "name": "Bayesian statistics"
+    }
+  ]
+}

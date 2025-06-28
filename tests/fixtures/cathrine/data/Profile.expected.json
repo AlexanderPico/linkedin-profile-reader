@@ -1,0 +1,87 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Cathrine Sant (Petersen)",
+    "email": "cathrine.pet@gmail.com",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "cathrinepetersen",
+        "url": "https://www.linkedin.com/in/cathrinepetersen"
+      }
+    ],
+    "label": "Postdoc @ Gladstone Institutes",
+    "summary": "Developing computational methods for the analysis of single- cell sequencing data and identifying applications for the study of Alzheimer's disease pathogenesis."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Postdoctoral Scholar",
+      "startDate": "2025-01"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Graduate Student",
+      "location": "University of California, San Francisco",
+      "startDate": "2019-09",
+      "endDate": "2024-12",
+      "highlights": [
+        "UCSF Neuroscience PhD student co-advised by Dr. Lennart Mucke and Dr. Ryan Corces, in the Institute of Neurological Disease at Gladstone Institutes."
+      ]
+    },
+    {
+      "name": "University of California, San Francisco",
+      "position": "Research Assistant",
+      "location": "Grinberg Lab, UCSF Memory and Aging Center",
+      "startDate": "2016-10",
+      "endDate": "2019-09",
+      "highlights": [
+        "The Grinberg Lab approaches understanding pathogenesis in neurodegenerative diseases such as Alzheimer's using unique collections of human post-mortem samples. Within the lab, my focus was investigating the neuropathological changes underlying clinical heterogeneity in Alzheimer's disease."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of California, San Francisco",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Neuroscience",
+      "startDate": "2019",
+      "endDate": "2024"
+    },
+    {
+      "institution": "University of California, Berkeley",
+      "studyType": "BA (Honors)",
+      "area": "Statistics, Molecular & Cell Biology (Neurobiology)",
+      "startDate": "2015",
+      "endDate": "2018"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Research"
+    },
+    {
+      "name": "Visual Arts"
+    },
+    {
+      "name": "Public Speaking"
+    }
+  ],
+  "languages": [
+    {
+      "language": "Danish",
+      "fluency": "Native or Bilingual"
+    },
+    {
+      "language": "Spanish",
+      "fluency": "Limited Working"
+    },
+    {
+      "language": "English",
+      "fluency": "Native or Bilingual"
+    }
+  ]
+}

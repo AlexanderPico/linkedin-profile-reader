@@ -1,0 +1,201 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Kyrsten Lew",
+    "email": "klew624@gmail.com",
+    "phone": "209-401-7221",
+    "location": {
+      "city": "Los Angeles County",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "kyrsten-lew",
+        "url": "https://www.linkedin.com/in/kyrsten-lew"
+      }
+    ],
+    "label": "Project Manager at Gladstone Institutes",
+    "summary": "Program management professional with a broad experience encompassing planning and executing, establishing process and structure, analyzing reports, and road-mapping with the ability to unify a team by fostering positive working relationships that drive results."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Project Manager",
+      "location": "United States",
+      "startDate": "2021-04"
+    },
+    {
+      "name": "LifeForce Technologies",
+      "position": "Project Manager",
+      "location": "United States",
+      "startDate": "2020-04",
+      "endDate": "2020-09",
+      "highlights": [
+        "Scoped, planned, tracked and executed with engineers, product developers, medical professionals, to develop affordable PPE, PAPR (Personal Air- purifying Respirator) for health care frontline workers.",
+        "Established, organized and facilitated processes for cross-functional team meetings.",
+        "Created master gantt and managed the development schedule throughout the product development phase with effective follow-up on task assignments.",
+        "Identified and sourced various materials for device prototype."
+      ]
+    },
+    {
+      "name": "Binc",
+      "position": "Business Operations Program Manager",
+      "location": "Greater Los Angeles Area",
+      "startDate": "2019-08",
+      "endDate": "2020-04",
+      "url": "https://www.bincsearch.com/portfolio/",
+      "highlights": [
+        "Binc is an exclusive and hybrid recruiting organization. We bring together the best of contingency and corporate recruiting by deploying smart and driven recruiting teams into high urgency hiring situations. We execute aggressive, high quality, data-driven end to end recruiting programs customized to our client's needs."
+      ]
+    },
+    {
+      "name": "Binc",
+      "position": "Business Development Operations Specialist",
+      "location": "Greater Los Angeles Area",
+      "startDate": "2018-04",
+      "endDate": "2019-08",
+      "url": "https://www.bincsearch.com/portfolio/",
+      "highlights": [
+        "Binc is an exclusive and hybrid recruiting organization. We bring together the best of contingency and corporate recruiting by deploying smart and driven recruiting teams into high urgency hiring situations. We execute aggressive, high quality, data-driven end to end recruiting programs customized to our client's needs."
+      ]
+    },
+    {
+      "name": "Binc",
+      "position": "Business Development Operations Associate",
+      "location": "Greater Los Angeles Area",
+      "startDate": "2017-10",
+      "endDate": "2018-04",
+      "url": "https://www.bincsearch.com/portfolio/",
+      "highlights": [
+        "Binc is an exclusive and hybrid recruiting organization. We bring together the best of contingency and corporate recruiting by deploying smart and driven recruiting teams into high urgency hiring situations. We execute aggressive, high quality, data-driven end to end recruiting programs customized to our client's needs."
+      ]
+    },
+    {
+      "name": "StackPath / MaxCDN",
+      "position": "Marketing Specialist",
+      "location": "Greater Los Angeles Area",
+      "startDate": "2014-08",
+      "endDate": "2017-01",
+      "highlights": [
+        "Responsible for coordination of all new and existing, internal/external events, including strategic planning and optimization of sales training, executive retreats, corporate meetings, trade shows and conferences, driving an annual budget saving of 30% for 2015, and 33% in 2016.",
+        "Responsible for the management and optimization of paid advertising accounts, along with hiring, training and supervision of company freelancers.",
+        "Launched an inaugural webinar program designed to generate content, increase leads and improve overall customer experience."
+      ]
+    },
+    {
+      "name": "Freelance",
+      "position": "Freelance Event Producer",
+      "location": "Manteca, CA",
+      "startDate": "2013",
+      "endDate": "2014-08"
+    },
+    {
+      "name": "Union Bank/Santa Barbara Bank & Trust",
+      "position": "HR Coordinator / Employee Relations Specialist",
+      "startDate": "2013-04",
+      "endDate": "2013-06",
+      "highlights": [
+        "Responsible for the successful onboarding of new employees, this entailed initial preparation of candidate paperwork, database input, fingerprinting, and conducting orientations.",
+        "Served as liaison to the Executive Team during the acquisition phase of Santa",
+        "Barbara Bank & Trust by Union Bank. Coordinated layoff and informational exit interviews, and assisted with subsequent personal document processing."
+      ]
+    },
+    {
+      "name": "Pacific Capital Bancorp",
+      "position": "Sr. Administrative Assistant to the Chief Human Resources Officer and the Community Banking Exec.",
+      "startDate": "2011-05",
+      "endDate": "2013-06",
+      "highlights": [
+        "Supported in Executive Management in the successful transition to Union Bank, along with assistance in implementing new policies, procedures and guidelines.",
+        "Initiated a new procedure to optimize executive hiring process, resulting in promotion within 3 months."
+      ]
+    },
+    {
+      "name": "id Instructional Development: Video Services UCSB",
+      "position": "Camera Operator, Office Assistant",
+      "startDate": "2009-09",
+      "endDate": "2010-08",
+      "highlights": [
+        "Camera Operator for UCTV shoots as well as for UCSB faculty.",
+        "Office duties include interacting with faculty on a daily basis in regards to our 4,000 volume Film Collection for instructional usage, entering information on new films in our online database, tracking films that have been checked out or are on reserve, entering production requests into our production calendar, contacting our 25 student operators for productions jobs, confirming production jobs, answering services inquires, and standing in for a sick operator if needed. We use a variety of databases, 4D & File Maker Pro and use M.S. word and excel."
+      ]
+    },
+    {
+      "name": "Opportunity Green",
+      "position": "Volunteer Interface Navigator",
+      "startDate": "2009",
+      "endDate": "2009"
+    },
+    {
+      "name": "UCSB",
+      "position": "CAM CON Event Coordinator",
+      "startDate": "2008-08",
+      "endDate": "2008-10",
+      "highlights": [
+        "The 1st annual CAMERA CONVENTION (CAM CON), a three day event focused on introducing students to the various techniques of cinematography at UCSB.",
+        "Recruited, Scheduled, Managed, and Generated job assignments for staff as well as assisting with logistics for the event."
+      ]
+    },
+    {
+      "name": "West Beach Inn",
+      "position": "Front Desk Agent",
+      "startDate": "2008-06",
+      "endDate": "2008-10",
+      "highlights": [
+        "Communicate with staff and guests, book reservations, check guests in and out, prepare daily preparations for guests, Answer multi-line phone, concierge duties, handle guest requests, handle cash and credit machine, mediate problems that arise for guests and staff, clean (office, kitchen, lobby and pool area), order daily supplies, and prepare continental breakfast buffet."
+      ]
+    },
+    {
+      "name": "Anthropological Lab Research at the University of California, Santa Barbara",
+      "position": "Intern",
+      "startDate": "2006-09",
+      "endDate": "2006-12",
+      "highlights": [
+        "Sort, label, and process field samples from the Chumash Indian archaeological site for shells, arrowheads, bones, artifacts, etc.",
+        "To understand the patterns of the Chumash."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "UC Santa Barbara",
+      "studyType": "BA",
+      "area": "Film and Media Studies, Minor, in Asian American Studies",
+      "startDate": "2006",
+      "endDate": "2010"
+    },
+    {
+      "institution": "East Union High School",
+      "studyType": "HS Diploma",
+      "startDate": "2003",
+      "endDate": "2006"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Microsoft Excel"
+    },
+    {
+      "name": "PowerPoint"
+    },
+    {
+      "name": "Research"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "How to Stop Wasting Time in Meetings"
+    },
+    {
+      "name": "How to Motivate Yourself to Do What’s Most Important"
+    },
+    {
+      "name": "Canva: Web and Digital Design Projects"
+    },
+    {
+      "name": "Learning Canva"
+    }
+  ]
+}
