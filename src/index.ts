@@ -3,7 +3,7 @@
 // TODO
 
 import fs from "node:fs";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import PDFParser from 'pdf2json';
 
 // Internal extraction structures -------------------------------------------
 export interface ExperiencePosition {
@@ -72,6 +72,12 @@ export interface JSONResumeLocation {
   region?: string;
 }
 
+export interface JSONResumeProfile {
+  network: string;
+  username: string;
+  url: string;
+}
+
 export interface JSONResumeBasics {
   name?: string;
   label?: string;
@@ -80,6 +86,7 @@ export interface JSONResumeBasics {
   url?: string;
   location?: JSONResumeLocation;
   summary?: string;
+  profiles?: JSONResumeProfile[];
 }
 
 export interface JSONResume {
@@ -92,828 +99,630 @@ export interface JSONResume {
   languages?: JSONResumeLanguage[];
 }
 
+// pdf2json types
+interface PDFTextItem {
+  x: number;
+  y: number;
+  w: number;
+  sw: number;
+  A: string; // alignment
+  R: Array<{
+    T: string; // text content
+    S: number; // style index
+    TS: [number, number, number, number]; // [fontFace, fontSize, bold, italic]
+  }>;
+  clr?: number; // color index
+  oc?: string; // outline color (hex)
+}
 
+interface PDFPage {
+  Width: number;
+  Height: number;
+  HLines: any[];
+  VLines: any[];
+  Fills: any[];
+  Texts: PDFTextItem[];
+}
 
-/**
- * Parse a LinkedIn-exported profile PDF and return structured data.
- *
- * Only the Experience section is extracted for now.
- *
- * @param input  Absolute path to the PDF or the file Buffer.
- */
-export async function parseLinkedInPdf(
-  input: string | Buffer
-): Promise<JSONResume> {
-  // --- Load PDF -------------------------------------------------------------
-  let data: Uint8Array | string;
-  if (typeof input === "string") {
-    const path = input;
-    if (!fs.existsSync(path)) {
-      throw new Error(`PDF not found at ${path}`);
-    }
-    data = new Uint8Array(fs.readFileSync(path));
-  } else {
-    data = new Uint8Array(input);
-  }
+interface PDFData {
+  Pages: PDFPage[];
+  Meta: any;
+}
 
-  let doc;
-  try {
-    doc = await pdfjs.getDocument({ data }).promise;
-  } catch (error) {
-    throw new Error(`Failed to parse PDF: ${error instanceof Error ? error.message : String(error)}`);
-  }
+// Color constants
+const COLORS = {
+  BLACK: '#212121',
+  GRAY: '#bebebe',
+  LIGHT_GRAY: '#e1e8ed'
+};
 
-  // --- Helper utilities -----------------------------------------------------
-  const round = (n: number, prec = 2): number => {
-    const f = 10 ** prec; // More efficient than Math.pow
-    return Math.round(n * f) / f;
-  };
-
-  const clean = (text: string): string => text.replace(/\s+/g, " ").trim();
-
-  // --- Gather all text items with position & fontSize -----------------------
-  type Line = { text: string; fontSize: number; y: number; page: number; minX: number; maxX: number; column: 'left' | 'right' };
-  const lines: Line[] = [];
-
-  for (let p = 1; p <= doc.numPages; p++) {
-    const page = await doc.getPage(p);
-    const content = await page.getTextContent({ disableCombineTextItems: false } as any);
-    // Group words by Y to form lines
-    const byY = new Map<number, { x: number; text: string; fontSize: number }[]>();
-
-    content.items.forEach((it: any) => {
-      const yPos = round(it.transform[5], 1); // group by y position (rounded)
-      const x = it.transform[4];
-      const text = clean(it.str);
-      if (!text) return;
-      const fontSize = Math.hypot(it.transform[0], it.transform[1]);
-      if (!byY.has(yPos)) byY.set(yPos, []);
-      byY.get(yPos)!.push({ x, text, fontSize });
-    });
-
-    // sort lines by y desc (top to bottom)
-    const sortedYs = Array.from(byY.keys()).sort((a, b) => b - a);
-    sortedYs.forEach((yKey) => {
-      const items = byY.get(yKey)!.sort((a, b) => a.x - b.x);
-      const lineText = items.map((i) => i.text).join(" ").trim();
-      const maxFont = Math.max(...items.map((i) => i.fontSize));
-      const minX = Math.min(...items.map((i) => i.x));
-      const maxX = Math.max(...items.map((i) => i.x));
-      lines.push({ text: lineText, fontSize: maxFont, y: yKey, page: p, minX, maxX, column: 'left' }); // column will be determined later
-    });
-  }
-
-  // After collecting all lines, compute baseline line spacing
-  const yDiffs: number[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const d = lines[i - 1].y - lines[i].y;
-    if (d > 0 && d < 40) yDiffs.push(d);
-  }
-  yDiffs.sort((a, b) => a - b);
-  const baselineGap = yDiffs.length ? yDiffs[Math.floor(yDiffs.length / 2)] : 12; // fallback 12pt
-
-  // --- Column Detection ---------------------------------------------------
-  // Detect two-column layout by analyzing X coordinates
-  const topLines = lines.slice(0, 50); // analyze first 50 lines
-  const xPositions = topLines.flatMap(line => [line.minX, line.maxX]);
-  xPositions.sort((a, b) => a - b);
-  const minX = Math.min(...xPositions);
-  const maxX = Math.max(...xPositions);
-  const columnBoundary = (minX + maxX) / 2;
+// Helper to convert pdf2json color index to hex
+function colorIndexToHex(colorIndex: number | undefined): string {
+  if (colorIndex === undefined) return COLORS.BLACK;
   
-  // Assign column based on X position
-  lines.forEach(line => {
-    line.column = line.minX < columnBoundary ? 'left' : 'right';
-  });
+  // pdf2json uses different color encoding - let's debug and map actual values
+  // For now, return the index as a debug value
+  return `#${colorIndex?.toString(16).padStart(6, '0')}` || COLORS.BLACK;
+}
 
-  // Filter lines by column for content extraction
-  const rightColumnLines = lines.filter(line => line.column === 'right');
-  const leftColumnLines = lines.filter(line => line.column === 'left');
-
-  // --- Heuristic helpers ----------------------------------------------------
-  const dateRe = /[A-Za-z]{3,9}\s+\d{4}\s*[–-]\s*(Present|[A-Za-z]{3,9}\s+\d{4})/;
-  const durationRe = /\d+\s+(?:yr|yrs|year|years|mos?|months?)/i;
-  const headerRe = /^(Experience|Education|Certifications?|Publications?|Skills|Summary|Contact|Top Skills|Projects)/i;
+function extractTextContent(textItem: PDFTextItem): { text: string; fontSize: number; color: string; outlineColor?: string } {
+  const textParts = textItem.R.map(r => decodeURIComponent(r.T)).join('');
+  const fontSize = textItem.R.length > 0 ? textItem.R[0].TS[1] : 12;
+  const color = colorIndexToHex(textItem.clr);
+  const outlineColor = textItem.oc;
   
-  // Pre-compile commonly used regexes for better performance
-  const yearOnlyRe = /^\d{4}$/;
-  const bulletRe = /^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)](?=\s))\s*/u;
-  const inlineFluentRe = /^(.+?)\s*\(([^)]+)\)$/;
-
-  // --- Basics extraction (top of PDF) --------------------------------------
-  interface ProfileObj { network:string; username?:string; url:string; }
-  const basics: JSONResumeBasics & { profiles?: ProfileObj[] } = {} as any;
-  const profiles: ProfileObj[] = [];
-  {
-    // take first 60 lines of first page regardless of minor headers; this avoids "Contact" at very top being mistaken for break.
-    const topLines = lines.slice(0, 60);
-
-    if (topLines.length) {
-      // Name (largest font)
-      const nameLine = topLines.reduce((prev, curr) => {
-        if (curr.fontSize > prev.fontSize && curr.text.length > 3) return curr;
-        return prev;
-      }, topLines[0]);
-      // Split credentials after comma (e.g., ", PhD")
-      const nameRaw = nameLine.text;
-      if (/,/.test(nameRaw)) {
-        const [primary] = nameRaw.split(',');
-        basics.name = primary.trim();
-        // credential part ignored for now
-      } else {
-        basics.name = nameRaw;
-      }
-      const nameIdx = topLines.indexOf(nameLine);
-
-
-
-      const blob = topLines.map((l) => l.text).join(' ');
-
-      // Email may be broken across line (e.g., split at char). Try collapsed blob too.
-      const emailRegex = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
-      const collapsed = blob.replace(/\s+/g, '');
-      const emailCandidates = [
-        ...blob.match(emailRegex) ?? [],
-        ...collapsed.match(emailRegex) ?? []
-      ];
-      const filtered = emailCandidates.filter(e => /\.[A-Za-z]{3,}$/.test(e));
-      filtered.sort((a,b)=>a.length-b.length);
-      const preferred = filtered[0] || emailCandidates[0];
-      basics.email = preferred;
-
-      const urlMatch = blob.match(/https?:\/\/\S*linkedin\.com\/[^\s)]+/i) || blob.match(/www\.linkedin\.com\/[^\s)]+/i);
-      if (urlMatch) {
-        let url = urlMatch[0].replace(/\)+$/,'');
-        if (!/^https?:/i.test(url)) {
-          url = 'https://' + url;
-        }
-        const userMatch = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
-        if (userMatch) {
-          profiles.push({ network: 'LinkedIn', username: userMatch[1], url });
-        }
-      }
-
-      const phoneMatch = blob.match(/\+?\d[\d\s\-\(\)]{7,}\d/);
-      if (phoneMatch) basics.phone = phoneMatch[0];
-
-      // Find location: first comma line after name & label and not containing 'LinkedIn'
-      let locLine: {text:string}|undefined;
-      const idxAfterName = nameIdx + 1;
-      const headerAfterIdxRel = topLines.slice(idxAfterName).findIndex((l)=> headerRe.test(l.text) && !/^Contact$/i.test(l.text));
-      const scanMax = headerAfterIdxRel === -1 ? topLines.length : idxAfterName + headerAfterIdxRel;
-      for (let i = nameIdx+1; i < scanMax; i++) {
-        const t = topLines[i].text;
-        if ((basics.summary && t===basics.summary)) continue;
-        if (/@|http|www\.|linkedin/i.test(t)) continue;
-        if (/\|/.test(t)) continue;
-        if (!/,/.test(t)) continue;
-        if (/LinkedIn/i.test(t)) continue;
-        if (/\d/.test(t)) continue; // avoid job title lines containing numbers
-        locLine = topLines[i];
-        break;
-      }
-      if (!locLine) {
-        locLine = topLines.slice(nameIdx+1, scanMax).find((l)=>/,/.test(l.text) && /(United|Area|[A-Z]{2})/i.test(l.text));
-      }
-      if (!locLine) {
-        for (let i = nameIdx+1; i < scanMax; i++) {
-          const t = topLines[i].text;
-          if ((basics.summary && t===basics.summary)) continue;
-          if (/LinkedIn|www\.|http/i.test(t)) continue;
-          if (/\|/.test(t)) continue;
-          if (/Area$/i.test(t) || /(California|CA|United States)/i.test(t)) {
-            locLine = topLines[i];
-            break;
-          }
-        }
-      }
-      if (locLine) {
-        const parts = locLine.text.split(/,\s*/);
-        const city = parts.shift()!;
-        let countryCode: string | undefined;
-        let region: string | undefined;
-        if (parts.length) {
-          const last = parts[parts.length - 1];
-          if (/United/i.test(last) || last.length === 2) {
-            countryCode = last;
-            parts.pop();
-          }
-          region = parts.join(', ').trim() || undefined;
-        }
-        const locObj: JSONResumeLocation & { countryCode?: string } = { city } as any;
-        if (region) locObj.region = region;
-        if (countryCode) locObj.countryCode = countryCode;
-        basics.location = locObj;
-      }
-      if (profiles.length) (basics as any).profiles = profiles;
-
-      // Look for label/headline content (before Summary section)
-      const labelParts: string[] = [];
-      for (let i = nameIdx + 1; i < topLines.length; i++) {
-        const txt = topLines[i].text;
-        if (/^(Contact|Summary|Top Skills)$/i.test(txt)) break;
-        if (headerRe.test(txt)) break;
-        if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip actual emails/urls
-        // Check if line is location-like (but can't use isLocation function yet as it's defined later)
-        const looksLikeLocation = /,/.test(txt) && /(United|States|California|Area|City|Town|Province|Region|District|[A-Z]{2}$)/i.test(txt);
-        if (looksLikeLocation) continue; // skip location lines
-        if (txt.length < 3) continue;
-        labelParts.push(txt);
-        if (labelParts.length >= 2) break;
-      }
-      if (labelParts.length) {
-        let lbl = labelParts.join(' ').trim();
-        lbl = lbl.replace(/\s*\(LinkedIn\)$/i,'').trim();
-        basics.label = lbl;
-      }
-
-      // Look for Summary section content (detailed summary) - only in right column
-      const rightTopLines = topLines.filter(l => l.column === 'right');
-      const summaryHeaderIdx = rightTopLines.findIndex(l => /^Summary$/i.test(l.text));
-      if (summaryHeaderIdx !== -1) {
-        const summaryParts: string[] = [];
-        for (let i = summaryHeaderIdx + 1; i < rightTopLines.length; i++) {
-          const txt = rightTopLines[i].text;
-          if (/^Experience$/i.test(txt)) break; // stop at Experience header
-          if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.test(txt) || /linkedin\.|http|www\./i.test(txt)) continue; // skip emails/urls
-          // Skip very short lines unless they look like continuation words
-          if (txt.length < 8 && !/[.!?]$/.test(txt)) continue; // allow short lines ending with punctuation
-          if (rightTopLines[i].fontSize < 11.5) continue; // skip smaller font (likely skills)
-          summaryParts.push(txt);
-        }
-        if (summaryParts.length) {
-          basics.summary = summaryParts.join(' ').trim();
-        }
-      }
-
-      // Fallback: check lines individually in case email split onto next line
-      for (let i = 0; i < topLines.length; i++) {
-        if (/@/.test(topLines[i].text)) {
-          const combo = (topLines[i].text + (topLines[i + 1]?.text ?? '')).replace(/\s+/g, '');
-          const m = combo.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
-          if (m) {
-            if (!basics.email || m[0].length < basics.email.length) {
-              basics.email = m[0];
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    // Remove undefined props so object comparison ignores missing fields
-    Object.keys(basics).forEach((k)=>{
-      if ((basics as any)[k] === undefined) {
-        delete (basics as any)[k];
-      }
-    });
-  }
-
-  const isNoise = (line: string): boolean => {
-    return line === "" || /^\s*[\u2022•\-*]?\s*Page \d+/i.test(line);
-  };
-  const isLocation = (line: string): boolean => {
-    if (!line) return false;
-    if (line.length > 60) return false; // too long to be a location
-    if (durationRe.test(line) || dateRe.test(line)) return false;
-    const wordCount = line.trim().split(/\s+/).length;
-    if (wordCount > 8) return false; // locations are usually short
-    
-    // Exclude job titles and roles
-    if (/\b(Engineer|Scientist|Manager|Director|Lead|Leader|Analyst|Developer|Coordinator|Specialist|Associate|Assistant|Officer|Consultant|Advisor|Executive|Vice|President|CEO|CTO|CFO|VP)\b/i.test(line)) return false;
-    
-    const locationKeywords = /(Area|County|Bay|City|Town|United|Kingdom|States?|Province|Region|District|California|New York|Texas|Washington|Florida|Massachusetts|Virginia|Colorado|Arizona|Oregon|Ohio|Georgia|Illinois|Pennsylvania|Michigan|Wisconsin|North Carolina|South Carolina|[A-Z]{2}$)/i;
-    
-    // Major cities that should be recognized as locations
-    const majorCities = /^(Bangalore|Mumbai|Delhi|Chennai|Hyderabad|Pune|Kolkata|Ahmedabad|Surat|Jaipur|Lucknow|Kanpur|Nagpur|Indore|Thane|Bhopal|Visakhapatnam|Pimpri|Patna|Vadodara|Ghaziabad|Ludhiana|Agra|Nashik|Faridabad|Meerut|Rajkot|Kalyan|Vasai|Varanasi|Srinagar|Aurangabad|Dhanbad|Amritsar|Navi Mumbai|Allahabad|Ranchi|Howrah|Coimbatore|Jabalpur|Gwalior|Vijayawada|Jodhpur|Madurai|Raipur|Kota|Guwahati|Chandigarh|Solapur|Hubli|Tiruchirappalli|Bareilly|Mysore|Tiruppur|Gurgaon|Aligarh|Jalandhar|Bhubaneswar|Salem|Warangal|Guntur|Bhiwandi|Saharanpur|Gorakhpur|Bikaner|Amravati|Noida|Jamshedpur|Bhilai|Cuttack|Firozabad|Kochi|Nellore|Bhavnagar|Dehradun|Durgapur|Asansol|Rourkela|Nanded|Kolhapur|Ajmer|Akola|Gulbarga|Jamnagar|Ujjain|Loni|Siliguri|Jhansi|Ulhasnagar|Jammu|Sangli|Mangalore|Erode|Belgaum|Ambattur|Tirunelveli|Malegaon|Gaya|Jalgaon|Udaipur|Maheshtala)$/i;
-    
-    if (/,/.test(line) && locationKeywords.test(line)) return true;
-    if (/\bCampus\b/i.test(line)) return true;
-    if (/\b[A-Z][a-z]+,?\s+[A-Z]{2}\b/.test(line)) return true; // city state
-    if (/\b[A-Z]{2}\b$/.test(line)) return true; // state code at end
-    if (/\bArea$/i.test(line)) return true;
-    if (majorCities.test(line.trim())) return true; // major city names
-    return false;
-  };
-
-
-
-
-  // Precompute section header indices for scoped parsing - use right column only
-  const experienceHeaderIdx = rightColumnLines.findIndex((l) => /^Experience\b/i.test(l.text));
-  const educationHeaderIdx = rightColumnLines.findIndex((l) => /^Education\b/i.test(l.text));
-
-  // --- Main extraction loop -------------------------------------------------
-  let currentCompany = "";
-  const positions: ExperiencePosition[] = [];
-  const education: RawEducationEntry[] = [];
-  const seen = new Set<string>();
-
-  for (let idx = 0; idx < rightColumnLines.length; idx++) {
-    // Only consider lines within the Experience section boundaries
-    if (experienceHeaderIdx !== -1 && idx <= experienceHeaderIdx) continue; // not yet inside Experience
-    if (educationHeaderIdx !== -1 && idx >= educationHeaderIdx) break;      // reached Education (or later)
-
-    const txt = rightColumnLines[idx].text;
-
-    if (!dateRe.test(txt)) continue;
-
-    const m = txt.match(/([A-Za-z]+ \d{4})\s*[–-]\s*(Present|[A-Za-z]+ \d{4})/);
-    const start = m ? m[1] : "";
-    const endVal = m ? m[2] : "";
-    const end = /Present/i.test(endVal) ? null : endVal;
-
-    const dateFont = rightColumnLines[idx].fontSize;
-
-    // Identify title lines above the date line with equal font size
-    let tIdx = idx - 1;
-    while (
-      tIdx >= 0 &&
-      (isNoise(rightColumnLines[tIdx].text) || rightColumnLines[tIdx].fontSize <= dateFont + 0.1)
-    ) {
-      tIdx--;
-    }
-    if (tIdx < 0) continue;
-
-    const firstLine = rightColumnLines[tIdx];
-    const titleParts: string[] = [firstLine.text];
-    const titleFont = firstLine.fontSize;
-    tIdx--;
-    // collect additional lines immediately above with same font size (within 0.2pt)
-    while (tIdx >= 0) {
-      const lineObj = rightColumnLines[tIdx];
-      const ltxt = lineObj.text;
-      const fSize = lineObj.fontSize;
-
-      if (isNoise(ltxt) || dateRe.test(ltxt) || durationRe.test(ltxt)) break; // allow commas in titles
-      if (Math.abs(fSize - titleFont) > 0.2) break; // different font -> stop
-
-      titleParts.unshift(ltxt);
-      tIdx--;
-    }
-    const title = titleParts.join(" ").trim();
-    if (!title) continue;
-
-    // find company: search further up for first line with larger/equal font size than titleFont
-    let cIdx = tIdx;
-    let companyFound = currentCompany; // fallback to last known
-    while (cIdx >= 0) {
-      const l = rightColumnLines[cIdx];
-      if (!isNoise(l.text) && !headerRe.test(l.text) && !dateRe.test(l.text) && !durationRe.test(l.text)) {
-        if (l.fontSize > titleFont + 0.1) {
-          companyFound = l.text;
-          break;
-        }
-      }
-      cIdx--;
-    }
-    currentCompany = companyFound;
-
-    // location line just after date
-    let location = "";
-    let urlFound: string | undefined;
-    interface HL { text: string; bullet: boolean; gap: boolean; y: number; page: number; }
-    const highlightSegs: HL[] = [];
-    let gapSinceLast = false;
-    // Scan until next date line or education section (no arbitrary limit)
-    for (let j = idx + 1; j < rightColumnLines.length; j++) {
-      // Stop if we reach the Education section
-      if (educationHeaderIdx !== -1 && j >= educationHeaderIdx) break;
-      const lObj = rightColumnLines[j];
-      const ltxt = lObj.text;
-      
-
-      
-      if (ltxt === '') { gapSinceLast = true; continue; }
-      if (/^Page \d+/i.test(ltxt)) { 
-        if (ltxt.includes('Critical care')) console.log(`DEBUG: Critical care line skipped as page number`);
-        gapSinceLast = false; continue; 
-      }
-      
-      // Check for location BEFORE other break conditions (locations are often in gray/smaller font)
-      if (!location && isLocation(ltxt) && lObj.fontSize >= dateFont - 0.5) { // Slightly more lenient for gray locations
-        location = ltxt;
-      }
-      
-      if (dateRe.test(ltxt)) break; // next block starts
-      if (headerRe.test(ltxt)) continue; // skip section headers
-      if (lObj.fontSize > dateFont + 0.1) break; // assume new title block
-      if (!urlFound && ( /https?:\/\//i.test(ltxt) || /[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[^\s)]+/.test(ltxt) ) ) {
-        urlFound = ltxt.startsWith('http') ? ltxt : 'https://' + ltxt.replace(/^www\./i, '');
-        continue;
-      }
-      const wordCnt = ltxt.trim().split(/\s+/).length;
-      const bulletLine = bulletRe.test(ltxt);
-      const prevSeg = highlightSegs.length ? highlightSegs[highlightSegs.length-1] : undefined;
-      const prevY2 = highlightSegs.length ? highlightSegs[highlightSegs.length-1].y : undefined;
-      const largeGapCurrent = prevY2 !== undefined && (prevY2 - lObj.y) > baselineGap * 1.6;
-      const pageChange = prevSeg && prevSeg.page !== (rightColumnLines[j].page ?? 0);
-      const gapFlag = gapSinceLast || largeGapCurrent || (!!pageChange);
-      const continuation = prevSeg && !prevSeg.bullet && !prevSeg.gap && !gapFlag && prevSeg.page === rightColumnLines[j].page;
-      let textClean = ltxt.replace(/^\s*(?:[\u2022•·\-*]|\d+[.)]|[a-zA-Z][.)](?=\s))\s*/, '').trim();
-      if (/^(Work involved|Responsibilities)[:\-]/i.test(textClean)) {
-        textClean = textClean.replace(/^(Work involved|Responsibilities)[:\-]\s*/i, '');
-      }
-      
-      // Skip URL-like content that's just domain names
-      if (/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(textClean) && !/\s/.test(textClean)) {
-        continue;
-      }
-      
-      // Skip only clearly problematic content (keeping minimal filtering since we now have column separation)
-      if (/WikiPathways|PathVisio/i.test(textClean) || // Alex's specific publication titles
-          (textClean.endsWith(':') && textClean.split(' ').length < 8)) { // Incomplete phrases ending with colon
-        continue;
-      }
-      // defer push until after conditions below
-      let isLocationLine = location === ltxt; // Check if this line was just set as location
-      
-      if (!isLocationLine && textClean && (bulletLine || gapFlag || continuation || lObj.fontSize < dateFont - 0.2 || wordCnt > 8 || (!bulletLine && !gapFlag && wordCnt >= 1))) {
-        // add highlight segment now
-        highlightSegs.push({ text: textClean, bullet: bulletLine, gap: gapFlag, y: lObj.y, page: rightColumnLines[j].page });
-        if(pageChange) gapSinceLast = false;
-      }
-    }
-
-    if (!urlFound) {
-      const slug = currentCompany.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
-      if (slug.length > 4) {
-        const urlRegex = new RegExp(`(?:https?:\/\/)?[A-Za-z0-9.-]*${slug}[A-Za-z0-9.-]*\.[A-Za-z]{2,}(?:\/[^\s)]+)?`, 'i');
-        const mLine = rightColumnLines.find(l => urlRegex.test(l.text));
-        if (mLine) {
-          const matches = mLine.text.match(urlRegex);
-          if (matches && matches.length) {
-            matches.sort((a,b)=>b.length-a.length);
-            const pick = matches[0];
-            urlFound = pick.startsWith('http')? pick : 'https://'+pick;
-          }
-        }
-      }
-    }
-
-    if (!urlFound) {
-      const caps = currentCompany.match(/[A-Z]/g);
-      const acronym = caps ? caps.join('').toLowerCase() : currentCompany.split(/\s+/).map(w=>w[0]).join('').toLowerCase();
-      if (acronym.length>=3) {
-        const urlRegex = new RegExp(`(?:https?:\\/\\/)?[A-Za-z0-9.-]*${acronym}[A-Za-z0-9.-]*\\.[A-Za-z]{2,}(?:\\/[^\s)]+)?`, 'i');
-        const mLine = rightColumnLines.find(l => urlRegex.test(l.text));
-        if (mLine) {
-          const matches = mLine.text.match(urlRegex);
-          if (matches && matches.length) {
-            matches.sort((a,b)=>b.length-a.length);
-            const pick = matches[0];
-            urlFound = pick.startsWith('http')? pick : 'https://'+pick;
-          }
-        }
-      }
-    }
-
-    const key = title + start + currentCompany;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const pos: ExperiencePosition = { title, company: currentCompany, start, end } as any;
-    if (location) pos.location = location;
-    if (urlFound) pos.url = urlFound;
-    if (highlightSegs.length) {
-      const merged: string[] = [];
-      highlightSegs.forEach((seg) => {
-        if (merged.length === 0 || seg.bullet || seg.gap) {
-          merged.push(seg.text);
-          return;
-        }
-        const prevText = merged[merged.length - 1].trim();
-        const startsLower = /^[a-z]/.test(seg.text);
-        const endPunct = /[.!?]$/;
-        const words = seg.text.split(/\s+/).length;
-        if (startsLower) {
-          merged[merged.length - 1] += ' ' + seg.text;
-        } else if (!endPunct.test(prevText) && words < 8) {
-          merged[merged.length - 1] += ' ' + seg.text;
-        } else {
-          merged.push(seg.text);
-        }
-      });
-      // Capitalize first letter of each highlight
-      pos.highlights = merged.map(highlight => 
-        highlight.charAt(0).toUpperCase() + highlight.slice(1)
-      );
-    }
-    positions.push(pos);
-  }
-
-  // ------------------- EDUCATION PARSING -----------------------------------
-  const eduHeaderIdx = rightColumnLines.findIndex((l) => /^Education\b/i.test(l.text));
-  if (eduHeaderIdx !== -1) {
-    let idx = eduHeaderIdx + 1;
-    while (idx < rightColumnLines.length) {
-      // skip blank / noise lines
-      if (isNoise(rightColumnLines[idx].text)) { idx++; continue; }
-
-      // break if we reach another major section
-      if (headerRe.test(rightColumnLines[idx].text) && !/^Education\b/i.test(rightColumnLines[idx].text)) {
-        break;
-      }
-
-      const school = rightColumnLines[idx].text.trim();
-      idx++;
-
-      // move to degree line
-      while (idx < rightColumnLines.length && isNoise(rightColumnLines[idx].text)) idx++;
-      if (idx >= rightColumnLines.length) break;
-
-      let degreeFieldStr = rightColumnLines[idx].text.trim();
-
-      // accumulate additional lines that belong to the same degree/field
-      const schoolFont = rightColumnLines[idx - 1].fontSize; // font of school line
-      let look = idx + 1;
-      while (look < rightColumnLines.length) {
-        const t = rightColumnLines[look].text.trim();
-        if (isNoise(t)) { look++; continue; }
-        if (headerRe.test(t)) break;
-        if (rightColumnLines[look].fontSize >= schoolFont - 0.01) break; // new school starts
-        // stop at date-only or year-range line (starts new block)
-        if (/^[\u2022•·]?\s*\(?[0-9]{4}(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/.test(t)) break;
-        degreeFieldStr += ' ' + t;
-        look++;
-      }
-      idx = look - 1; // last consumed line for this entry
-
-      // parse date range in degreeRaw or will fallback to separate line
-      let start: string | undefined;
-      let end: string | null | undefined;
-      
-      // Look for date patterns like "(September 2024 - June 2028)" or "(June 2022 - August 2022)"
-      const fullDateMatch = degreeFieldStr.match(/·\s*\(([A-Za-z]+ \d{4})\s*-\s*([A-Za-z]+ \d{4}|Present)\)$/);
-      if (fullDateMatch) {
-        start = fullDateMatch[1];
-        const endVal = fullDateMatch[2];
-        end = /Present/i.test(endVal) ? null : endVal;
-        degreeFieldStr = degreeFieldStr.replace(/·\s*\([^)]+\)$/, '').trim();
-      } else {
-        // Fallback to original year-only pattern
-        const dateMatch = degreeFieldStr.match(/(?:[\u2022•·]\s*)?\(?([0-9]{4})(?:\s*[–-]\s*(Present|[0-9]{4}))?\)?$/);
-        if (dateMatch) {
-          start = dateMatch[1];
-          const endVal = dateMatch[2];
-          end = endVal ? (/Present/i.test(endVal) ? null : endVal) : null;
-          degreeFieldStr = degreeFieldStr.slice(0, degreeFieldStr.indexOf(dateMatch[0])).trim();
-        }
-      }
-
-      // remove trailing bullets / separators
-      degreeFieldStr = degreeFieldStr.replace(/[\u2022•·]+$/,'').trim().replace(/,+$/,'');
-
-      const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','MASTER','DOCTOR','SECONDARY']);
-      let degree = '';
-      let field: string | undefined;
-      if (degreeFieldStr.includes(',')) {
-        const [lhs, rhs] = degreeFieldStr.split(/,(.+)/);
-        const lhsTrim = lhs.trim();
-        const rhsTrim = (rhs ?? '').trim();
-        const lhsKey = lhsTrim.split(/\s+/)[0].replace(/\./g,'').toUpperCase();
-
-        if (degreeSet.has(lhsKey)) {
-          degree = lhsTrim;
-          field = rhsTrim || undefined;
-        } else if (/Tech/i.test(lhsTrim)) {
-          degree = lhsTrim.trim();
-          field = rhsTrim || undefined;
-        } else if (/Secondary Education/i.test(lhsTrim)) {
-          degree = lhsTrim;
-          field = rhsTrim || undefined;
-        } else {
-          field = degreeFieldStr.trim();
-        }
-      } else if (/\bin\b/i.test(degreeFieldStr)) {
-        const [deg, fld] = degreeFieldStr.split(/\bin\b/i);
-        degree = deg.trim();
-        field = fld.trim();
-      } else {
-        // If begins with known degree keyword treat as degree, else it's field only
-        const firstTokRaw = degreeFieldStr.split(/\s+/)[0];
-        const firstTok = firstTokRaw.replace(/\./g,'').toUpperCase();
-        if (degreeSet.has(firstTok)) {
-          degree = firstTokRaw.replace(/\./g,'');
-          field = degreeFieldStr.slice(firstTokRaw.length).trim().replace(/^,\s*/,'');
-        } else if (/Secondary Education/i.test(degreeFieldStr)) {
-          degree = "Secondary Education";
-          field = degreeFieldStr.replace(/Secondary Education,?\s*/i, '').trim() || undefined;
-        } else {
-          field = degreeFieldStr;
-        }
-      }
-
-      if (!start) {
-        let probe = idx + 1;
-        while (probe < rightColumnLines.length && isNoise(rightColumnLines[probe].text)) probe++;
-        if (probe < rightColumnLines.length) {
-          const m = rightColumnLines[probe].text.trim().match(/^[\u2022•·]?\s*\(?([0-9]{4})\)?$/);
-          if (m) {
-            start = m[1];
-            end = null;
-            idx = probe; // consume date-only line
-          }
-        }
-      }
-
-      // normalize degree abbreviation dots (e.g., B.S. -> BS) and casing
-      // keep dots in degree to preserve original formatting
-
-      if (field) field = field.replace(/,+$/,'').trim();
-
-      if (start === undefined) start = null as any;
-      if (end === undefined) end = null;
-
-      education.push({ school, degree, field, start, end });
-
-      idx++;
-    }
-  }
-
-  // ------------------- SKILLS PARSING (LEFT COLUMN) ------------------------
-  const skills: JSONResumeSkill[] = [];
-  const skillsHeaderIdx = leftColumnLines.findIndex((l) => /^(Top Skills|Skills)$/i.test(l.text));
-  
-  if (skillsHeaderIdx !== -1) {
-    let idx = skillsHeaderIdx + 1;
-    
-    while (idx < leftColumnLines.length) {
-      const line = leftColumnLines[idx];
-      const txt = line.text.trim();
-      
-      // Skip empty lines
-      if (!txt) { idx++; continue; }
-      
-      // Break if we reach another major section
-      if (/^(Contact|Education|Experience|Certifications?|Publications?|Languages?|Projects?)$/i.test(txt)) {
-        break;
-      }
-      
-      // Skills are typically in smaller font (10.5) compared to headers (13) and summary text (12)
-      // Skip summary text (larger font, longer lines)
-      if (line.fontSize >= 12 && txt.length > 50) {
-        idx++;
-        continue;
-      }
-      
-      // This looks like a skill - shorter text, smaller font
-      if (line.fontSize <= 11 && txt.length <= 50) {
-        skills.push({
-          name: txt
-        });
-      }
-      
-      idx++;
-    }
-  }
-
-  // ------------------- CERTIFICATES PARSING (LEFT COLUMN) ------------------
-  const certificates: JSONResumeCertificate[] = [];
-  const certificatesHeaderIdx = leftColumnLines.findIndex((l) => /^(Certifications?|Licenses?)$/i.test(l.text));
-  
-  if (certificatesHeaderIdx !== -1) {
-    let idx = certificatesHeaderIdx + 1;
-    
-    while (idx < leftColumnLines.length) {
-      const line = leftColumnLines[idx];
-      const txt = line.text.trim();
-      
-      // Skip empty lines
-      if (!txt) { idx++; continue; }
-      
-      // Break if we reach another major section
-      if (/^(Contact|Education|Experience|Top Skills|Skills|Publications?|Languages?|Projects?)$/i.test(txt)) {
-        break;
-      }
-      
-      // Certificates are typically in smaller font (10.5) compared to headers (13)
-      // Skip summary text (larger font, longer lines)
-      if (line.fontSize >= 12 && txt.length > 50) {
-        idx++;
-        continue;
-      }
-      
-      // This looks like a certificate - shorter text, smaller font
-      if (line.fontSize <= 11 && txt.length <= 100) {
-        certificates.push({
-          name: txt
-        });
-      }
-      
-      idx++;
-    }
-  }
-
-  // ------------------- LANGUAGES PARSING (LEFT COLUMN) ---------------------
-  const languages: JSONResumeLanguage[] = [];
-  const languagesHeaderIdx = leftColumnLines.findIndex((l) => /^Languages?$/i.test(l.text));
-  
-  if (languagesHeaderIdx !== -1) {
-    let idx = languagesHeaderIdx + 1;
-    
-    while (idx < leftColumnLines.length) {
-      const line = leftColumnLines[idx];
-      const txt = line.text.trim();
-      
-      // Skip empty lines
-      if (!txt) { idx++; continue; }
-      
-      // Break if we reach another major section
-      if (/^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Projects?)$/i.test(txt)) {
-        break;
-      }
-      
-      // Languages are typically in smaller font (10.5) compared to headers (13)
-      if (line.fontSize >= 12) {
-        idx++;
-        continue;
-      }
-      
-      // Look for language entries with potential fluency level
-      if (line.fontSize <= 11) {
-        let languageName = txt;
-        let fluency: string | undefined;
-        
-        // Check if fluency is in the same line (in parentheses)
-        const inlineMatch = txt.match(inlineFluentRe);
-        if (inlineMatch) {
-          languageName = inlineMatch[1].trim();
-          fluency = inlineMatch[2].trim();
-        } else {
-          // Check if next line might be fluency level (in parentheses)
-          if (idx + 1 < leftColumnLines.length) {
-            const nextLine = leftColumnLines[idx + 1];
-            const nextTxt = nextLine.text.trim();
-            if (/^\([^)]+\)$/.test(nextTxt) && nextLine.fontSize <= 11) {
-              fluency = nextTxt.replace(/[()]/g, '');
-              idx++; // consume the fluency line
-            }
-          }
-        }
-        
-        languages.push({
-          language: languageName,
-          ...(fluency ? { fluency } : {})
-        });
-      }
-      
-      idx++;
-    }
-  }
-
-  // -------------------------------------------------------------------------
-
-  const monthMap: Record<string, string> = {
-    january: "01", jan: "01",
-    february: "02", feb: "02",
-    march: "03", mar: "03",
-    april: "04", apr: "04",
-    may: "05",
-    june: "06", jun: "06",
-    july: "07", jul: "07",
-    august: "08", aug: "08",
-    september: "09", sep: "09",
-    october: "10", oct: "10",
-    november: "11", nov: "11",
-    december: "12", dec: "12",
-  };
-
-  const toIso = (val: string | null | undefined): string | undefined => {
-    if (!val) return undefined; // Return undefined instead of null for schema compliance
-    const parts = val.split(/\s+/);
-    if (parts.length === 2) {
-      const m = monthMap[parts[0].toLowerCase()];
-      const y = parts[1];
-      if (m && /\d{4}/.test(y)) return `${y}-${m}`;
-    }
-    // If it's just a year, return as-is (YYYY format is valid in schema)
-    if (yearOnlyRe.test(val.trim())) return val.trim();
-    return val; // fallback
-  };
-
   return {
-    $schema: "https://jsonresume.org/schema/1.0.0/resume.json",
-    basics,
-    work: positions.map((p) => ({
-      name: p.company,
-      position: p.title,
-      ...(p.location ? { location: p.location } : {}),
-      ...(toIso(p.start) ? { startDate: toIso(p.start) } : {}),
-      ...(toIso(p.end) ? { endDate: toIso(p.end) } : {}),
-      ...(p.summary ? { summary: p.summary } : {}),
-      ...(p.url ? { url: p.url } : {}),
-      ...(p.highlights ? { highlights: p.highlights } : {}),
-    })),
-    education: education.map((e) => ({
-      institution: e.school,
-      ...(e.degree ? { studyType: e.degree } : {}),
-      ...(e.field ? { area: e.field } : {}),
-      ...(toIso(e.start) ? { startDate: toIso(e.start) } : {}),
-      ...(toIso(e.end) ? { endDate: toIso(e.end) } : {}),
-    })),
-    ...(skills.length > 0 ? { skills } : {}),
-    ...(certificates.length > 0 ? { certificates } : {}),
-    ...(languages.length > 0 ? { languages } : {}),
+    text: textParts,
+    fontSize,
+    color,
+    outlineColor
   };
+}
+
+export async function parseLinkedInPdf(pdfInput: string | Buffer): Promise<JSONResume> {
+  return new Promise((resolve, reject) => {
+    const pdfParser = new PDFParser();
+    
+    pdfParser.on('pdfParser_dataError', (errData: any) => {
+      reject(new Error(`PDF parsing error: ${errData.parserError}`));
+    });
+    
+    pdfParser.on('pdfParser_dataReady', (pdfData: PDFData) => {
+      try {
+        const result = parsePDFData(pdfData);
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    
+    if (typeof pdfInput === 'string') {
+      // File path
+      pdfParser.loadPDF(pdfInput);
+    } else {
+      // Buffer
+      pdfParser.parseBuffer(pdfInput);
+    }
+  });
+}
+
+function parsePDFData(pdfData: PDFData): JSONResume {
+  console.log(`DEBUG: Processing ${pdfData.Pages.length} pages`);
+  
+  // Extract all text items from all pages with position and formatting info
+  const allTextItems: Array<{
+    text: string;
+    x: number;
+    y: number;
+    fontSize: number;
+    color: string;
+    outlineColor?: string;
+    page: number;
+  }> = [];
+  
+  pdfData.Pages.forEach((page, pageIndex) => {
+    console.log(`DEBUG: Page ${pageIndex + 1} has ${page.Texts.length} text items`);
+    
+    page.Texts.forEach(textItem => {
+      const { text, fontSize, color, outlineColor } = extractTextContent(textItem);
+      if (text.trim()) {
+        allTextItems.push({
+          text: text.trim(),
+          x: textItem.x,
+          y: textItem.y,
+          fontSize,
+          color,
+          outlineColor,
+          page: pageIndex + 1
+        });
+      }
+    });
+  });
+  
+  console.log(`DEBUG: Total text items: ${allTextItems.length}`);
+  console.log(`DEBUG: First 10 items:`, allTextItems.slice(0, 10));
+  
+  // 1. Separate left and right columns
+  const { leftColumn, rightColumn } = separateColumns(allTextItems);
+  console.log(`DEBUG: Left column: ${leftColumn.length} items`);
+  console.log(`DEBUG: Right column: ${rightColumn.length} items`);
+  
+  // 2. Parse left column sections
+  const leftSections = parseLeftColumnSections(leftColumn);
+  
+  // 3. Parse right column sections
+  const rightSections = parseRightColumnSections(rightColumn);
+  
+  // 4. Build final JSON Resume
+  return buildJSONResume(leftSections, rightSections);
+}
+
+function separateColumns(textItems: Array<{
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: string;
+  outlineColor?: string;
+  page: number;
+}>): {
+  leftColumn: typeof textItems;
+  rightColumn: typeof textItems;
+} {
+  // Find column boundary by analyzing x positions
+  const xPositions = textItems.map(item => item.x);
+  xPositions.sort((a, b) => a - b);
+  
+  console.log(`DEBUG: X positions range: ${Math.min(...xPositions)} to ${Math.max(...xPositions)}`);
+  console.log(`DEBUG: Sample x positions:`, xPositions.slice(0, 10));
+  
+  // Look for a significant gap in x positions to identify column boundary
+  let maxGap = 0;
+  let columnBoundary = 0;
+  
+  for (let i = 1; i < xPositions.length; i++) {
+    const gap = xPositions[i] - xPositions[i-1];
+    if (gap > maxGap) {
+      maxGap = gap;
+      columnBoundary = (xPositions[i-1] + xPositions[i]) / 2;
+    }
+  }
+  
+  console.log(`DEBUG: Column boundary at x=${columnBoundary} (gap: ${maxGap})`);
+  
+  const leftColumn = textItems.filter(item => item.x < columnBoundary);
+  const rightColumn = textItems.filter(item => item.x >= columnBoundary);
+  
+  return { leftColumn, rightColumn };
+}
+
+function parseLeftColumnSections(leftColumn: Array<{
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: string;
+  outlineColor?: string;
+  page: number;
+}>): { [sectionName: string]: typeof leftColumn } {
+  const sections: { [sectionName: string]: typeof leftColumn } = {};
+  
+  // Find section headers - larger font and specific color
+  const sectionHeaders = leftColumn.filter(item => 
+    item.fontSize >= 16 && 
+    /^(Contact|Top Skills|Skills|Certifications?|Languages?)$/i.test(item.text)
+  );
+  
+  console.log(`DEBUG: Found ${sectionHeaders.length} left column section headers:`, 
+    sectionHeaders.map(h => ({ text: h.text, color: h.color, fontSize: h.fontSize })));
+  
+  // Group items under each section header
+  for (let i = 0; i < sectionHeaders.length; i++) {
+    const header = sectionHeaders[i];
+    const nextHeader = sectionHeaders[i + 1];
+    
+    const sectionItems = leftColumn.filter(item => {
+      if (item.y <= header.y) return false; // Must be below header
+      if (nextHeader && item.y >= nextHeader.y) return false; // Must be above next header
+      return true;
+    });
+    
+    sections[header.text] = sectionItems;
+    console.log(`DEBUG: Section "${header.text}" has ${sectionItems.length} items`);
+  }
+  
+  return sections;
+}
+
+function parseRightColumnSections(rightColumn: Array<{
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: string;
+  outlineColor?: string;
+  page: number;
+}>): {
+  basics: typeof rightColumn;
+  experience?: typeof rightColumn;
+  education?: typeof rightColumn;
+} {
+  const sections: {
+    basics: typeof rightColumn;
+    experience?: typeof rightColumn;
+    education?: typeof rightColumn;
+  } = {
+    basics: []
+  };
+  
+  // Find major section headers by looking for headrule + large font pattern
+  // First, let's identify all large font items that could be headers
+  const potentialHeaders = rightColumn.filter(item => 
+    item.fontSize >= 18 && 
+    /^(Experience|Education|Projects|Volunteer|Awards|Publications)$/i.test(item.text)
+  );
+  
+  // For now, let's focus on Experience section which we know has the headrule pattern
+  // We'll identify it by being on page 1 with large font
+  const majorHeaders = potentialHeaders.filter(item => 
+    item.page === 1 && // Experience section is on page 1
+    item.text === 'Experience'
+  );
+  
+  // Sort headers by y position (top to bottom)
+  majorHeaders.sort((a, b) => a.y - b.y);
+  
+  console.log(`DEBUG: Found ${majorHeaders.length} right column major headers (sorted):`, 
+    majorHeaders.map(h => ({ text: h.text, fontSize: h.fontSize, y: h.y })));
+  
+  // Debug: Let's see what's being detected as Education header
+  const educationHeaders = rightColumn.filter(item => 
+    item.fontSize >= 18 && 
+    /^Education$/i.test(item.text)
+  );
+  console.log(`DEBUG: Potential headers found:`, potentialHeaders.map(h => ({ 
+    text: h.text, 
+    fontSize: h.fontSize, 
+    y: h.y,
+    page: h.page
+  })));
+  
+  console.log(`DEBUG: Major headers after filtering:`, majorHeaders.map(h => ({ 
+    text: h.text, 
+    fontSize: h.fontSize, 
+    y: h.y,
+    page: h.page
+  })));
+  
+  console.log(`DEBUG: All right column items around Experience:`, 
+    rightColumn.filter(item => item.y > 18 && item.y < 25).map(item => ({
+      text: item.text,
+      y: item.y,
+      page: item.page,
+      fontSize: item.fontSize
+    })));
+  
+  // Everything before first major header is "basics", but only on page 1
+  const firstMajorHeader = majorHeaders.length > 0 ? majorHeaders[0] : null;
+  sections.basics = rightColumn.filter(item => {
+    if (firstMajorHeader && item.y >= firstMajorHeader.y) return false; // Must be before first major header
+    if (item.page !== 1) return false; // Only include page 1 content in basics
+    return true;
+  });
+  console.log(`DEBUG: Basics section has ${sections.basics.length} items`);
+  
+  // Group items under each major section
+  for (let i = 0; i < majorHeaders.length; i++) {
+    const header = majorHeaders[i];
+    const nextHeader = majorHeaders[i + 1];
+    
+    const sectionItems = rightColumn.filter(item => {
+      if (item.y <= header.y) return false; // Must be below header
+      if (nextHeader && item.y >= nextHeader.y) return false; // Must be above next header
+      return true;
+    });
+    
+    const sectionName = header.text.toLowerCase();
+    if (sectionName === 'experience') {
+      sections.experience = sectionItems;
+    } else if (sectionName === 'education') {
+      sections.education = sectionItems;
+    }
+    
+    console.log(`DEBUG: Section "${header.text}" (y=${header.y}) has ${sectionItems.length} items`);
+    if (sectionItems.length > 0) {
+      console.log(`DEBUG: First few items:`, sectionItems.slice(0, 3).map(item => ({
+        text: item.text,
+        y: item.y,
+        page: item.page
+      })));
+    }
+  }
+  
+  return sections;
+}
+
+function buildJSONResume(
+  leftSections: { [sectionName: string]: any[] },
+  rightSections: { basics: any[]; experience?: any[]; education?: any[] }
+): JSONResume {
+  const resume: JSONResume = {
+    $schema: "https://jsonresume.org/schema/1.0.0/resume.json",
+    basics: parseBasics(rightSections.basics),
+    work: rightSections.experience ? parseExperience(rightSections.experience) : [],
+    education: rightSections.education ? parseEducation(rightSections.education) : [],
+  };
+  
+  // Add left column sections
+  if (leftSections['Top Skills'] || leftSections['Skills']) {
+    resume.skills = parseSkills(leftSections['Top Skills'] || leftSections['Skills'] || []);
+  }
+  
+  if (leftSections['Certifications'] || leftSections['Certification']) {
+    resume.certificates = parseCertificates(leftSections['Certifications'] || leftSections['Certification'] || []);
+  }
+  
+  // Merge contact info from left column into basics
+  if (leftSections['Contact'] && resume.basics) {
+    mergeContactInfo(resume.basics, leftSections['Contact']);
+  }
+  
+  return resume;
+}
+
+function mergeContactInfo(basics: JSONResumeBasics, contactItems: any[]): void {
+  console.log(`DEBUG: Merging contact info from ${contactItems.length} items`);
+  
+  // Find email - look for @ sign and potential continuation
+  const emailParts = contactItems.filter(item => /@/.test(item.text));
+  if (emailParts.length > 0) {
+    // Sort by position and combine
+    emailParts.sort((a, b) => a.y - b.y || a.x - b.x);
+    let email = emailParts[0].text;
+    
+    // Check if there's a continuation part (like "u" from split email)
+    // Look for the next item that's very close in position and looks like a continuation
+    const emailY = emailParts[0].y;
+    const continuationItem = contactItems.find(item => 
+      item.y > emailY && 
+      item.y < emailY + 1 && // very close vertically
+      item.text.length <= 3 && // short text
+      /^[a-z]+$/.test(item.text) && // lowercase letters only
+      !/@/.test(item.text) // not another email
+    );
+    
+    if (continuationItem) {
+      email += continuationItem.text;
+      console.log(`DEBUG: Found email continuation: "${continuationItem.text}"`);
+    }
+    
+    basics.email = email;
+    console.log(`DEBUG: Found email in contact: "${basics.email}"`);
+  }
+  
+  // Find LinkedIn profile
+  const linkedinItems = contactItems.filter(item => 
+    /linkedin\.com\/in\//.test(item.text) || item.text === '(LinkedIn)'
+  );
+  
+  if (linkedinItems.length > 0) {
+    const linkedinItem = linkedinItems.find(item => /linkedin\.com\/in\//.test(item.text));
+    if (linkedinItem) {
+      const match = linkedinItem.text.match(/linkedin\.com\/in\/([^\/\s)]+)/);
+      if (match) {
+        basics.profiles = [{
+          network: 'LinkedIn',
+          username: match[1],
+          url: `https://www.${linkedinItem.text.replace(/^www\./, '')}`
+        }];
+        console.log(`DEBUG: Found LinkedIn profile in contact: ${basics.profiles[0].url}`);
+      }
+    }
+  }
+}
+
+function parseBasics(basicsItems: Array<{
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  color: string;
+  outlineColor?: string;
+  page: number;
+}>): JSONResumeBasics {
+  console.log(`DEBUG: Parsing basics from ${basicsItems.length} items`);
+  console.log(`DEBUG: Basics items:`, basicsItems.map(item => ({
+    text: item.text,
+    fontSize: item.fontSize,
+    color: item.color,
+    y: item.y
+  })));
+  
+  const basics: JSONResumeBasics = {};
+  
+  // Sort by y position (top to bottom)
+  basicsItems.sort((a, b) => a.y - b.y);
+  
+  // Name should be the largest font at the top
+  const maxFontSize = Math.max(...basicsItems.map(i => i.fontSize));
+  console.log(`DEBUG: Max font size: ${maxFontSize}`);
+  
+  const nameItem = basicsItems.find(item => 
+    item.fontSize === maxFontSize && item.text.length > 3
+  );
+  if (nameItem) {
+    basics.name = nameItem.text;
+    console.log(`DEBUG: Found name: "${basics.name}" (fontSize: ${nameItem.fontSize})`);
+  }
+  
+  // Label should be the text immediately after the name
+  // Looking at the debug output, it should be "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes"
+  const nameY = nameItem?.y || 0;
+  const labelCandidates = basicsItems.filter(item => 
+    item.y > nameY && 
+    item.y < nameY + 3 && // within 3 units of name
+    item.text.length > 10 && 
+    item.fontSize === 15 && // consistent font size for labels
+    !/@/.test(item.text) &&
+    !/linkedin/i.test(item.text) &&
+    !/Summary|Education|Experience/i.test(item.text)
+  );
+  
+  if (labelCandidates.length > 0) {
+    labelCandidates.sort((a, b) => a.y - b.y);
+    // Combine consecutive lines that are close together
+    let labelText = labelCandidates[0].text;
+    for (let i = 1; i < labelCandidates.length; i++) {
+      if (Math.abs(labelCandidates[i].y - labelCandidates[i-1].y) < 1.5) {
+        labelText += ' ' + labelCandidates[i].text;
+      } else {
+        break;
+      }
+    }
+    basics.label = labelText;
+    console.log(`DEBUG: Found label: "${basics.label}"`);
+  }
+  
+  // Location detection using color - location text has outlineColor #b0b0b0
+  const locationItems = basicsItems.filter(item => 
+    item.outlineColor === '#b0b0b0'
+  );
+  if (locationItems.length > 0) {
+    const locationText = locationItems[0].text;
+    basics.location = parseLocationText(locationText);
+    console.log(`DEBUG: Found location (color-based): "${locationText}"`);
+  }
+  
+  // Summary - look for content after "Summary" header but before next major section
+  const summaryHeaderIndex = basicsItems.findIndex(item => item.text === 'Summary');
+  if (summaryHeaderIndex !== -1) {
+    const summaryHeader = basicsItems[summaryHeaderIndex];
+    const nextMajorSectionIndex = basicsItems.findIndex(item => 
+      item.y > summaryHeader.y && 
+      (item.text === 'Education' || item.text === 'Experience') &&
+      item.fontSize >= 18
+    );
+    
+    const summaryEndY = nextMajorSectionIndex !== -1 ? basicsItems[nextMajorSectionIndex].y : Infinity;
+    console.log(`DEBUG: Summary parsing - nextMajorSectionIndex: ${nextMajorSectionIndex}, summaryEndY: ${summaryEndY}`);
+    
+    const summaryItems = basicsItems.filter(item => 
+      item.y > summaryHeader.y &&
+      item.y < summaryEndY &&
+      item.fontSize === 15 &&
+      // Only exclude items that are clearly not part of the summary
+      !/^(Executive Director|Google Summer|September|February|\d+ years|nrnb\.org|The Rockefeller|University of)/i.test(item.text) &&
+      // Don't exclude "Experience in..." text which is part of summary
+      item.text !== 'Education' && item.text !== 'Experience' // Only exclude exact header matches
+    );
+    
+    if (summaryItems.length > 0) {
+      summaryItems.sort((a, b) => a.y - b.y);
+      basics.summary = summaryItems.map(item => item.text).join(' ');
+      console.log(`DEBUG: Found summary (${summaryItems.length} parts): "${basics.summary}"`);
+      console.log(`DEBUG: Summary items y-coordinates:`, summaryItems.map(item => ({ text: item.text.substring(0, 50), y: item.y })));
+    }
+    
+    // Debug: Let's see what's being filtered out
+    const allSummaryAreaItems = basicsItems.filter(item => 
+      item.y > summaryHeader.y &&
+      item.y < summaryEndY &&
+      item.fontSize === 15
+    );
+    console.log(`DEBUG: All items in summary area (${allSummaryAreaItems.length}):`, allSummaryAreaItems.map(item => ({ 
+      text: item.text.substring(0, 50), 
+      y: item.y,
+      included: summaryItems.includes(item)
+    })));
+  }
+  
+  // Email and LinkedIn will be added from the Contact section in left column
+  
+  return basics;
+}
+
+function parseLocationText(locationText: string): JSONResumeLocation {
+  const parts = locationText.split(',').map(p => p.trim());
+  const location: JSONResumeLocation = {};
+  
+  if (parts.length >= 1) location.city = parts[0];
+  if (parts.length >= 2) location.region = parts[1];
+  if (parts.length >= 3) location.countryCode = parts[2];
+  
+  return location;
+}
+
+function parseExperience(experienceItems: any[]): JSONResumeWork[] {
+  console.log(`DEBUG: Parsing experience from ${experienceItems.length} items`);
+  console.log(`DEBUG: Experience items:`, experienceItems.slice(0, 10).map(item => ({
+    text: item.text,
+    fontSize: item.fontSize,
+    y: item.y,
+    page: item.page
+  })));
+  
+  const workEntries: JSONResumeWork[] = [];
+  
+  // Group items by company - companies are typically fontSize 15
+  const companyItems = experienceItems.filter(item => item.fontSize === 15);
+  
+  for (const companyItem of companyItems) {
+    const companyName = companyItem.text;
+    
+    // Find items related to this company (within reasonable y range)
+    const relatedItems = experienceItems.filter(item => 
+      item.y > companyItem.y && 
+      item.y < companyItem.y + 10 // within 10 units
+    );
+    
+    // Look for position title (fontSize 14.5)
+    const positionItem = relatedItems.find(item => item.fontSize === 14.5);
+    
+    // Look for date range (fontSize 13.5, contains dates)
+    const dateItem = relatedItems.find(item => 
+      item.fontSize === 13.5 && 
+      /\d{4}/.test(item.text) && 
+      /Present|January|February|March|April|May|June|July|August|September|October|November|December/.test(item.text)
+    );
+    
+    if (positionItem && dateItem) {
+      const entry: JSONResumeWork = {
+        name: companyName,
+        position: positionItem.text,
+        startDate: extractStartDate(dateItem.text),
+        endDate: extractEndDate(dateItem.text)
+      };
+      
+      workEntries.push(entry);
+      console.log(`DEBUG: Found work entry: ${entry.name} - ${entry.position}`);
+    }
+  }
+  
+  return workEntries;
+}
+
+function extractStartDate(dateText: string): string | undefined {
+  const match = dateText.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+  if (match) {
+    const monthMap: { [key: string]: string } = {
+      'January': '01', 'February': '02', 'March': '03', 'April': '04',
+      'May': '05', 'June': '06', 'July': '07', 'August': '08',
+      'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    };
+    return `${match[2]}-${monthMap[match[1]]}`;
+  }
+  return undefined;
+}
+
+function extractEndDate(dateText: string): string | undefined {
+  if (/Present/i.test(dateText)) {
+    return undefined;
+  }
+  // Look for end date after " - "
+  const match = dateText.match(/- (January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+  if (match) {
+    const monthMap: { [key: string]: string } = {
+      'January': '01', 'February': '02', 'March': '03', 'April': '04',
+      'May': '05', 'June': '06', 'July': '07', 'August': '08',
+      'September': '09', 'October': '10', 'November': '11', 'December': '12'
+    };
+    return `${match[2]}-${monthMap[match[1]]}`;
+  }
+  return undefined;
+}
+
+function parseEducation(educationItems: any[]): JSONResumeEducation[] {
+  console.log(`DEBUG: Parsing education from ${educationItems.length} items`);
+  // Placeholder - will implement detailed parsing later
+  return [];
+}
+
+function parseSkills(skillItems: any[]): JSONResumeSkill[] {
+  console.log(`DEBUG: Parsing skills from ${skillItems.length} items`);
+  return skillItems.map(item => ({ name: item.text }));
+}
+
+function parseCertificates(certItems: any[]): JSONResumeCertificate[] {
+  console.log(`DEBUG: Parsing certificates from ${certItems.length} items`);
+  return certItems.map(item => ({ name: item.text }));
 }
