@@ -1,4 +1,8 @@
-import { parseLinkedInPdf, getParsingMetrics, ParsingMetrics } from './index.js';
+import {
+  parseLinkedInPdf,
+  getParsingMetrics,
+  ParsingMetrics,
+} from './index.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -6,14 +10,14 @@ import path from 'path';
 interface PerformanceReport {
   fixtureName: string;
   pdfPath: string;
-  
+
   // Raw metrics from parser
   metrics: ParsingMetrics;
-  
+
   // Expected counts from test fixtures
   expectedWorkCount: number;
   expectedEducationCount: number;
-  
+
   // Computed performance indicators
   workSuccessRate: number;
   educationSuccessRate: number;
@@ -23,14 +27,16 @@ interface PerformanceReport {
   strengths: string[];
 }
 
-export async function generatePerformanceReport(fixtureName: string): Promise<PerformanceReport> {
+export async function generatePerformanceReport(
+  fixtureName: string,
+): Promise<PerformanceReport> {
   const pdfPath = `tests/fixtures/${fixtureName}/data/Profile.pdf`;
   const expectedPath = `tests/fixtures/${fixtureName}/data/Profile.expected.json`;
-  
+
   if (!fs.existsSync(pdfPath)) {
     throw new Error(`PDF file not found: ${pdfPath}`);
   }
-  
+
   if (!fs.existsSync(expectedPath)) {
     throw new Error(`Expected results file not found: ${expectedPath}`);
   }
@@ -41,32 +47,41 @@ export async function generatePerformanceReport(fixtureName: string): Promise<Pe
     const expected = JSON.parse(expectedContent);
     const expectedWorkCount = expected.work?.length || 0;
     const expectedEducationCount = expected.education?.length || 0;
-    
+
     // Parse the PDF and get metrics directly
     await parseLinkedInPdf(pdfPath);
     const metrics = getParsingMetrics();
-    
+
     if (!metrics) {
       throw new Error('Failed to collect parsing metrics');
     }
 
     // Compute performance indicators using expected vs parsed counts
-    const workSuccessRate = expectedWorkCount > 0 
-      ? Math.round((metrics.workEntriesParsed / expectedWorkCount) * 100) 
-      : 100;
-      
-    const educationSuccessRate = expectedEducationCount > 0 
-      ? Math.round((metrics.educationEntriesParsed / expectedEducationCount) * 100) 
-      : 100;
+    const workSuccessRate =
+      expectedWorkCount > 0
+        ? Math.round((metrics.workEntriesParsed / expectedWorkCount) * 100)
+        : 100;
+
+    const educationSuccessRate =
+      expectedEducationCount > 0
+        ? Math.round(
+            (metrics.educationEntriesParsed / expectedEducationCount) * 100,
+          )
+        : 100;
 
     // Calculate overall success rate
     const basicsParsed = !!(metrics.hasName && metrics.hasLabel);
     const workParsed = metrics.workEntriesParsed > 0;
     const educationParsed = metrics.educationEntriesParsed > 0;
     const contactParsed = !!(metrics.hasEmail || metrics.hasLinkedIn);
-    
-    const successfulSections = [basicsParsed, workParsed, educationParsed, contactParsed].filter(Boolean).length;
-    const overallSuccessRate = Math.round(successfulSections / 4 * 100);
+
+    const successfulSections = [
+      basicsParsed,
+      workParsed,
+      educationParsed,
+      contactParsed,
+    ].filter(Boolean).length;
+    const overallSuccessRate = Math.round((successfulSections / 4) * 100);
 
     // Determine status
     let status: string;
@@ -83,19 +98,24 @@ export async function generatePerformanceReport(fixtureName: string): Promise<Pe
     // Identify issues and strengths
     const issues: string[] = [];
     const strengths: string[] = [];
-    
+
     if (!basicsParsed) issues.push('Basics section incomplete');
     if (!workParsed) issues.push('Work experience not extracted');
     if (!educationParsed) issues.push('Education section not parsed');
     if (!contactParsed) issues.push('Contact information missing');
-    if (workSuccessRate < 100 && metrics.workEntriesDetected > 0) issues.push('Work entry fragmentation detected');
-    if (educationSuccessRate < 100 && metrics.educationEntriesDetected > 0) issues.push('Education parsing incomplete');
-    
+    if (workSuccessRate < 100 && metrics.workEntriesDetected > 0)
+      issues.push('Work entry fragmentation detected');
+    if (educationSuccessRate < 100 && metrics.educationEntriesDetected > 0)
+      issues.push('Education parsing incomplete');
+
     if (basicsParsed) strengths.push('Complete basics extraction');
-    if (metrics.summaryLength > 200) strengths.push('Comprehensive summary extracted');
+    if (metrics.summaryLength > 200)
+      strengths.push('Comprehensive summary extracted');
     if (metrics.skillsCount > 0) strengths.push('Skills successfully parsed');
-    if (metrics.totalPages > 1) strengths.push('Multi-page processing successful');
-    if (metrics.pageBreaksRemoved > 0) strengths.push('Page break normalization working');
+    if (metrics.totalPages > 1)
+      strengths.push('Multi-page processing successful');
+    if (metrics.pageBreaksRemoved > 0)
+      strengths.push('Page break normalization working');
 
     return {
       fixtureName,
@@ -108,9 +128,8 @@ export async function generatePerformanceReport(fixtureName: string): Promise<Pe
       overallSuccessRate,
       status,
       issues,
-      strengths
+      strengths,
     };
-
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
   }
@@ -118,7 +137,7 @@ export async function generatePerformanceReport(fixtureName: string): Promise<Pe
 
 export function generateMarkdownReport(report: PerformanceReport): string {
   const date = new Date().toISOString().split('T')[0];
-  
+
   return `# Parsing Performance Report: ${report.fixtureName}
 
 *Generated on ${date}*
@@ -160,10 +179,14 @@ export function generateMarkdownReport(report: PerformanceReport): string {
 
 ### 🔍 Section Details
 #### Left Column Sections:
-${Object.entries(report.metrics.leftColumnSections).map(([section, count]) => `- **${section}:** ${count} items`).join('\n')}
+${Object.entries(report.metrics.leftColumnSections)
+  .map(([section, count]) => `- **${section}:** ${count} items`)
+  .join('\n')}
 
 #### Right Column Sections:
-${Object.entries(report.metrics.rightColumnSections).map(([section, count]) => `- **${section}:** ${count} items`).join('\n')}
+${Object.entries(report.metrics.rightColumnSections)
+  .map(([section, count]) => `- **${section}:** ${count} items`)
+  .join('\n')}
 
 ## 🎯 Overall Assessment
 
@@ -172,17 +195,22 @@ ${Object.entries(report.metrics.rightColumnSections).map(([section, count]) => `
 **🏆 Status:** ${report.status}
 
 ### 💪 Strengths
-${report.strengths.map(strength => `- ${strength}`).join('\n')}
+${report.strengths.map((strength) => `- ${strength}`).join('\n')}
 
 ### ⚠️ Issues Identified
-${report.issues.length > 0 ? report.issues.map(issue => `- ${issue}`).join('\n') : '- No major issues detected'}
+${report.issues.length > 0 ? report.issues.map((issue) => `- ${issue}`).join('\n') : '- No major issues detected'}
 
 ## 📈 Performance Rating
 
-${report.overallSuccessRate === 100 ? '🏆 **PERFECT PARSING** - All sections successfully extracted!' :
-  report.overallSuccessRate >= 75 ? '✅ **GOOD PARSING** - Most sections successfully extracted' :
-  report.overallSuccessRate >= 50 ? '⚠️ **PARTIAL PARSING** - Some sections need improvement' :
-  '❌ **POOR PARSING** - Major issues detected'}
+${
+  report.overallSuccessRate === 100
+    ? '🏆 **PERFECT PARSING** - All sections successfully extracted!'
+    : report.overallSuccessRate >= 75
+      ? '✅ **GOOD PARSING** - Most sections successfully extracted'
+      : report.overallSuccessRate >= 50
+        ? '⚠️ **PARTIAL PARSING** - Some sections need improvement'
+        : '❌ **POOR PARSING** - Major issues detected'
+}
 
 ---
 *This report was automatically generated by the LinkedIn Profile Parser performance analysis tool v2.*
@@ -191,9 +219,9 @@ ${report.overallSuccessRate === 100 ? '🏆 **PERFECT PARSING** - All sections s
 
 export async function generateAllReports(): Promise<PerformanceReport[]> {
   const fixturesDir = 'tests/fixtures';
-  const fixtures = fs.readdirSync(fixturesDir).filter(name => 
-    fs.statSync(path.join(fixturesDir, name)).isDirectory()
-  );
+  const fixtures = fs
+    .readdirSync(fixturesDir)
+    .filter((name) => fs.statSync(path.join(fixturesDir, name)).isDirectory());
 
   const allReports: PerformanceReport[] = [];
 
@@ -208,9 +236,11 @@ export async function generateAllReports(): Promise<PerformanceReport[]> {
       const reportPath = `tests/fixtures/${fixture}/data/performance-report.md`;
       fs.writeFileSync(reportPath, markdownReport);
       console.log(`✅ Report saved: ${reportPath}`);
-
     } catch (error) {
-      console.error(`❌ Error analyzing ${fixture}:`, error instanceof Error ? error.message : String(error));
+      console.error(
+        `❌ Error analyzing ${fixture}:`,
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -219,7 +249,7 @@ export async function generateAllReports(): Promise<PerformanceReport[]> {
 
 export function generateSummaryTable(allReports: PerformanceReport[]): string {
   const date = new Date().toISOString().split('T')[0];
-  
+
   let table = `# LinkedIn Profile Parser - Performance Summary
 
 *Generated on ${date}*
@@ -230,7 +260,7 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 |---------|-------|-------|----------|------|-------|----------|---------|------|-----------|--------|---------|--------|
 `;
 
-  allReports.forEach(r => {
+  allReports.forEach((r) => {
     const m = r.metrics;
     table += `| ${r.fixtureName} | ${m.totalPages} | ${m.totalTextItems} | ${m.sectionsDetected} | ${m.hasName ? '✅' : '❌'} | ${m.hasLabel ? '✅' : '❌'} | ${m.hasLocation ? '✅' : '❌'} | ${m.summaryLength}ch | ${m.workEntriesParsed}/${r.expectedWorkCount} | ${m.educationEntriesParsed}/${r.expectedEducationCount} | ${m.skillsCount} | ${r.overallSuccessRate}% | ${r.status} |\n`;
   });
@@ -239,17 +269,26 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 
 `;
 
-  const avgSuccess = Math.round(allReports.reduce((sum, r) => sum + r.overallSuccessRate, 0) / allReports.length);
-  const perfectCount = allReports.filter(r => r.overallSuccessRate === 100).length;
-  const goodCount = allReports.filter(r => r.overallSuccessRate >= 75 && r.overallSuccessRate < 100).length;
-  const partialCount = allReports.filter(r => r.overallSuccessRate >= 50 && r.overallSuccessRate < 75).length;
-  const poorCount = allReports.filter(r => r.overallSuccessRate < 50).length;
+  const avgSuccess = Math.round(
+    allReports.reduce((sum, r) => sum + r.overallSuccessRate, 0) /
+      allReports.length,
+  );
+  const perfectCount = allReports.filter(
+    (r) => r.overallSuccessRate === 100,
+  ).length;
+  const goodCount = allReports.filter(
+    (r) => r.overallSuccessRate >= 75 && r.overallSuccessRate < 100,
+  ).length;
+  const partialCount = allReports.filter(
+    (r) => r.overallSuccessRate >= 50 && r.overallSuccessRate < 75,
+  ).length;
+  const poorCount = allReports.filter((r) => r.overallSuccessRate < 50).length;
 
   table += `- **Average Success Rate:** ${avgSuccess}%
-- **Perfect Parsing:** ${perfectCount}/${allReports.length} fixtures (${Math.round(perfectCount/allReports.length*100)}%)
-- **Good Parsing:** ${goodCount}/${allReports.length} fixtures (${Math.round(goodCount/allReports.length*100)}%)
-- **Partial Parsing:** ${partialCount}/${allReports.length} fixtures (${Math.round(partialCount/allReports.length*100)}%)
-- **Poor Parsing:** ${poorCount}/${allReports.length} fixtures (${Math.round(poorCount/allReports.length*100)}%)
+- **Perfect Parsing:** ${perfectCount}/${allReports.length} fixtures (${Math.round((perfectCount / allReports.length) * 100)}%)
+- **Good Parsing:** ${goodCount}/${allReports.length} fixtures (${Math.round((goodCount / allReports.length) * 100)}%)
+- **Partial Parsing:** ${partialCount}/${allReports.length} fixtures (${Math.round((partialCount / allReports.length) * 100)}%)
+- **Poor Parsing:** ${poorCount}/${allReports.length} fixtures (${Math.round((poorCount / allReports.length) * 100)}%)
 
 ## 🔍 Detailed Metrics
 
@@ -258,7 +297,7 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 |---------|----------|--------|--------------|
 `;
 
-  allReports.forEach(r => {
+  allReports.forEach((r) => {
     table += `| ${r.fixtureName} | ${r.expectedWorkCount} | ${r.metrics.workEntriesParsed} | ${r.workSuccessRate}% |\n`;
   });
 
@@ -267,7 +306,7 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 |---------|----------|--------|--------------|
 `;
 
-  allReports.forEach(r => {
+  allReports.forEach((r) => {
     table += `| ${r.fixtureName} | ${r.expectedEducationCount} | ${r.metrics.educationEntriesParsed} | ${r.educationSuccessRate}% |\n`;
   });
 
@@ -276,7 +315,7 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 |---------|----------------|--------------|----------------|
 `;
 
-  allReports.forEach(r => {
+  allReports.forEach((r) => {
     table += `| ${r.fixtureName} | ${r.metrics.summaryLength} chars | ${r.metrics.skillsCount} | ${r.metrics.sectionsDetected} |\n`;
   });
 
@@ -284,32 +323,38 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 
 `;
 
-  const allIssues = allReports.flatMap(r => r.issues);
-  const issueFrequency = allIssues.reduce((acc, issue) => {
-    acc[issue] = (acc[issue] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const allIssues = allReports.flatMap((r) => r.issues);
+  const issueFrequency = allIssues.reduce(
+    (acc, issue) => {
+      acc[issue] = (acc[issue] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   Object.entries(issueFrequency)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .forEach(([issue, count]) => {
-      table += `- **${issue}:** ${count}/${allReports.length} fixtures (${Math.round(count/allReports.length*100)}%)\n`;
+      table += `- **${issue}:** ${count}/${allReports.length} fixtures (${Math.round((count / allReports.length) * 100)}%)\n`;
     });
 
   table += `\n## 💪 Common Strengths
 
 `;
 
-  const allStrengths = allReports.flatMap(r => r.strengths);
-  const strengthFrequency = allStrengths.reduce((acc, strength) => {
-    acc[strength] = (acc[strength] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const allStrengths = allReports.flatMap((r) => r.strengths);
+  const strengthFrequency = allStrengths.reduce(
+    (acc, strength) => {
+      acc[strength] = (acc[strength] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   Object.entries(strengthFrequency)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .forEach(([strength, count]) => {
-      table += `- **${strength}:** ${count}/${allReports.length} fixtures (${Math.round(count/allReports.length*100)}%)\n`;
+      table += `- **${strength}:** ${count}/${allReports.length} fixtures (${Math.round((count / allReports.length) * 100)}%)\n`;
     });
 
   table += `\n---
@@ -317,4 +362,4 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
 `;
 
   return table;
-} 
+}

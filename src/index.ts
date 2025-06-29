@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // TODO
 
-import fs from "node:fs";
 import PDFParser from 'pdf2json';
 
 // Performance Metrics Interface for direct data collection
@@ -708,7 +707,7 @@ function parsePDFData(pdfData: PDFData): JSONResume {
   console.log(`DEBUG: First 10 items:`, allTextItems.slice(0, 10));
   
   // STEP 2: Normalize page breaks for ALL content (text + headrules)
-  const { normalizedTextItems, normalizedHeadrules, pageOffsets } = normalizeAllContent(allTextItems, allHeadrules);
+  const { normalizedTextItems, normalizedHeadrules } = normalizeAllContent(allTextItems, allHeadrules);
   
   // STEP 3: Separate left and right columns (now with normalized coordinates)
   const { leftColumn, rightColumn } = separateColumns(normalizedTextItems);
