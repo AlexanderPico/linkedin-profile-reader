@@ -10,14 +10,18 @@
   },
   "types": "./dist/index.d.ts",
   "bin": {
-    "parse-linkedin-pdf": "./bin/parse-linkedin-pdf"
+    "parse-linkedin-pdf": "./bin/parse-linkedin-pdf",
+    "generate-performance-reports": "./bin/generate-performance-reports",
+    "generate-performance-reports-v2": "./bin/generate-performance-reports-v2"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.js",
     "prepare": "husky install && npm run build",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "performance": "./bin/generate-performance-reports",
+    "performance-v2": "./bin/generate-performance-reports-v2"
   },
   "keywords": [
     "linkedin",

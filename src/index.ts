@@ -5,6 +5,77 @@
 import fs from "node:fs";
 import PDFParser from 'pdf2json';
 
+// Performance Metrics Interface for direct data collection
+export interface ParsingMetrics {
+  // Document analysis
+  totalTextItems: number;
+  totalPages: number;
+  pageBreaksRemoved: number;
+  sectionsDetected: number;
+  
+  // Basics metrics
+  hasName: boolean;
+  hasLabel: boolean;
+  hasLocation: boolean;
+  hasEmail: boolean;
+  hasLinkedIn: boolean;
+  summaryLength: number;
+  
+  // Work metrics
+  workEntriesDetected: number;
+  workEntriesParsed: number;
+  
+  // Education metrics
+  educationEntriesDetected: number;
+  educationEntriesParsed: number;
+  
+  // Additional sections
+  skillsCount: number;
+  languagesCount: number;
+  publicationsCount: number;
+  awardsCount: number;
+  certificatesCount: number;
+  
+  // Section item counts
+  leftColumnSections: { [sectionName: string]: number };
+  rightColumnSections: { [sectionName: string]: number };
+}
+
+// Global metrics collection during parsing
+let currentMetrics: ParsingMetrics | null = null;
+
+// Function to initialize metrics collection
+function initializeMetrics(): void {
+  currentMetrics = {
+    totalTextItems: 0,
+    totalPages: 0,
+    pageBreaksRemoved: 0,
+    sectionsDetected: 0,
+    hasName: false,
+    hasLabel: false,
+    hasLocation: false,
+    hasEmail: false,
+    hasLinkedIn: false,
+    summaryLength: 0,
+    workEntriesDetected: 0,
+    workEntriesParsed: 0,
+    educationEntriesDetected: 0,
+    educationEntriesParsed: 0,
+    skillsCount: 0,
+    languagesCount: 0,
+    publicationsCount: 0,
+    awardsCount: 0,
+    certificatesCount: 0,
+    leftColumnSections: {},
+    rightColumnSections: {}
+  };
+}
+
+// Function to get collected metrics
+export function getParsingMetrics(): ParsingMetrics | null {
+  return currentMetrics;
+}
+
 // Internal extraction structures -------------------------------------------
 export interface ExperiencePosition {
   title: string;
@@ -333,6 +404,9 @@ export async function parseLinkedInPdf(pdfInput: string | Buffer): Promise<JSONR
     
     pdfParser.on('pdfParser_dataReady', (pdfData: PDFData) => {
       try {
+        // Initialize metrics collection
+        initializeMetrics();
+        
         const result = parsePDFData(pdfData);
         resolve(result);
       } catch (error) {
@@ -431,6 +505,11 @@ function normalizePageBreaks(textItems: Array<{
   
   console.log(`DEBUG: Normalized ${textItems.length} items to ${normalizedItems.length} items (removed ${pageBreakLines.length} page breaks)`);
   console.log(`DEBUG: Y-value range after normalization: ${Math.min(...normalizedItems.map(i => i.y))} to ${Math.max(...normalizedItems.map(i => i.y))}`);
+  
+  // Collect metrics: page breaks removed
+  if (currentMetrics) {
+    currentMetrics.pageBreaksRemoved = pageBreakLines.length;
+  }
   
   return normalizedItems;
 }
@@ -618,6 +697,12 @@ function parsePDFData(pdfData: PDFData): JSONResume {
     }
   });
   
+  // Collect metrics: document analysis
+  if (currentMetrics) {
+    currentMetrics.totalTextItems = allTextItems.length;
+    currentMetrics.totalPages = pdfData.Pages.length;
+  }
+  
   console.log(`DEBUG: Total text items: ${allTextItems.length}`);
   console.log(`DEBUG: Total headrules: ${allHeadrules.length}`);
   console.log(`DEBUG: First 10 items:`, allTextItems.slice(0, 10));
@@ -751,6 +836,11 @@ function parseLeftColumnSections(leftColumn: Array<{
     // Use the schema section name as the key
     sections[header.schemaSection] = sectionItems;
     console.log(`DEBUG: Section "${header.schemaSection}" (original: "${header.text}") has ${sectionItems.length} items`);
+    
+    // Collect metrics: left column sections
+    if (currentMetrics) {
+      currentMetrics.leftColumnSections[header.schemaSection] = sectionItems.length;
+    }
   }
   
   return sections;
@@ -962,6 +1052,18 @@ function parseRightColumnSections(
     sections.education?.length || 0
   );
 
+  // Collect metrics: right column sections
+  if (currentMetrics) {
+    currentMetrics.rightColumnSections.basics = sections.basics.length;
+    if (sections.summary) currentMetrics.rightColumnSections.summary = sections.summary.length;
+    if (sections.experience) currentMetrics.rightColumnSections.experience = sections.experience.length;
+    if (sections.education) currentMetrics.rightColumnSections.education = sections.education.length;
+    
+    // Count detected sections (non-zero sections)
+    currentMetrics.sectionsDetected = Object.values(currentMetrics.rightColumnSections).filter(count => count > 0).length +
+                                     Object.values(currentMetrics.leftColumnSections).filter(count => count > 0).length;
+  }
+
   return sections;
 }
 
@@ -1016,6 +1118,25 @@ function buildJSONResume(
   // Merge contact info from left column into basics
   if (leftSections['Contact'] && resume.basics) {
     mergeContactInfo(resume.basics, leftSections['Contact']);
+  }
+  
+  // Collect final metrics: parsed results
+  if (currentMetrics && resume.basics) {
+    currentMetrics.hasName = !!resume.basics.name;
+    currentMetrics.hasLabel = !!resume.basics.label;
+    currentMetrics.hasLocation = !!(resume.basics.location?.address || resume.basics.location?.city);
+    currentMetrics.hasEmail = !!resume.basics.email;
+    currentMetrics.hasLinkedIn = !!(resume.basics.profiles?.[0]?.url);
+    currentMetrics.summaryLength = resume.basics.summary?.length || 0;
+    
+    currentMetrics.workEntriesParsed = resume.work?.length || 0;
+    currentMetrics.educationEntriesParsed = resume.education?.length || 0;
+    
+    currentMetrics.skillsCount = resume.skills?.length || 0;
+    currentMetrics.languagesCount = resume.languages?.length || 0;
+    currentMetrics.publicationsCount = resume.publications?.length || 0;
+    currentMetrics.awardsCount = resume.awards?.length || 0;
+    currentMetrics.certificatesCount = resume.certificates?.length || 0;
   }
   
   return resume;
@@ -1205,6 +1326,11 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
       
       workEntries.push(entry);
       console.log(`DEBUG: Found work entry: ${entry.name} - ${entry.position}`);
+      
+      // Collect metrics: work entries detected
+      if (currentMetrics) {
+        currentMetrics.workEntriesDetected++;
+      }
     }
   }
   
@@ -1356,6 +1482,11 @@ function parseEducation(educationItems: any[]): JSONResumeEducation[] {
       
       educationEntries.push(entry);
       console.log(`DEBUG: Found education entry: ${entry.institution} - ${entry.studyType || 'No degree'} in ${entry.area || 'Unknown field'}`);
+      
+      // Collect metrics: education entries detected
+      if (currentMetrics) {
+        currentMetrics.educationEntriesDetected++;
+      }
     }
   }
   
