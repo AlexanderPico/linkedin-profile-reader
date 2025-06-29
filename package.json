@@ -32,6 +32,7 @@
   "author": "Alexander Pico",
   "license": "MIT",
   "dependencies": {
+    "pdf2json": "^3.1.6",
     "pdfjs-dist": "^5.3.31"
   },
   "devDependencies": {
