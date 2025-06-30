@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+
+import { generateAllReports, generateSummaryTable } from '../dist/performance-report-v2.js';
+import fs from 'fs';
+
+async function main() {
+  try {
+    console.log('🚀 LinkedIn Profile Parser - Performance Analysis v2');
+    console.log('='.repeat(60));
+    
+    // Generate all individual reports
+    const allReports = await generateAllReports();
+    
+    if (allReports.length === 0) {
+      console.log('⚠️ No reports generated. Check that test fixtures exist.');
+      process.exit(1);
+    }
+    
+    // Generate summary table
+    console.log('\n📊 Generating performance summary...');
+    const summaryTable = generateSummaryTable(allReports);
+    const summaryPath = 'tests/performance-summary-v2.md';
+    fs.writeFileSync(summaryPath, summaryTable);
+    console.log(`✅ Summary saved: ${summaryPath}`);
+    
+    // Print summary statistics
+    const avgSuccess = Math.round(allReports.reduce((sum, r) => sum + r.overallSuccessRate, 0) / allReports.length);
+    const perfectCount = allReports.filter(r => r.overallSuccessRate === 100).length;
+    
+    console.log('\n🎯 Performance Summary:');
+    console.log(`   📊 Average Success Rate: ${avgSuccess}%`);
+    console.log(`   🏆 Perfect Parsing: ${perfectCount}/${allReports.length} fixtures`);
+    console.log(`   📋 Total Reports Generated: ${allReports.length}`);
+    
+    console.log('\n✅ Performance analysis complete!');
+    console.log(`📂 Individual reports: tests/fixtures/*/data/performance-report.md`);
+    console.log(`📊 Summary report: ${summaryPath}`);
+    
+  } catch (error) {
+    console.error('❌ Error generating performance reports:', error);
+    process.exit(1);
+  }
+}
+
+main(); 

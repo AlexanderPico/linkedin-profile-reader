@@ -2,13 +2,11 @@
   "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
   "basics": {
     "name": "Alexander Pico",
-    "label": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
-    "summary": "PhD in molecular biology and biophysics with bioinformatics experience in data mining, analysis, visualization and integration. Experience in managing software development to put tools in the hands of bench biologists. Expertise in pathway modeling and analysis, multiomics, polymorphisms, structural biology and ion channels.",
     "email": "alex.pico@gladstone.ucsf.edu",
     "location": {
       "city": "San Francisco",
-      "countryCode": "United States",
-      "region": "California"
+      "region": "California",
+      "countryCode": "United States"
     },
     "profiles": [
       {
@@ -16,7 +14,9 @@
         "username": "apico",
         "url": "https://www.linkedin.com/in/apico"
       }
-    ]
+    ],
+    "label": "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes",
+    "summary": "PhD in molecular biology and biophysics with bioinformatics experience in data mining, analysis, visualization and integration. Experience in managing software development to put tools in the hands of bench biologists. Expertise in pathway modeling and analysis, multiomics, polymorphisms, structural biology and ion channels."
   },
   "work": [
     {
