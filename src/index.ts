@@ -732,7 +732,7 @@ function parsePDFData(pdfData: PDFData): JSONResume {
   const { normalizedTextItems, normalizedHeadrules } = normalizeAllContent(allTextItems, allHeadrules);
   
   // STEP 3: Separate left and right columns (now with normalized coordinates)
-  const { leftColumn, rightColumn } = separateColumns(normalizedTextItems);
+  const { leftColumn, rightColumn } = separateColumns(normalizedTextItems, normalizedHeadrules);
   console.log(`Left column: ${leftColumn.length} items`);
   console.log(`Right column: ${rightColumn.length} items`);
   
@@ -762,7 +762,7 @@ function separateColumns(textItems: Array<{
   outlineColor?: string;
   page: number;
   originalPage?: number;
-}>): {
+}>, headrules?: Array<{ x: number }>): {
   leftColumn: typeof textItems;
   rightColumn: typeof textItems;
 } {
@@ -785,8 +785,16 @@ function separateColumns(textItems: Array<{
     }
   }
   
-  console.log(`DEBUG: Column boundary at x=${columnBoundary} (gap: ${maxGap})`);
+  if (headrules && headrules.length > 0) {
+    const minHeadruleX = Math.min(...headrules.map(h => h.x));
+    const headruleBoundary = minHeadruleX - 1; // leave 1 unit margin
+    if (headruleBoundary < columnBoundary && headruleBoundary > 0) {
+      console.log(`DEBUG: Adjusting column boundary based on headrule: ${columnBoundary.toFixed(3)} → ${headruleBoundary.toFixed(3)}`);
+      columnBoundary = headruleBoundary;
+    }
+  }
   
+  console.log(`DEBUG: Final column boundary at x=${columnBoundary}`);
   const leftColumn = textItems.filter(item => item.x < columnBoundary);
   const rightColumn = textItems.filter(item => item.x >= columnBoundary);
   
@@ -936,6 +944,9 @@ function parseRightColumnSections(
       item.y <= headrule.normalizedY + 2 && // Or up to 2 units after headrule
       item.text.length > 2
     );
+    
+    console.log('DEBUG: Checking headrule at y=%s: found %d nearby title items', headrule.normalizedY.toFixed(3), nearbyTitleItems.length);
+    nearbyTitleItems.forEach(ti=>console.log('  nearby "%s" y=%s',ti.text,ti.y.toFixed(3)));
     
     nearbyTitleItems.forEach(item => {
       const schemaSection = mapToSchemaSection(item.text);
