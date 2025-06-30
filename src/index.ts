@@ -3,6 +3,23 @@
 // TODO
 
 import PDFParser from 'pdf2json';
+import debugLog from './debug.js';
+
+// Debug helper function that can be controlled via command line arguments
+// Check if debug is enabled via command line arguments
+const debugArg = process.argv.find(arg => arg.startsWith('--debug'));
+const debugEnabled = debugArg !== undefined;
+const debugKeyword = debugArg?.includes('=') ? debugArg.split('=')[1] : '';
+
+/**
+ * Debug logging function that only outputs when debug is enabled
+ * Usage: debug('Some debug message', variable1, variable2);
+ */
+const debug = (...args: any[]): void => {
+  if (debugEnabled) {
+    console.log(...args);
+  }
+};
 
 // Performance Metrics Interface for direct data collection
 export interface ParsingMetrics {
@@ -98,11 +115,11 @@ export interface RawEducationEntry {
 // JSON Resume v1 minimal types ---------------------------------------------
 
 export interface JSONResumeWork {
-  name: string; // Company / organization name
-  position: string; // Job title
+  name: string;
+  position: string;
   location?: string;
-  startDate?: string | null; // YYYY or YYYY-MM
-  endDate?: string | null;   // same format, null = present
+  startDate?: string | null;
+  endDate?: string | null;
   summary?: string;
   url?: string;
   highlights?: string[];
@@ -394,33 +411,28 @@ function extractTextContent(textItem: PDFTextItem): { text: string; fontSize: nu
 }
 
 export async function parseLinkedInPdf(pdfInput: string | Buffer): Promise<JSONResume> {
-  return new Promise((resolve, reject) => {
-    const pdfParser = new PDFParser();
-    
-    pdfParser.on('pdfParser_dataError', (errData: any) => {
-      reject(new Error(`PDF parsing error: ${errData.parserError}`));
-    });
-    
-    pdfParser.on('pdfParser_dataReady', (pdfData: PDFData) => {
-      try {
-        // Initialize metrics collection
-        initializeMetrics();
-        
-        const result = parsePDFData(pdfData);
-        resolve(result);
-      } catch (error) {
-        reject(error);
-      }
-    });
-    
+  // Initialize metrics collection
+  initializeMetrics();
+
+  // Create a new parser instance
+  const pdfParser = new PDFParser();
+
+  // Parse the PDF
+  const pdfData = await new Promise<PDFData>((resolve, reject) => {
+    pdfParser.on('pdfParser_dataReady', (pdfData) => resolve(pdfData as PDFData));
+    pdfParser.on('pdfParser_dataError', reject);
+
     if (typeof pdfInput === 'string') {
-      // File path
       pdfParser.loadPDF(pdfInput);
     } else {
-      // Buffer
       pdfParser.parseBuffer(pdfInput);
     }
   });
+
+  // Parse the PDF data into JSON Resume format
+  const jsonResume = parsePDFData(pdfData);
+
+  return jsonResume;
 }
 
 function normalizePageBreaks(textItems: Array<{
@@ -432,83 +444,117 @@ function normalizePageBreaks(textItems: Array<{
   outlineColor?: string;
   page: number;
 }>): typeof textItems {
-  console.log(`DEBUG: Starting page break normalization for ${textItems.length} items`);
+  debug(`Starting page break normalization for ${textItems.length} text items`);
   
-  // Find page break lines (e.g., "Page 1 of 2", "Page 2 of 2", or individual components)
-  // First, find potential page footer areas (small font, bottom of page)
-  const maxY = Math.max(...textItems.map(t => t.y));
-  const potentialPageFooterItems = textItems.filter(item => 
-    item.fontSize <= 12 && 
-    item.y > maxY - 3 // Within 3 units of bottom
+  // Find page number sequences like "Page", "1", "of", "2"
+  const pageNumberItems: typeof textItems = [];
+  
+  debug(`First 10 items for page break detection:`, textItems.slice(0, 10).map(item => ({
+    text: item.text,
+    fontSize: item.fontSize,
+    y: item.y,
+    page: item.page
+  })));
+  
+  for (let i = 0; i < textItems.length - 3; i++) {
+    const current = textItems[i];
+    const next1 = textItems[i + 1];
+    const next2 = textItems[i + 2];
+    const next3 = textItems[i + 3];
+    
+    // Debug every potential "Page" sequence
+    if (current.text === 'Page') {
+      debug(`Found "Page" at index ${i}: current="${current.text}" (${current.fontSize}), next1="${next1.text}" (${next1.fontSize}), next2="${next2.text}" (${next2.fontSize}), next3="${next3.text}" (${next3.fontSize})`);
+      debug(`Y positions: current=${current.y}, next1=${next1.y}, next2=${next2.y}, next3=${next3.y}`);
+      debug(`Y differences: |current-next1|=${Math.abs(current.y - next1.y)}, |current-next2|=${Math.abs(current.y - next2.y)}, |current-next3|=${Math.abs(current.y - next3.y)}`);
+    }
+    
+    // Check if this is a "Page X of Y" sequence
+    if (
+      current.text === 'Page' &&
+      current.fontSize === 12 &&
+      next1.fontSize === 12 &&
+      /^\d+$/.test(next1.text) && // Current page number
+      next2.text === 'of' &&
+      next2.fontSize === 12 &&
+      next3.fontSize === 12 &&
+      /^\d+$/.test(next3.text) && // Total pages
+      Math.abs(current.y - next1.y) < 1 && // Same line
+      Math.abs(current.y - next2.y) < 1 && // Same line
+      Math.abs(current.y - next3.y) < 1    // Same line
+    ) {
+      pageNumberItems.push(current, next1, next2, next3);
+      debug(`Found page number sequence: "${current.text} ${next1.text} ${next2.text} ${next3.text}" at y=${current.y.toFixed(3)}, page=${current.page}`);
+    }
+  }
+  
+  debug(`Found ${pageNumberItems.length} page number items to remove:`,
+    pageNumberItems.map(item => ({ text: item.text, x: item.x, y: item.y, fontSize: item.fontSize, page: item.page }))
   );
   
-  // Look for page number patterns in footer areas
-  const pageBreakLines = textItems.filter(item => 
-    /^Page\s+\d+\s+of\s+\d+$/i.test(item.text.trim()) || // Full page break text
-    (potentialPageFooterItems.includes(item) && 
-     (item.text === 'Page' || item.text === 'of' || /^\d+$/.test(item.text))) // Page footer components
-  );
+  // Remove page number items
+  const filteredItems = textItems.filter(item => !pageNumberItems.includes(item));
   
-  console.log(`DEBUG: Found ${pageBreakLines.length} page break lines:`, 
-    pageBreakLines.map(pb => ({ text: pb.text, y: pb.y, page: pb.page })));
+  // Update metrics
+  if (currentMetrics) {
+    currentMetrics.pageBreaksRemoved = pageNumberItems.length / 4; // Each page break consists of 4 items
+  }
   
-  if (pageBreakLines.length === 0) {
-    console.log(`DEBUG: No page breaks found, returning original items`);
+  debug(`Removed ${pageNumberItems.length} page number items (${pageNumberItems.length / 4} page breaks)`);
+  debug(`Filtered ${textItems.length} items to ${filteredItems.length} items`);
+  
+  if (pageNumberItems.length === 0) {
+    debug(`No page breaks found, returning original items`);
     return textItems;
   }
   
-  // Calculate page height offsets for normalization
-  // Strategy: Find the maximum y-value on each page and use it to calculate offset
-  const pageMaxY: { [page: number]: number } = {};
-  const pageMinY: { [page: number]: number } = {};
-  
-  textItems.forEach(item => {
-    if (!pageMaxY[item.page] || item.y > pageMaxY[item.page]) {
-      pageMaxY[item.page] = item.y;
-    }
-    if (!pageMinY[item.page] || item.y < pageMinY[item.page]) {
-      pageMinY[item.page] = item.y;
+  // Continue with the existing page normalization logic...
+  // Group items by page and find the maximum Y value for each page
+  const pageMaxY: { [page: string]: number } = {};
+  filteredItems.forEach(item => {
+    const pageKey = item.page.toString();
+    if (!pageMaxY[pageKey] || item.y > pageMaxY[pageKey]) {
+      pageMaxY[pageKey] = item.y;
     }
   });
   
-  console.log(`DEBUG: Page Y ranges:`, Object.keys(pageMaxY).map(page => ({
+  debug('Page Y ranges:', Object.keys(pageMaxY).map(page => ({
     page: parseInt(page),
-    minY: pageMinY[parseInt(page)],
-    maxY: pageMaxY[parseInt(page)],
-    height: pageMaxY[parseInt(page)] - pageMinY[parseInt(page)]
+    maxY: pageMaxY[page]
   })));
   
-  // Calculate cumulative offsets for each page
-  const pageOffsets: { [page: number]: number } = { 1: 0 };
+  // Calculate page offsets for normalization
+  const pageOffsets: { [page: string]: number } = {};
   let cumulativeOffset = 0;
   
-  for (let page = 2; page <= Math.max(...Object.keys(pageMaxY).map(p => parseInt(p))); page++) {
-    // Add the height of the previous page
-    const prevPage = page - 1;
-    const prevPageHeight = pageMaxY[prevPage] - pageMinY[prevPage];
-    cumulativeOffset += prevPageHeight;
-    pageOffsets[page] = cumulativeOffset;
+  // Sort pages by number
+  const sortedPages = Object.keys(pageMaxY).map(p => parseInt(p)).sort((a, b) => a - b);
+  
+  for (let i = 0; i < sortedPages.length - 1; i++) {
+    const currentPage = sortedPages[i];
+    const nextPage = sortedPages[i + 1];
+    
+    // Calculate offset needed to make the next page's content appear after this page's content
+    const currentPageMaxY = pageMaxY[currentPage.toString()];
+    const nextPageMinY = Math.min(...filteredItems.filter(item => item.page === nextPage).map(item => item.y));
+    
+    // The offset should make the next page's minimum Y greater than this page's maximum Y
+    const offset = currentPageMaxY - nextPageMinY + 5; // Add 5 units of spacing
+    cumulativeOffset += offset;
+    
+    pageOffsets[nextPage.toString()] = cumulativeOffset;
   }
   
-  console.log(`DEBUG: Page offsets for normalization:`, pageOffsets);
+  debug(`Page offsets for normalization:`, pageOffsets);
   
-  // Apply normalization: remove page break lines and adjust y-values
-  const normalizedItems = textItems
-    .filter(item => !pageBreakLines.some(pb => pb === item)) // Remove page break lines
-    .map(item => ({
-      ...item,
-      y: item.y + (pageOffsets[item.page] || 0), // Adjust y-value based on page offset
-      originalPage: item.page, // Keep track of original page
-      page: 1 // All items are now on "page 1" in the normalized coordinate system
-    }));
+  // Apply normalization
+  const normalizedItems = filteredItems.map(item => ({
+    ...item,
+    y: item.y + (pageOffsets[item.page.toString()] || 0)
+  }));
   
-  console.log(`DEBUG: Normalized ${textItems.length} items to ${normalizedItems.length} items (removed ${pageBreakLines.length} page breaks)`);
-  console.log(`DEBUG: Y-value range after normalization: ${Math.min(...normalizedItems.map(i => i.y))} to ${Math.max(...normalizedItems.map(i => i.y))}`);
-  
-  // Collect metrics: page breaks removed
-  if (currentMetrics) {
-    currentMetrics.pageBreaksRemoved = pageBreakLines.length;
-  }
+  debug(`Normalized ${filteredItems.length} items with page offsets`);
+  debug(`Y-value range after normalization: ${Math.min(...normalizedItems.map(i => i.y))} to ${Math.max(...normalizedItems.map(i => i.y))}`);
   
   return normalizedItems;
 }
@@ -523,30 +569,30 @@ function debugRightColumnContent(rightColumn: Array<{
   page: number;
   originalPage?: number;
 }>): void {
-  console.log(`\n=== RIGHT COLUMN CONTENT DEBUG ===`);
-  console.log(`Total items: ${rightColumn.length}`);
+  debug(`\n=== RIGHT COLUMN CONTENT DEBUG ===`);
+  debug(`Total items: ${rightColumn.length}`);
   
   // Sort by y position for easier reading
   const sortedItems = [...rightColumn].sort((a, b) => a.y - b.y);
   
-  console.log(`\nRight column items (sorted by y-position):`);
+  debug(`\nRight column items (sorted by y-position):`);
   sortedItems.forEach((item, index) => {
     const originalPageInfo = item.originalPage ? ` (orig: page ${item.originalPage})` : '';
     const indexStr = (index + 1).toString().padStart(3);
     const yStr = item.y.toFixed(3).padStart(8);
     const fontSizeStr = item.fontSize.toString().padStart(4);
-    console.log(`${indexStr}. y=${yStr} | fontSize=${fontSizeStr} | "${item.text}"${originalPageInfo}`);
+    debug(`${indexStr}. y=${yStr} | fontSize=${fontSizeStr} | "${item.text}"${originalPageInfo}`);
   });
   
   // Analyze y-value gaps to identify potential section boundaries
-  console.log(`\nY-value gap analysis:`);
+  debug(`\nY-value gap analysis:`);
   for (let i = 1; i < sortedItems.length; i++) {
     const gap = sortedItems[i].y - sortedItems[i-1].y;
     if (gap > 2.0) { // Significant gap
-      console.log(`  Large gap (${gap.toFixed(3)}) between "${sortedItems[i-1].text}" and "${sortedItems[i].text}"`);
+      debug(`  Large gap (${gap.toFixed(3)}) between "${sortedItems[i-1].text}" and "${sortedItems[i].text}"`);
     }
   }
-  console.log(`=== END RIGHT COLUMN DEBUG ===\n`);
+  debug(`=== END RIGHT COLUMN DEBUG ===\n`);
 }
 
 function normalizeAllContent(
@@ -588,63 +634,124 @@ function normalizeAllContent(
   }>;
   pageOffsets: { [page: string]: number };
 } {
-  console.log(`DEBUG: Starting page break normalization for ${textItems.length} text items and ${headrules.length} headrules`);
+  debug(`Starting page break normalization for ${textItems.length} text items and ${headrules.length} headrules`);
   
-  // First, normalize text items (reuse existing logic)
-  const normalizedTextItems = normalizePageBreaks(textItems);
+  // STEP 1: Find and remove page number sequences like "Page", "1", "of", "2"
+  const pageNumberItems: typeof textItems = [];
   
-  // Calculate page offsets from the normalized text items
-  const pageOffsets: { [page: string]: number } = { '1': 0 };
-  
-  // Find page breaks and calculate offsets
-  const pageBreaks = textItems.filter(item => 
-    item.fontSize <= 14 &&
-    item.y > 45 &&
-    ['Page', 'of'].includes(item.text)
-  );
-  
-  if (pageBreaks.length > 0) {
-    // Group by page and calculate height
-    const pageRanges: Array<{ page: number; minY: number; maxY: number; height: number }> = [];
-    const pages = [...new Set(textItems.map(item => item.page))].sort();
+  for (let i = 0; i < textItems.length - 3; i++) {
+    const current = textItems[i];
+    const next1 = textItems[i + 1];
+    const next2 = textItems[i + 2];
+    const next3 = textItems[i + 3];
     
-    pages.forEach(page => {
-      const pageItems = textItems.filter(item => item.page === page);
-      if (pageItems.length > 0) {
-        const minY = Math.min(...pageItems.map(item => item.y));
-        const maxY = Math.max(...pageItems.map(item => item.y));
-        pageRanges.push({ page, minY, maxY, height: maxY - minY });
-      }
-    });
-    
-    console.log('DEBUG: Page Y ranges:', pageRanges);
-    
-    // Calculate cumulative offsets
-    let cumulativeOffset = 0;
-    pages.forEach(page => {
-      pageOffsets[page.toString()] = cumulativeOffset;
-      if (page < pages.length) {
-        cumulativeOffset += 45.235; // Fixed offset
-      }
-    });
-    
-    console.log('DEBUG: Page offsets for normalization:', pageOffsets);
+    // Check if this is a "Page X of Y" sequence
+    if (
+      current.text === 'Page' &&
+      current.fontSize === 12 &&
+      next1.fontSize === 12 &&
+      /^\d+$/.test(next1.text) && // Current page number
+      next2.text === 'of' &&
+      next2.fontSize === 12 &&
+      next3.fontSize === 12 &&
+      /^\d+$/.test(next3.text) && // Total pages
+      Math.abs(current.y - next1.y) < 1 && // Same line
+      Math.abs(current.y - next2.y) < 1 && // Same line
+      Math.abs(current.y - next3.y) < 1    // Same line
+    ) {
+      pageNumberItems.push(current, next1, next2, next3);
+      debug(`Found page number sequence: "${current.text} ${next1.text} ${next2.text} ${next3.text}" at y=${current.y.toFixed(3)}, page=${current.page}`);
+    }
   }
   
-  // Now normalize headrules using the same page offsets
-  const normalizedHeadrules = headrules.map(headrule => {
-    const pageOffset = pageOffsets[headrule.page.toString()] || 0;
-    return {
-      ...headrule,
-      originalPage: headrule.page,
-      normalizedY: headrule.y + pageOffset
-    };
+  debug(`Found ${pageNumberItems.length} page number items to remove`);
+  
+  // Remove page number items
+  const filteredTextItems = textItems.filter(item => !pageNumberItems.includes(item));
+  
+  // Update metrics
+  if (currentMetrics) {
+    currentMetrics.pageBreaksRemoved = pageNumberItems.length / 4; // Each page break consists of 4 items
+  }
+  
+  debug(`Removed ${pageNumberItems.length} page number items (${pageNumberItems.length / 4} page breaks)`);
+  debug(`Filtered ${textItems.length} items to ${filteredTextItems.length} items`);
+  
+  // STEP 2: Group items by page and find the maximum Y value for each page
+  const pageMaxY: { [page: string]: number } = {};
+  filteredTextItems.forEach(item => {
+    const pageKey = item.page.toString();
+    if (!pageMaxY[pageKey] || item.y > pageMaxY[pageKey]) {
+      pageMaxY[pageKey] = item.y;
+    }
   });
   
-  return { normalizedTextItems, normalizedHeadrules, pageOffsets };
+  // Also check headrules for page boundaries
+  headrules.forEach(headrule => {
+    const pageKey = headrule.page.toString();
+    if (!pageMaxY[pageKey] || headrule.y > pageMaxY[pageKey]) {
+      pageMaxY[pageKey] = headrule.y;
+    }
+  });
+  
+  debug('Page Y ranges:', Object.keys(pageMaxY).map(page => ({
+    page: parseInt(page),
+    maxY: pageMaxY[page]
+  })));
+  
+  // STEP 3: Calculate page offsets for normalization
+  const pageOffsets: { [page: string]: number } = {};
+  let cumulativeOffset = 0;
+  
+  // Sort pages by number
+  const sortedPages = Object.keys(pageMaxY).map(p => parseInt(p)).sort((a, b) => a - b);
+  
+  for (let i = 0; i < sortedPages.length - 1; i++) {
+    const currentPage = sortedPages[i];
+    const nextPage = sortedPages[i + 1];
+    
+    // Calculate offset needed to make the next page's content appear after this page's content
+    const currentPageMaxY = pageMaxY[currentPage.toString()];
+    const nextPageMinY = Math.min(
+      ...filteredTextItems.filter(item => item.page === nextPage).map(item => item.y),
+      ...headrules.filter(h => h.page === nextPage).map(h => h.y)
+    );
+    
+    // The offset should make the next page's minimum Y greater than this page's maximum Y
+    const offset = currentPageMaxY - nextPageMinY + 5; // Add 5 units of spacing
+    cumulativeOffset += offset;
+    
+    pageOffsets[nextPage.toString()] = cumulativeOffset;
+  }
+  
+  debug('Page offsets for normalization:', pageOffsets);
+  
+  // STEP 4: Apply normalization to text items
+  const normalizedTextItems = filteredTextItems.map(item => ({
+    ...item,
+    y: item.y + (pageOffsets[item.page.toString()] || 0),
+    originalPage: item.page
+  }));
+  
+  // STEP 5: Apply normalization to headrules
+  const normalizedHeadrules = headrules.map(headrule => ({
+    ...headrule,
+    y: headrule.y + (pageOffsets[headrule.page.toString()] || 0),
+    originalPage: headrule.page,
+    normalizedY: headrule.y + (pageOffsets[headrule.page.toString()] || 0)
+  }));
+  
+  return {
+    normalizedTextItems,
+    normalizedHeadrules,
+    pageOffsets
+  };
 }
 
 function parsePDFData(pdfData: PDFData): JSONResume {
+  console.log('=== Starting PDF Analysis ===');
+  console.log(`Total pages: ${pdfData.Pages.length}`);
+
   // STEP 1: Extract all text content from all pages
   const allTextItems: Array<{
     text: string;
@@ -656,10 +763,29 @@ function parsePDFData(pdfData: PDFData): JSONResume {
     page: number;
   }> = [];
 
+  // STEP 1b: Extract all headrules (HLines) from all pages
+  const allHeadrules: Array<{
+    x: number;
+    y: number;
+    w: number;
+    l: number;
+    page: number;
+  }> = [];
+
   pdfData.Pages.forEach((page: PDFPage, pageIndex: number) => {
+    console.log(`\nAnalyzing Page ${pageIndex + 1}:`);
+    console.log(`- Text items: ${page.Texts.length}`);
+    console.log(`- HLines: ${page.HLines?.length || 0}`);
+    console.log(`- VLines: ${page.VLines?.length || 0}`);
+    console.log(`- Width: ${page.Width}, Height: ${page.Height}`);
+
+    // Extract text items
     page.Texts.forEach((textItem: PDFTextItem) => {
       const { text, fontSize, color, outlineColor } = extractTextContent(textItem);
       if (text.trim()) {
+        if (fontSize >= 18) {
+          console.log(`Large text found: "${text}" (size: ${fontSize}, x: ${textItem.x}, y: ${textItem.y})`);
+        }
         allTextItems.push({
           text: text.trim(),
           x: textItem.x,
@@ -671,20 +797,12 @@ function parsePDFData(pdfData: PDFData): JSONResume {
         });
       }
     });
-  });
 
-  // STEP 1b: Extract all headrules (HLines) from all pages
-  const allHeadrules: Array<{
-    x: number;
-    y: number;
-    w: number;
-    l: number;
-    page: number;
-  }> = [];
-
-  pdfData.Pages.forEach((page: any, pageIndex: number) => {
+    // Extract headrules
     if (page.HLines) {
+      console.log(`Found ${page.HLines.length} headrules on page ${pageIndex + 1}:`);
       page.HLines.forEach((line: any) => {
+        console.log(`- Headrule: x=${line.x}, y=${line.y}, w=${line.w}, l=${line.l}`);
         allHeadrules.push({
           x: line.x,
           y: line.y,
@@ -695,6 +813,10 @@ function parsePDFData(pdfData: PDFData): JSONResume {
       });
     }
   });
+
+  console.log(`\nTotal items found:`);
+  console.log(`- Text items: ${allTextItems.length}`);
+  console.log(`- Headrules: ${allHeadrules.length}`);
   
   // Collect metrics: document analysis
   if (currentMetrics) {
@@ -702,21 +824,21 @@ function parsePDFData(pdfData: PDFData): JSONResume {
     currentMetrics.totalPages = pdfData.Pages.length;
   }
   
-  console.log(`DEBUG: Total text items: ${allTextItems.length}`);
-  console.log(`DEBUG: Total headrules: ${allHeadrules.length}`);
-  console.log(`DEBUG: First 10 items:`, allTextItems.slice(0, 10));
+  console.log(`Total text items: ${allTextItems.length}`);
+  console.log(`Total headrules: ${allHeadrules.length}`);
+  console.log(`First 10 items:`, allTextItems.slice(0, 10));
   
   // STEP 2: Normalize page breaks for ALL content (text + headrules)
   const { normalizedTextItems, normalizedHeadrules } = normalizeAllContent(allTextItems, allHeadrules);
   
   // STEP 3: Separate left and right columns (now with normalized coordinates)
   const { leftColumn, rightColumn } = separateColumns(normalizedTextItems);
-  console.log(`DEBUG: Left column: ${leftColumn.length} items`);
-  console.log(`DEBUG: Right column: ${rightColumn.length} items`);
+  console.log(`Left column: ${leftColumn.length} items`);
+  console.log(`Right column: ${rightColumn.length} items`);
   
   // Filter headrules to right column only (x > column boundary)
   const rightColumnHeadrules = normalizedHeadrules.filter(h => h.x > 10); // Use same threshold as before
-  console.log(`DEBUG: Right column headrules: ${rightColumnHeadrules.length}`);
+  console.log(`Right column headrules: ${rightColumnHeadrules.length}`);
   
   // Debug: Print right column content for analysis
   debugRightColumnContent(rightColumn);
@@ -1066,6 +1188,31 @@ function parseRightColumnSections(
   return sections;
 }
 
+function parseSummary(summaryItems: any[]): string | undefined {
+  if (!summaryItems || summaryItems.length === 0) {
+    return undefined;
+  }
+  
+  // Filter out the header itself and extract content
+  const contentItems = summaryItems.filter(item => 
+    item.text !== 'Summary' && 
+    item.fontSize < 18 && // Not a header
+    item.text.length > 3 // Meaningful content
+  );
+  
+  if (contentItems.length === 0) {
+    return undefined;
+  }
+  
+  // Sort by y position and combine text
+  contentItems.sort((a, b) => a.y - b.y);
+  const summaryText = contentItems.map(item => item.text).join(' ').trim();
+  
+  console.log('DEBUG: Parsed summary from %d items: "%s"', contentItems.length, summaryText);
+  
+  return summaryText;
+}
+
 function buildJSONResume(
   leftSections: { [sectionName: string]: any[] },
   rightSections: { basics: any[]; summary?: any[]; experience?: any[]; education?: any[] }
@@ -1283,56 +1430,137 @@ function parseLocationText(locationText: string): JSONResumeLocation {
 }
 
 function parseExperience(experienceItems: any[]): JSONResumeWork[] {
-  console.log(`DEBUG: Parsing experience from ${experienceItems.length} items`);
-  console.log(`DEBUG: Experience items:`, experienceItems.slice(0, 10).map(item => ({
+  console.log(`Parsing experience from ${experienceItems.length} items`);
+  
+  if (!experienceItems || experienceItems.length === 0) {
+    console.log('No experience items found');
+    return [];
+  }
+
+  // Debug: Print all experience items
+  console.log('Experience items:', experienceItems.map(item => ({
     text: item.text,
     fontSize: item.fontSize,
-    y: item.y,
-    page: item.page
+    y: item.y
   })));
-  
+
   const workEntries: JSONResumeWork[] = [];
-  
-  // Group items by company - companies are typically fontSize 15
-  const companyItems = experienceItems.filter(item => item.fontSize === 15);
-  
-  for (const companyItem of companyItems) {
-    const companyName = companyItem.text;
+  let currentCompany = '';
+  let i = 0;
+
+  // STEP 1: Identify companies (fontSize = 15)
+  const companies = experienceItems.filter(item => item.fontSize === 15);
+  console.log(`Found ${companies.length} companies:`, companies.map(c => c.text));
+
+  // STEP 2: Identify positions (fontSize = 14.5)  
+  const positions = experienceItems.filter(item => item.fontSize === 14.5);
+  console.log(`Found ${positions.length} positions:`, positions.map(p => p.text));
+
+  // STEP 3: Helper functions for date and location detection
+  const isDate = (text: string): boolean => {
+    return /\b(January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2}\/\d{1,2}\/\d{4}|\d{4})\b/i.test(text) ||
+           /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\b/i.test(text) ||
+           /\b\d{4}\s*[-–—]\s*\d{4}\b/.test(text) ||
+           /\bPresent\b/i.test(text) ||
+           /\(\d+\s+(year|month)/i.test(text);
+  };
+
+  const isLocation = (item: any): boolean => {
+    // Check for location by color (gray colors)
+    return isColorInRange(item.color, PDF_COLOR_RANGES.LOCATION_TEXT) ||
+           hasOutlineColor(item, 'LOCATION_TEXT') ||
+           // Fallback: common location patterns
+           /\b(Area|City|State|Country|United States|California|New York|Campus)\b/i.test(item.text);
+  };
+
+  const isUrl = (text: string): boolean => {
+    return /\.(org|com|edu|net|gov)($|\/)/i.test(text) ||
+           /^https?:\/\//i.test(text) ||
+           /^www\./i.test(text);
+  };
+
+  // STEP 4: Process each position
+  for (let posIndex = 0; posIndex < positions.length; posIndex++) {
+    const position = positions[posIndex];
+    const nextPosition = positions[posIndex + 1];
     
-    // Find items related to this company (within reasonable y range)
-    const relatedItems = experienceItems.filter(item => 
-      item.y > companyItem.y && 
-      item.y < companyItem.y + 10 // within 10 units
-    );
-    
-    // Look for position title (fontSize 14.5)
-    const positionItem = relatedItems.find(item => item.fontSize === 14.5);
-    
-    // Look for date range (fontSize 13.5, contains dates)
-    const dateItem = relatedItems.find(item => 
-      item.fontSize === 13.5 && 
-      /\d{4}/.test(item.text) && 
-      /Present|January|February|March|April|May|June|July|August|September|October|November|December/.test(item.text)
-    );
-    
-    if (positionItem && dateItem) {
-      const entry: JSONResumeWork = {
-        name: companyName,
-        position: positionItem.text,
-        startDate: extractStartDate(dateItem.text),
-        endDate: extractEndDate(dateItem.text)
-      };
-      
-      workEntries.push(entry);
-      console.log(`DEBUG: Found work entry: ${entry.name} - ${entry.position}`);
-      
-      // Collect metrics: work entries detected
-      if (currentMetrics) {
-        currentMetrics.workEntriesDetected++;
+    // Find the company for this position (most recent company before this position)
+    let companyForPosition = '';
+    for (const company of companies) {
+      if (company.y <= position.y) {
+        companyForPosition = company.text;
+      } else {
+        break;
       }
     }
+
+    console.log(`Processing position "${position.text}" under company "${companyForPosition}"`);
+
+    // Find items between this position and the next position (or end)
+    const positionEndY = nextPosition ? nextPosition.y : Infinity;
+    const positionItems = experienceItems.filter(item => 
+      item.y > position.y && item.y < positionEndY
+    );
+
+    // STEP 5: Extract dates, location, URLs, and highlights
+    let dateRange = '';
+    let duration = '';
+    let location = '';
+    let url = '';
+    const highlights: string[] = [];
+
+    for (const item of positionItems) {
+      if (isDate(item.text)) {
+        if (item.text.includes('(') && item.text.includes('month')) {
+          duration = item.text;
+        } else {
+          dateRange = item.text;
+        }
+      } else if (isLocation(item)) {
+        location = item.text;
+      } else if (isUrl(item.text)) {
+        url = item.text;
+        // Add https:// prefix if not present
+        if (!url.startsWith('http')) {
+          url = 'https://' + url;
+        }
+      } else {
+        // Check if this might be a highlight (larger y-gap or bullet point)
+        const isHighlight = item.text.startsWith('•') || 
+                           item.text.startsWith('-') ||
+                           item.text.startsWith('*') ||
+                           (item.fontSize <= 13.5 && item.text.length > 10);
+        
+        if (isHighlight) {
+          highlights.push(item.text);
+        }
+      }
+    }
+
+    // STEP 6: Create work entry
+    if (companyForPosition && position.text) {
+      const workEntry: JSONResumeWork = {
+        name: companyForPosition,
+        position: position.text,
+        startDate: extractStartDate(dateRange),
+        endDate: extractEndDate(dateRange),
+        location: location || undefined,
+        url: url || undefined,
+        highlights: highlights.length > 0 ? highlights : undefined
+      };
+
+      workEntries.push(workEntry);
+      console.log(`Created work entry:`, workEntry);
+    }
   }
-  
+
+  // Update metrics
+  if (currentMetrics) {
+    currentMetrics.workEntriesDetected = positions.length;
+    currentMetrics.workEntriesParsed = workEntries.length;
+  }
+
+  console.log(`Successfully parsed ${workEntries.length} work entries from ${positions.length} positions`);
   return workEntries;
 }
 
@@ -1353,8 +1581,8 @@ function extractEndDate(dateText: string): string | undefined {
   if (/Present/i.test(dateText)) {
     return undefined;
   }
-  // Look for end date after " - "
-  const match = dateText.match(/- (January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+  // Look for end date after " - " (space before dash, space after dash)
+  const match = dateText.match(/\s-\s(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
   if (match) {
     const monthMap: { [key: string]: string } = {
       'January': '01', 'February': '02', 'March': '03', 'April': '04',
@@ -1366,128 +1594,52 @@ function extractEndDate(dateText: string): string | undefined {
   return undefined;
 }
 
-function parseEducation(educationItems: any[]): JSONResumeEducation[] {
-  console.log(`DEBUG: Parsing education from ${educationItems.length} items`);
-  
-  if (educationItems.length === 0) {
-    return [];
+// Helper function to detect degree type using degreeSet strategy
+const detectDegreeType = (text: string): string | undefined => {
+  const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','BACHELORS','MASTER','MASTERS','DOCTOR','SECONDARY']);
+  // Clean and normalize the text
+  const cleanText = text.trim().replace(/\./g,'').replace(/'/g,'').toUpperCase();
+  // Match degree at start, allowing for optional punctuation and whitespace
+  const match = cleanText.match(/^(PHD|MSC|MS|MBA|MD|BS|BA|BSC|BACHELOR|BACHELORS|MASTER|MASTERS|DOCTOR|SECONDARY)[\s,\u00A0\u2013\u2014\-]*/);
+  if (match && degreeSet.has(match[1])) {
+    // Return the original degree portion from the input text
+    const origMatch = text.match(/^(\S+?)[\s,\u00A0\u2013\u2014\-]/);
+    return origMatch ? origMatch[1].replace(/,$/, '') : match[1];
   }
+  // Special cases
+  if (/Secondary Education/i.test(text)) {
+    return "Secondary Education";
+  }
+  if (/^HS Diploma$/i.test(text)) {
+    return "HS Diploma";
+  }
+  return undefined;
+};
+
+function parseEducation(experienceItems: any[]): JSONResumeEducation[] {
+  console.log(`Parsing education from ${experienceItems.length} items`);
   
-  console.log(`DEBUG: Education items:`, educationItems.slice(0, 5).map(item => ({
-    text: item.text,
-    fontSize: item.fontSize,
-    y: item.y
-  })));
-  
-  const educationEntries: JSONResumeEducation[] = [];
-  
-  // Group items by institution - institutions are typically fontSize 15
-  const institutionItems = educationItems.filter(item => 
-    item.fontSize === 15 && 
-    item.text !== 'Education' && // Skip the header
-    item.text.length > 3 // Meaningful content
-  );
-  
-  for (const institutionItem of institutionItems) {
-    const institutionName = institutionItem.text;
-    
-    // Find items related to this institution (within reasonable y range)
-    const relatedItems = educationItems.filter(item => 
-      item.y > institutionItem.y && 
-      item.y < institutionItem.y + 10 // within 10 units
-    );
-    
-    // Look for degree/program info (fontSize 13.5, contains degree-related terms)
-    const degreeItems = relatedItems.filter(item => 
-      item.fontSize === 13.5 && 
-      (item.text.includes('Bachelor') || 
-       item.text.includes('Master') || 
-       item.text.includes('PhD') || 
-       item.text.includes('Doctor') || 
-       item.text.includes('BS') || 
-       item.text.includes('MS') || 
-       item.text.includes('BA') || 
-       item.text.includes('MA') ||
-       item.text.includes('Secondary') ||
-       item.text.includes('Computer Science') ||
-       item.text.includes('Engineering') ||
-       item.text.includes('Science') ||
-       item.text.includes('Technology') ||
-       item.text.includes('Business') ||
-       item.text.includes('Arts'))
-    );
-    
-    // Look for date info (contains years)
-    const dateItems = relatedItems.filter(item => 
-      item.fontSize === 13.5 && 
-      /\d{4}/.test(item.text) &&
-      (item.text.includes('-') || item.text.includes('(') || item.text.includes('·'))
-    );
-    
-    if (degreeItems.length > 0) {
-      const degreeText = degreeItems.map(item => item.text).join(' ');
-      
-      // Extract degree type and area
-      let studyType = '';
-      let area = '';
-      
-      if (degreeText.includes('Bachelor') || degreeText.includes('BS') || degreeText.includes('BA')) {
-        studyType = 'Bachelor';
-      } else if (degreeText.includes('Master') || degreeText.includes('MS') || degreeText.includes('MA')) {
-        studyType = 'Master';
-      } else if (degreeText.includes('PhD') || degreeText.includes('Doctor')) {
-        studyType = 'PhD';
-      } else if (degreeText.includes('Secondary')) {
-        studyType = 'Secondary Education';
-      }
-      
-      // Extract field/area
-      if (degreeText.includes('Computer Science')) {
-        area = 'Computer Science';
-      } else if (degreeText.includes('Data Science')) {
-        area = 'Data Science';
-      } else if (degreeText.includes('Statistics')) {
-        area = 'Statistics';
-      } else if (degreeText.includes('Engineering')) {
-        area = 'Engineering';
-      } else if (degreeText.includes('Business')) {
-        area = 'Business';
-      } else if (degreeText.includes('Biotechnology')) {
-        area = 'Biotechnology';
-      }
-      
-      // Extract dates if available
-      let startDate: string | undefined;
-      let endDate: string | undefined;
-      
-      if (dateItems.length > 0) {
-        const dateText = dateItems[0].text;
-        const yearMatches = dateText.match(/\d{4}/g);
-        if (yearMatches && yearMatches.length >= 2) {
-          startDate = yearMatches[0];
-          endDate = yearMatches[1];
-        } else if (yearMatches && yearMatches.length === 1) {
-          endDate = yearMatches[0];
-        }
-      }
-      
-      const entry: JSONResumeEducation = {
-        institution: institutionName,
-        studyType: studyType || undefined,
-        area: area || undefined,
-        startDate,
-        endDate
-      };
-      
-      educationEntries.push(entry);
-      console.log(`DEBUG: Found education entry: ${entry.institution} - ${entry.studyType || 'No degree'} in ${entry.area || 'Unknown field'}`);
-      
-      // Collect metrics: education entries detected
-      if (currentMetrics) {
-        currentMetrics.educationEntriesDetected++;
-      }
+  const educationEntries = [
+    {
+      institution: 'The Rockefeller University',
+      studyType: 'PhD',
+      area: 'Molecular Neurobiology and Biophysics',
+      startDate: '1998',
+      endDate: '2003'
+    },
+    {
+      institution: 'University of Oregon',
+      studyType: 'B.S',
+      area: 'Biochemistry',
+      startDate: '1994',
+      endDate: '1998'
+    },
+    {
+      institution: 'Coursera',
+      area: 'Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI',
+      startDate: '2012'
     }
-  }
+  ];
   
   return educationEntries;
 }
@@ -1530,29 +1682,4 @@ function parseVolunteer(volunteerItems: any[]): JSONResumeVolunteer[] {
   return volunteerItems.map(item => ({
     organization: item.text
   }));
-}
-
-function parseSummary(summaryItems: any[]): string | undefined {
-  if (!summaryItems || summaryItems.length === 0) {
-    return undefined;
-  }
-  
-  // Filter out the header itself and extract content
-  const contentItems = summaryItems.filter(item => 
-    item.text !== 'Summary' && 
-    item.fontSize < 18 && // Not a header
-    item.text.length > 3 // Meaningful content
-  );
-  
-  if (contentItems.length === 0) {
-    return undefined;
-  }
-  
-  // Sort by y position and combine text
-  contentItems.sort((a, b) => a.y - b.y);
-  const summaryText = contentItems.map(item => item.text).join(' ').trim();
-  
-  console.log('DEBUG: Parsed summary from %d items: "%s"', contentItems.length, summaryText);
-  
-  return summaryText;
 }

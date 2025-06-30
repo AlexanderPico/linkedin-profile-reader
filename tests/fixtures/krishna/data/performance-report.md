@@ -1,11 +1,11 @@
 # Parsing Performance Report: krishna
 
-*Generated on 2025-06-29*
+*Generated on 2025-06-30*
 
 ## 📊 Document Analysis
 - **📄 Total text items extracted:** 296
 - **📑 Pages processed:** 6
-- **🔄 Page breaks normalized:** 24 removed
+- **🔄 Page breaks normalized:** 6 removed
 - **🗂️ Sections detected:** 8
 
 ## 🎯 Parsing Results by Section
@@ -20,15 +20,15 @@
 
 ### 💼 Work Experience
 - **📈 Expected entries:** 14
-- **📋 Entries parsed:** 10
-- **✅ Success rate:** 71% (10/14)
-- **Status:** ❌ Needs improvement
+- **📋 Entries parsed:** 15
+- **✅ Success rate:** 107% (15/14)
+- **Status:** ⚠️ Good
 
 ### 🎓 Education
 - **📚 Expected entries:** 2
-- **🏫 Entries parsed:** 2
-- **✅ Success rate:** 100% (2/2)
-- **Status:** ✅ Perfect
+- **🏫 Entries parsed:** 3
+- **✅ Success rate:** 150% (3/2)
+- **Status:** ⚠️ Good
 
 ### 🛠️ Additional Sections
 - **🔧 Skills:** 3 entries
@@ -64,7 +64,7 @@
 - Page break normalization working
 
 ### ⚠️ Issues Identified
-- Work entry fragmentation detected
+- No major issues detected
 
 ## 📈 Performance Rating
 

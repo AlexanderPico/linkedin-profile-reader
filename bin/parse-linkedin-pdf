@@ -20,6 +20,7 @@ const args = process.argv.slice(2);
 // Parse CLI flags
 const validateFlag = args.includes('--validate');
 const helpFlag = args.includes('--help') || args.includes('-h');
+const reportFlag = args.includes('--report');
 
 if (helpFlag) {
   console.log(`
@@ -29,11 +30,13 @@ Parse LinkedIn Profile.pdf exports to JSON Resume format
 
 Options:
   --validate    Validate output against JSON Resume schema
+  --report      Generate performance report
   --help, -h    Show this help message
 
 Examples:
   parse-linkedin-pdf Profile.pdf
   parse-linkedin-pdf --validate Profile.pdf
+  parse-linkedin-pdf --report Profile.pdf
   cat Profile.pdf | parse-linkedin-pdf --validate
 `);
   process.exit(0);
@@ -80,6 +83,34 @@ try {
       }
     } catch (validationError) {
       console.error('⚠️  Schema validation unavailable:', validationError.message);
+    }
+  }
+
+  // Generate performance report if requested
+  if (reportFlag) {
+    try {
+      const { generateAllReports, generateSummaryTable } = await import('../src/performance-report-v2.js');
+      console.log('\n🔍 Generating performance reports...');
+      const allReports = await generateAllReports();
+      
+      // Generate and save summary table
+      const summaryTable = generateSummaryTable(allReports);
+      const summaryPath = 'tests/performance-summary-v2.md';
+      fs.writeFileSync(summaryPath, summaryTable);
+      
+      // Print summary statistics
+      const avgSuccess = Math.round(allReports.reduce((sum, r) => sum + r.overallSuccessRate, 0) / allReports.length);
+      const perfectCount = allReports.filter(r => r.overallSuccessRate === 100).length;
+      
+      console.log('\n🎯 Performance Summary:');
+      console.log(`   📊 Average Success Rate: ${avgSuccess}%`);
+      console.log(`   🏆 Perfect Parsing: ${perfectCount}/${allReports.length} fixtures`);
+      console.log(`   📋 Total Reports Generated: ${allReports.length}`);
+      console.log('\n✅ Performance analysis complete!');
+      console.log(`📂 Individual reports: tests/fixtures/*/data/performance-report.md`);
+      console.log(`📊 Summary report: ${summaryPath}`);
+    } catch (error) {
+      console.error('❌ Error generating performance reports:', error);
     }
   }
   

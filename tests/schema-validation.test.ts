@@ -1,4 +1,6 @@
-import { parseLinkedInPdf } from '../dist/index.js';
+import { parseLinkedInPdf } from '../src/index.js';
+import { validateJSONResume } from '../src/validate.mjs';
+import type { JSONResumeWork, JSONResumeEducation } from '../src/types.d.ts';
 
 describe('JSON Resume Schema Validation', () => {
   const testProfiles = [
@@ -13,8 +15,6 @@ describe('JSON Resume Schema Validation', () => {
     async ({ name, path: profilePath }) => {
       const result = await parseLinkedInPdf(profilePath);
 
-      // Dynamic import to avoid TypeScript issues with AJV
-      const { validateJSONResume } = await import('../src/validate.mjs');
       const validation = validateJSONResume(result) as {
         valid: boolean;
         errors?: string[];
@@ -25,6 +25,9 @@ describe('JSON Resume Schema Validation', () => {
         validation.errors?.forEach((error: string) => {
           console.log(`  - ${error}`);
         });
+        // Print the full result for debugging
+        console.log('Full result:', JSON.stringify(result, null, 2));
+        fail('Schema validation failed. See errors above.');
       }
 
       expect(validation.valid).toBe(true);
@@ -109,3 +112,11 @@ describe('JSON Resume Schema Validation', () => {
     });
   });
 });
+
+function validateWork(work: JSONResumeWork[]): void {
+  // ... existing code ...
+}
+
+function validateEducation(edu: JSONResumeEducation[]): void {
+  // ... existing code ...
+}

@@ -1,11 +1,11 @@
 # Parsing Performance Report: benjamin
 
-*Generated on 2025-06-29*
+*Generated on 2025-06-30*
 
 ## 📊 Document Analysis
 - **📄 Total text items extracted:** 86
 - **📑 Pages processed:** 3
-- **🔄 Page breaks normalized:** 12 removed
+- **🔄 Page breaks normalized:** 3 removed
 - **🗂️ Sections detected:** 6
 
 ## 🎯 Parsing Results by Section

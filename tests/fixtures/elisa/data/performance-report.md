@@ -1,11 +1,11 @@
 # Parsing Performance Report: elisa
 
-*Generated on 2025-06-29*
+*Generated on 2025-06-30*
 
 ## 📊 Document Analysis
 - **📄 Total text items extracted:** 101
 - **📑 Pages processed:** 3
-- **🔄 Page breaks normalized:** 12 removed
+- **🔄 Page breaks normalized:** 3 removed
 - **🗂️ Sections detected:** 4
 
 ## 🎯 Parsing Results by Section
@@ -20,15 +20,15 @@
 
 ### 💼 Work Experience
 - **📈 Expected entries:** 15
-- **📋 Entries parsed:** 12
-- **✅ Success rate:** 80% (12/15)
+- **📋 Entries parsed:** 18
+- **✅ Success rate:** 120% (18/15)
 - **Status:** ⚠️ Good
 
 ### 🎓 Education
 - **📚 Expected entries:** 1
-- **🏫 Entries parsed:** 1
-- **✅ Success rate:** 100% (1/1)
-- **Status:** ✅ Perfect
+- **🏫 Entries parsed:** 3
+- **✅ Success rate:** 300% (3/1)
+- **Status:** ⚠️ Good
 
 ### 🛠️ Additional Sections
 - **🔧 Skills:** 0 entries
@@ -58,7 +58,7 @@
 - Page break normalization working
 
 ### ⚠️ Issues Identified
-- Work entry fragmentation detected
+- No major issues detected
 
 ## 📈 Performance Rating
 

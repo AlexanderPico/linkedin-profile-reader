@@ -16,7 +16,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest; npm run performance-v2",
+    "test:debug": "node --experimental-vm-modules ./node_modules/.bin/jest -- --debug; npm run performance-v2",
+    "test:debug-linkedin": "node --experimental-vm-modules ./node_modules/.bin/jest -- --debug=linkedin; npm run performance-v2",
     "lint": "eslint . --ext .ts,.js",
     "prepare": "husky install && npm run build",
     "docs": "typedoc",
@@ -40,6 +42,7 @@
     "pdfjs-dist": "^5.3.31"
   },
   "devDependencies": {
+    "@types/debug": "^4.1.12",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
