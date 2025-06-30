@@ -26,9 +26,9 @@
 
 ### 🎓 Education
 - **📚 Expected entries:** 2
-- **🏫 Entries parsed:** 3
-- **✅ Success rate:** 150% (3/2)
-- **Status:** ⚠️ Good
+- **🏫 Entries parsed:** 2
+- **✅ Success rate:** 100% (2/2)
+- **Status:** ✅ Perfect
 
 ### 🛠️ Additional Sections
 - **🔧 Skills:** 3 entries

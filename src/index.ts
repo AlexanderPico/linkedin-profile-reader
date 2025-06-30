@@ -702,31 +702,31 @@ function normalizeAllContent(
     maxY: pageMaxY[page]
   })));
   
-  // STEP 3: Calculate page offsets for normalization
+  // STEP 3: Calculate page offsets for normalization using footer algorithm
+  // Find footer "Page" line y positions (before removal)
+  const footerY: { [page: string]: number } = {};
+  pageNumberItems.forEach(item => {
+    if (item.text === 'Page') {
+      footerY[item.page.toString()] = item.y;
+    }
+  });
+
   const pageOffsets: { [page: string]: number } = {};
   let cumulativeOffset = 0;
-  
-  // Sort pages by number
-  const sortedPages = Object.keys(pageMaxY).map(p => parseInt(p)).sort((a, b) => a - b);
-  
+
+  const sortedPages = Object.keys(pageMaxY).map(p => parseInt(p)).sort((a,b)=>a-b);
+
   for (let i = 0; i < sortedPages.length - 1; i++) {
     const currentPage = sortedPages[i];
-    const nextPage = sortedPages[i + 1];
-    
-    // Calculate offset needed to make the next page's content appear after this page's content
-    const currentPageMaxY = pageMaxY[currentPage.toString()];
-    const nextPageMinY = Math.min(
-      ...filteredTextItems.filter(item => item.page === nextPage).map(item => item.y),
-      ...headrules.filter(h => h.page === nextPage).map(h => h.y)
-    );
-    
-    // The offset should make the next page's minimum Y greater than this page's maximum Y
-    const offset = currentPageMaxY - nextPageMinY + 5; // Add 5 units of spacing
+    const nextPage = sortedPages[i+1];
+
+    // Determine footer y for current page; if missing, fallback to maxY
+    const footer = footerY[currentPage.toString()] ?? pageMaxY[currentPage.toString()];
+    const offset = footer - 2.83; // algorithm: add footerY, subtract margin
     cumulativeOffset += offset;
-    
     pageOffsets[nextPage.toString()] = cumulativeOffset;
   }
-  
+
   debug('Page offsets for normalization:', pageOffsets);
   
   // STEP 4: Apply normalization to text items
@@ -736,13 +736,37 @@ function normalizeAllContent(
     originalPage: item.page
   }));
   
-  // STEP 5: Apply normalization to headrules
-  const normalizedHeadrules = headrules.map(headrule => ({
-    ...headrule,
-    y: headrule.y + (pageOffsets[headrule.page.toString()] || 0),
-    originalPage: headrule.page,
-    normalizedY: headrule.y + (pageOffsets[headrule.page.toString()] || 0)
-  }));
+  // Debug: Check y-spacing between pages after normalization
+  for (let i = 0; i < sortedPages.length - 1; i++) {
+    const currentPage = sortedPages[i];
+    const nextPage = sortedPages[i + 1];
+    
+    // Find last item on current page and first item on next page (after normalization)
+    const currentPageItems = normalizedTextItems.filter(item => item.originalPage === currentPage);
+    const nextPageItems = normalizedTextItems.filter(item => item.originalPage === nextPage);
+    
+    if (currentPageItems.length > 0 && nextPageItems.length > 0) {
+      const lastItemCurrentPage = currentPageItems.reduce((max, item) => item.y > max.y ? item : max);
+      const firstItemNextPage = nextPageItems.reduce((min, item) => item.y < min.y ? item : min);
+      
+      const ySpacing = firstItemNextPage.y - lastItemCurrentPage.y;
+      
+      
+      debug(`Page ${currentPage} → ${nextPage}: Last item y=${lastItemCurrentPage.y.toFixed(3)} ("${lastItemCurrentPage.text}"), First item y=${firstItemNextPage.y.toFixed(3)} ("${firstItemNextPage.text}"), Spacing=${ySpacing.toFixed(3)}`);
+    }
+  }
+  
+  // STEP 5: Apply normalization to headrules (simplified - no special cross-page handling needed)
+  const normalizedHeadrules = headrules.map(headrule => {
+    const normalizedY = headrule.y + (pageOffsets[headrule.page.toString()] || 0);
+    
+    return {
+      ...headrule,
+      y: normalizedY,
+      originalPage: headrule.page,
+      normalizedY: normalizedY
+    };
+  });
   
   return {
     normalizedTextItems,
@@ -1013,6 +1037,12 @@ function parseRightColumnSections(
   console.log('DEBUG: STEP 3 - Found %d headrules in right column:', rightColumnHeadrules.length, rightColumnHeadrules.map(h => 
     `{ x: ${h.x.toFixed(3)}, y: ${h.y.toFixed(3)}, normalizedY: ${h.normalizedY.toFixed(3)}, page: ${h.page} }`
   ));
+  
+  // Debug: Show all title font headers
+  const titleHeaders = rightColumn.filter(item => item.fontSize >= 18 && item.text.length > 2);
+  console.log('DEBUG: Title font headers:', titleHeaders.map(h => 
+    `"${h.text}" at y=${h.y.toFixed(3)} (page ${h.page})`
+  ));
 
   // Find title font headers that are close to headrules (within 2 units)
   const headruleSections: Array<{ 
@@ -1025,9 +1055,12 @@ function parseRightColumnSections(
   
   rightColumnHeadrules.forEach(headrule => {
     // Look for title font text items near this headrule (normalized coordinates)
+    // Allow headers to appear slightly before their headrules (up to 2 units)
+    // or slightly after (up to 2 units)
     const nearbyTitleItems = rightColumn.filter(item => 
       item.fontSize >= 18 && 
-      Math.abs(item.y - headrule.normalizedY) < 2 && // Use normalized coordinates
+      item.y >= headrule.normalizedY - 2 && // Header can be up to 2 units before headrule
+      item.y <= headrule.normalizedY + 2 && // Or up to 2 units after headrule
       item.text.length > 2
     );
     
@@ -1600,31 +1633,170 @@ function extractEndDate(dateText: string): string | undefined {
 // Helper function to detect degree type using degreeSet strategy
 // const detectDegreeType = (text: string): string | undefined => {
 
-function parseEducation(experienceItems: any[]): JSONResumeEducation[] {
-  console.log(`Parsing education from ${experienceItems.length} items`);
+function parseEducation(educationItems: any[]): JSONResumeEducation[] {
+  console.log(`Parsing education from ${educationItems.length} items`);
   
-  const educationEntries = [
-    {
-      institution: 'The Rockefeller University',
-      studyType: 'PhD',
-      area: 'Molecular Neurobiology and Biophysics',
-      startDate: '1998',
-      endDate: '2003'
-    },
-    {
-      institution: 'University of Oregon',
-      studyType: 'B.S',
-      area: 'Biochemistry',
-      startDate: '1994',
-      endDate: '1998'
-    },
-    {
-      institution: 'Coursera',
-      area: 'Computer Programming, Functional Programming, Data Analysis, Neuroscience, Gamification, HCI',
-      startDate: '2012'
+  if (!educationItems || educationItems.length === 0) {
+    console.log('No education items found');
+    return [];
+  }
+
+  // Debug: Print all education items
+  console.log('Education items:', educationItems.map(item => ({
+    text: item.text,
+    fontSize: item.fontSize,
+    y: item.y
+  })));
+
+  const educationEntries: JSONResumeEducation[] = [];
+
+  // STEP 1: Identify institutions by font size and preceding y-gaps
+  // Calculate baseline line spacing
+  const yDiffs: number[] = [];
+  for (let i = 1; i < educationItems.length; i++) {
+    const diff = educationItems[i - 1].y - educationItems[i].y;
+    if (diff > 0 && diff < 40) yDiffs.push(diff);
+  }
+  yDiffs.sort((a, b) => a - b);
+  const baselineGap = yDiffs.length ? yDiffs[Math.floor(yDiffs.length / 2)] : 12;
+  console.log(`Education baseline gap: ${baselineGap}`);
+
+  // Find potential institutions (larger font sizes with larger y-gaps)
+  const institutions: Array<{ item: any; index: number }> = [];
+  
+  for (let i = 0; i < educationItems.length; i++) {
+    const item = educationItems[i];
+    
+    // Check if this could be an institution
+    // Primary indicator: fontSize = 15 (same pattern as work experience companies)
+    const isInstitutionFont = item.fontSize === 15;
+    const isLongEnough = item.text.length > 3;
+    const isNotDate = !/(19|20)\d{2}/.test(item.text); // Not a year
+    const isNotParenthetical = !item.text.startsWith('(');
+    const isNotBullet = !item.text.startsWith('·');
+    
+    if (isInstitutionFont && isLongEnough && isNotDate && isNotParenthetical && isNotBullet) {
+      institutions.push({ item, index: i });
+      console.log(`Found potential institution: "${item.text}" (fontSize: ${item.fontSize})`);
     }
-  ];
-  
+  }
+
+  console.log(`Found ${institutions.length} potential institutions`);
+
+  // STEP 2 & 3: For each institution, identify subsequent lines and parse them
+  for (let instIndex = 0; instIndex < institutions.length; instIndex++) {
+    const institution = institutions[instIndex];
+    const nextInstitution = institutions[instIndex + 1];
+    
+    // Get items between this institution and the next (or end)
+    const startIndex = institution.index + 1;
+    const endIndex = nextInstitution ? nextInstitution.index : educationItems.length;
+    const relatedItems = educationItems.slice(startIndex, endIndex);
+    
+    console.log(`Processing institution: "${institution.item.text}"`);
+    console.log(`Related items (${relatedItems.length}):`, relatedItems.map(item => item.text));
+
+    // Parse the related items for degree, area, and dates
+    let studyType: string | undefined;
+    let area: string | undefined;
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+
+    // Combine all related text for parsing
+    const combinedText = relatedItems.map(item => item.text).join(' ');
+    console.log(`Combined text: "${combinedText}"`);
+
+    // Parse for degree types
+    const degreePatterns = [
+      /\b(PhD|Ph\.?D\.?|Doctor of Philosophy|Doctorate)\b/i,
+      /\b(Master|Masters|M\.?S\.?|M\.?A\.?|MBA|M\.?Sc\.?)\b/i,
+      /\b(Bachelor|Bachelors|B\.?S\.?|B\.?A\.?|B\.?Sc\.?)\b/i,
+      /\b(Associate|A\.?S\.?|A\.?A\.?)\b/i,
+      /\b(Certificate|Certification|Cert\.?)\b/i
+    ];
+
+    for (const pattern of degreePatterns) {
+      const match = combinedText.match(pattern);
+      if (match) {
+        studyType = match[1];
+        break;
+      }
+    }
+
+    // Parse for area/field of study (text before date in parentheses)
+    // Look for pattern: degree? area... (date)
+    const areaMatch = combinedText.match(/^(.*?)\s*\(.*?(19|20)\d{2}.*?\)\s*$/);
+    if (areaMatch) {
+      let areaText = areaMatch[1].trim();
+      // Remove degree type from area if it's at the beginning
+      if (studyType) {
+        areaText = areaText.replace(new RegExp(`^${studyType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*,?\\s*`, 'i'), '');
+      }
+      // Clean up bullet points and extra characters
+      areaText = areaText.replace(/\s*·\s*/g, ' ').trim();
+      area = areaText;
+    } else {
+      // Fallback: use text that's not a date or bullet
+      const nonDateText = relatedItems
+        .filter(item => !/(19|20)\d{2}/.test(item.text) && !item.text.match(/^\([^)]*\)$/) && !item.text.startsWith('·'))
+        .map(item => item.text)
+        .join(' ')
+        .trim();
+      if (nonDateText) {
+        // Remove degree type from area if it's at the beginning
+        let cleanArea = nonDateText;
+        if (studyType) {
+          cleanArea = cleanArea.replace(new RegExp(`^${studyType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*,?\\s*`, 'i'), '');
+        }
+        area = cleanArea.trim();
+      }
+    }
+
+    // Parse dates from parenthetical expressions
+    const dateInParens = combinedText.match(/\(([^)]*?(19|20)\d{2}[^)]*?)\)/);
+    if (dateInParens) {
+      const dateText = dateInParens[1];
+      console.log(`Found date text: "${dateText}"`);
+      
+      // Extract start and end years
+      const years = dateText.match(/(19|20)\d{2}/g);
+      if (years) {
+        startDate = years[0];
+        if (years.length > 1) {
+          endDate = years[1];
+        }
+      }
+    } else {
+      // Look for standalone years
+      const years = combinedText.match(/(19|20)\d{2}/g);
+      if (years) {
+        startDate = years[0];
+        if (years.length > 1) {
+          endDate = years[1];
+        }
+      }
+    }
+
+    // Create education entry
+    const educationEntry: JSONResumeEducation = {
+      institution: institution.item.text,
+      studyType: studyType || undefined,
+      area: area || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    };
+
+    console.log(`Created education entry:`, educationEntry);
+    educationEntries.push(educationEntry);
+  }
+
+  // Update metrics
+  if (currentMetrics) {
+    currentMetrics.educationEntriesDetected = institutions.length;
+    currentMetrics.educationEntriesParsed = educationEntries.length;
+  }
+
+  console.log(`Successfully parsed ${educationEntries.length} education entries from ${institutions.length} institutions`);
   return educationEntries;
 }
 
