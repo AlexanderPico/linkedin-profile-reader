@@ -1,6 +1,6 @@
 import { parseLinkedInPdf } from '../src/index.js';
 import { validateJSONResume } from '../src/validate.mjs';
-import type { JSONResumeWork, JSONResumeEducation } from '../src/types.d.ts';
+// import type { JSONResumeWork, JSONResumeEducation } from '../src/types.d.ts';
 
 describe('JSON Resume Schema Validation', () => {
   const testProfiles = [
@@ -113,10 +113,12 @@ describe('JSON Resume Schema Validation', () => {
   });
 });
 
-function validateWork(work: JSONResumeWork[]): void {
-  // ... existing code ...
-}
+// Test work experience validation
+// const validateWork = (work: any) => {
+//   expect(work).toBeDefined();
+// };
 
-function validateEducation(edu: JSONResumeEducation[]): void {
-  // ... existing code ...
-}
+// Test education validation
+// const validateEducation = (edu: any) => {
+//   expect(edu).toBeDefined();
+// };

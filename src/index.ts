@@ -3,13 +3,13 @@
 // TODO
 
 import PDFParser from 'pdf2json';
-import debugLog from './debug.js';
+// import { debugConsole, debugIf, isDebugEnabled } from './debug.js';
 
 // Debug helper function that can be controlled via command line arguments
 // Check if debug is enabled via command line arguments
 const debugArg = process.argv.find(arg => arg.startsWith('--debug'));
 const debugEnabled = debugArg !== undefined;
-const debugKeyword = debugArg?.includes('=') ? debugArg.split('=')[1] : '';
+// const debugKeyword = debugArg?.includes('=') ? debugArg.split('=')[1] : '';
 
 /**
  * Debug logging function that only outputs when debug is enabled
@@ -435,6 +435,8 @@ export async function parseLinkedInPdf(pdfInput: string | Buffer): Promise<JSONR
   return jsonResume;
 }
 
+// Legacy function - replaced by normalizeAllContent
+/*
 function normalizePageBreaks(textItems: Array<{
   text: string;
   x: number;
@@ -558,6 +560,7 @@ function normalizePageBreaks(textItems: Array<{
   
   return normalizedItems;
 }
+*/
 
 function debugRightColumnContent(rightColumn: Array<{
   text: string;
@@ -1445,8 +1448,9 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
   })));
 
   const workEntries: JSONResumeWork[] = [];
-  let currentCompany = '';
-  let i = 0;
+  // Remove unused variables
+  // let currentCompany = '';
+  // let i = 0;
 
   // STEP 1: Identify companies (fontSize = 15)
   const companies = experienceItems.filter(item => item.fontSize === 15);
@@ -1504,7 +1508,6 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
 
     // STEP 5: Extract dates, location, URLs, and highlights
     let dateRange = '';
-    let duration = '';
     let location = '';
     let url = '';
     const highlights: string[] = [];
@@ -1512,7 +1515,7 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
     for (const item of positionItems) {
       if (isDate(item.text)) {
         if (item.text.includes('(') && item.text.includes('month')) {
-          duration = item.text;
+          // Duration information captured but not used in work entry
         } else {
           dateRange = item.text;
         }
@@ -1595,26 +1598,7 @@ function extractEndDate(dateText: string): string | undefined {
 }
 
 // Helper function to detect degree type using degreeSet strategy
-const detectDegreeType = (text: string): string | undefined => {
-  const degreeSet = new Set(['PHD','MSC','MS','MBA','MD','BS','BA','BSC','BACHELOR','BACHELORS','MASTER','MASTERS','DOCTOR','SECONDARY']);
-  // Clean and normalize the text
-  const cleanText = text.trim().replace(/\./g,'').replace(/'/g,'').toUpperCase();
-  // Match degree at start, allowing for optional punctuation and whitespace
-  const match = cleanText.match(/^(PHD|MSC|MS|MBA|MD|BS|BA|BSC|BACHELOR|BACHELORS|MASTER|MASTERS|DOCTOR|SECONDARY)[\s,\u00A0\u2013\u2014\-]*/);
-  if (match && degreeSet.has(match[1])) {
-    // Return the original degree portion from the input text
-    const origMatch = text.match(/^(\S+?)[\s,\u00A0\u2013\u2014\-]/);
-    return origMatch ? origMatch[1].replace(/,$/, '') : match[1];
-  }
-  // Special cases
-  if (/Secondary Education/i.test(text)) {
-    return "Secondary Education";
-  }
-  if (/^HS Diploma$/i.test(text)) {
-    return "HS Diploma";
-  }
-  return undefined;
-};
+// const detectDegreeType = (text: string): string | undefined => {
 
 function parseEducation(experienceItems: any[]): JSONResumeEducation[] {
   console.log(`Parsing education from ${experienceItems.length} items`);

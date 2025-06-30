@@ -19,4 +19,4 @@ export interface JSONResumeEducation {
   endDate?: string;
   score?: string;
   courses?: string[];
-} 
+}
