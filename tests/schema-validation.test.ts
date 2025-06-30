@@ -1,5 +1,7 @@
 import { parseLinkedInPdf } from '../src/index.js';
 import { validateJSONResume } from '../src/validate.mjs';
+import fs from 'fs';
+import path from 'path';
 // import type { JSONResumeWork, JSONResumeEducation } from '../src/types.d.ts';
 
 describe('JSON Resume Schema Validation', () => {
@@ -66,6 +68,9 @@ describe('JSON Resume Schema Validation', () => {
     }
     if (result.languages) {
       expect(Array.isArray(result.languages)).toBe(true);
+    }
+    if (result.awards) {
+      expect(Array.isArray(result.awards)).toBe(true);
     }
   });
 
