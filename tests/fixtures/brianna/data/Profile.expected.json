@@ -1,0 +1,117 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Brianna Swanson",
+    "email": "briannaswanson@gmail.com",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "brianna-swanson-shrm-cp-49667449",
+        "url": "https://www.linkedin.com/in/brianna-swanson-shrm-cp-49667449"
+      }
+    ],
+    "label": "Director of People Operations at Kindred.ai"
+  },
+  "work": [
+    {
+      "name": "Ocado Technology",
+      "position": "Head of Center North America",
+      "startDate": "2023-08"
+    },
+    {
+      "name": "Ocado Technology",
+      "position": "Director of People Operations NA Technology",
+      "startDate": "2021-12",
+      "endDate": "2023-08"
+    },
+    {
+      "name": "Kindred.ai",
+      "position": "Head of People Operations",
+      "location": "San Francisco Bay Area",
+      "startDate": "2019-07",
+      "endDate": "2021-12"
+    },
+    {
+      "name": "The Hatch Agency",
+      "position": "Head of People",
+      "location": "San Francisco Bay Area",
+      "startDate": "2019-02",
+      "endDate": "2019-07"
+    },
+    {
+      "name": "Deliv",
+      "position": "Head of People",
+      "location": "Menlo Park, CA",
+      "startDate": "2018-04",
+      "endDate": "2018-12"
+    },
+    {
+      "name": "Deliv",
+      "position": "Consultant for Deliv through Retain HR",
+      "location": "San Francisco Bay Area",
+      "startDate": "2017-10",
+      "endDate": "2018-04"
+    },
+    {
+      "name": "Betts Recruiting",
+      "position": "Head of HR",
+      "location": "San Francisco Bay Area",
+      "startDate": "2016-04",
+      "endDate": "2017-10"
+    },
+    {
+      "name": "Kirkland & Ellis LLP",
+      "position": "Corporate Case Assistant",
+      "location": "San Francisco, CA; Manhattan, New York (originally)",
+      "startDate": "2013-08",
+      "endDate": "2016-04"
+    },
+    {
+      "name": "Camp and Camp Associates",
+      "position": "Office Administrator/Bookkeeper",
+      "location": "Walnut Creek, CA",
+      "startDate": "2009-02",
+      "endDate": "2010-02"
+    },
+    {
+      "name": "United States House of Representatives",
+      "position": "Congressional Intern",
+      "location": "Washington DC",
+      "startDate": "2008-04",
+      "endDate": "2008-08"
+    },
+    {
+      "name": "Miner Productions",
+      "position": "Office Manager Assistant/Video Production Assistant, Office Admin, and Marketing Intern",
+      "location": "San Francisco, CA",
+      "startDate": "2005-02",
+      "endDate": "2008-01"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Marymount Manhattan College",
+      "studyType": "Bachelor",
+      "area": "Business Administration (B.B.A.) and Sociology (B.A.)"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Social Media"
+    },
+    {
+      "name": "Event Management"
+    },
+    {
+      "name": "Public Speaking"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "SHRM-CP"
+    }
+  ]
+}

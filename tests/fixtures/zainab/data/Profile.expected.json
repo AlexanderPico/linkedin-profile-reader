@@ -1,0 +1,122 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Zainab Yusuf-Sada",
+    "email": "sadazainab@gmail.com",
+    "location": {
+      "city": "San Francisco Bay Area"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "zainabsada03",
+        "url": "https://www.linkedin.com/in/zainabsada03"
+      }
+    ],
+    "label": "Senior Executive Administrator @ Gladstone Institutes | Project Management",
+    "summary": "As an Executive Administrator at Gladstone Institutes, I provide operational and project support to the Director of the Gladstone Institute of Data Science and Biotechnology, a leading research center dedicated to advancing biomedical science and improving human health. I have over five years of experience in administrative roles at Gladstone, where I have consistently demonstrated my skills in people management, conference coordination, and analytical thinking. My mission is to enable the Director and the research team to focus on their scientific goals and objectives, while ensuring the smooth and efficient functioning of the office. I am responsible for managing the Director's calendar and travel arrangements, organizing and facilitating meetings and events, preparing and reviewing reports and presentations, and overseeing the budget and expenses. I also contribute to the planning and execution of various projects, such as grant applications, publications, and collaborations. I am currently pursuing a certificate in Project Management from Cornell University, to enhance my knowledge and skills in this field. I am passionate about supporting the vision and values of Gladstone, and I strive to deliver excellence and innovation in my work."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Senior Executive Administrator",
+      "location": "San Francisco, California, United States",
+      "startDate": "2022-09"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Administrative Specialist",
+      "startDate": "2022-01",
+      "endDate": "2022-09"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Administrative Associates",
+      "location": "San Francisco, California, United States",
+      "startDate": "2019-06",
+      "endDate": "2022-01"
+    },
+    {
+      "name": "SEIU",
+      "position": "Data Analyst",
+      "location": "Oakland, California",
+      "startDate": "2018-10",
+      "endDate": "2019-02",
+      "highlights": [
+        "Pull, analyze and compile data from CVENT",
+        "Assist in contract negotiations with vendors and in contract management",
+        "Coordinate travel and meeting logistics for the department.",
+        "Maintains and updates Travel system and database for tracking and reporting purposes.",
+        "Monitors union-wide meeting and calendar management system.",
+        "Plans and Coordinates large scale Events and event logistics.",
+        "Supports Director of Operations and Meetings and Travel Coordinator with data analysis and reporting."
+      ]
+    },
+    {
+      "name": "Boys & Girls Club",
+      "position": "Site Coordinator",
+      "location": "Buffalo/Niagara, New York Area",
+      "startDate": "2013-08",
+      "endDate": "2018-08",
+      "highlights": [
+        "Managed reports for three major funded grants. 21st Century & Abstinence Promotion & Say Yes to Education.",
+        "Planned, implemented, and oversaw the administration of Club-wide programs. Created unit plans and daily lesson plans that supported grant funded objectives which resulted in goal achievement and grant renewal.",
+        "Managed, monitored, and maintained high levels of staff accountability.",
+        "Maintained records related to the program, including participant contact information, community outreach activities, records of projects assigned and completed, and financial records.",
+        "Help design and implement a financial sustainability plan for the program",
+        "Provide program and data updates and progress reports to BGCNT, school administrators, funders and other stakeholders upon request, including a quarterly and year-end report to stakeholders.",
+        "Communicate with new hires before their start date to provide necessary information (e.g. work schedules and contract details), Process employment paperwork, and Gather candidate experience feedback from new hires."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Cornell University",
+      "area": "Project Management",
+      "startDate": "2021-09",
+      "endDate": "2022-12"
+    },
+    {
+      "institution": "Buffalo State University",
+      "studyType": "Bachelor",
+      "area": "Science"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Confidentiality"
+    },
+    {
+      "name": "Responsiveness"
+    },
+    {
+      "name": "Teamwork"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Project Management Simplified"
+    },
+    {
+      "name": "Customer Service Foundations"
+    },
+    {
+      "name": "The Human Resources Hero"
+    },
+    {
+      "name": "Strategic Human Resources"
+    },
+    {
+      "name": "Administrative Human Resources"
+    },
+    {
+      "name": "Employee of the Year"
+    },
+    {
+      "name": "Employee of the Month"
+    },
+    {
+      "name": "Award of Excellence"
+    }
+  ]
+}

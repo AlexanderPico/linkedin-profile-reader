@@ -1,0 +1,85 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Quinn Langdon",
+    "email": "qlangdon@gmail.com",
+    "location": {
+      "city": "Redwood City",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "quinn-langdon-a7a285193",
+        "url": "https://www.linkedin.com/in/quinn-langdon-a7a285193"
+      }
+    ],
+    "label": "Research Specialist II in the Brainard Lab at UCSF",
+    "summary": "Postdoctoral researcher studying the consequences of hybridization on genome evolution. Experience working with plants, animals, and fungi; with a particular enthusiasm for exploring yeast diversity."
+  },
+  "work": [
+    {
+      "name": "Howard Hughes Medical Institute (HHMI)",
+      "position": "Research Specialist II",
+      "startDate": "2025-04"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Bioinformatician",
+      "location": "San Francisco Bay Area",
+      "startDate": "2023-10"
+    },
+    {
+      "name": "Stanford University",
+      "position": "Postdoctoral Researcher",
+      "location": "Stanford, California, United States",
+      "startDate": "2019-09",
+      "endDate": "2023-11"
+    },
+    {
+      "name": "University of Wisconsin-Madison",
+      "position": "Graduate Student",
+      "location": "Madison, Wisconsin, United States",
+      "startDate": "2012",
+      "endDate": "2019"
+    },
+    {
+      "name": "University of North Carolina at Chapel Hill",
+      "position": "Laboratory Technician",
+      "location": "Chapel Hill, North Carolina, United States",
+      "startDate": "2011",
+      "endDate": "2012",
+      "highlights": [
+        "Technician in the High Throughput Sequencing Facility."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Wisconsin-Madison",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Genetics",
+      "startDate": "2012-09",
+      "endDate": "2019-08"
+    },
+    {
+      "institution": "Reed College",
+      "studyType": "Bachelor's degree",
+      "area": "Biology, General",
+      "startDate": "2007",
+      "endDate": "2011"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Molecular Ecology"
+    },
+    {
+      "name": "Yeast"
+    },
+    {
+      "name": "Microbial Ecology"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Zhaoqi Yan",
+    "email": "zhaoqi.yan@gladstone.ucsf",
+    "location": {
+      "city": "San Francisco",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "zhaoqi-yan-616293237",
+        "url": "https://www.linkedin.com/in/zhaoqi-yan-616293237"
+      }
+    ],
+    "label": "in neurological diseases."
+  },
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Scientist",
+      "location": "San Francisco Bay Area",
+      "startDate": "2024-01"
+    },
+    {
+      "name": "Gladstone Institutes",
+      "position": "Postdoctoral Scholar",
+      "location": "San Francisco Bay Area",
+      "startDate": "2020-01",
+      "endDate": "2023-12"
+    }
+  ],
+  "education": [{
+      "institution": "University of Alabama at Birmingham",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Immunology",
+      "startDate": "2014-08",
+      "endDate": "2019-08"
+    },
+  {
+    "institution": "University of Illinois Chicago",
+    "studyType": "Master of Science - MS",
+    "area": "Medical Biotechnology",
+    "startDate": "2012-08",
+    "endDate": "2014-05"
+  }
+]
+}

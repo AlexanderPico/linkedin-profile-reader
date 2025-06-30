@@ -1,0 +1,122 @@
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "basics": {
+    "name": "Kanishka Manna",
+    "email": "kmanna@ualr.edu",
+    "location": {
+      "city": "Reno",
+      "region": "Nevada",
+      "countryCode": "United States"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "kanishka-manna",
+        "url": "https://www.linkedin.com/in/kanishka-manna"
+      }
+    ],
+    "label": "Postdoctoral Scholar at University of Nevada, Reno",
+    "summary": "I am a Postdoctoral Scholar (Bioinformatics) focused on developing computational tools/pipelines and analyzing complex multi-omics data to gain deeper insights into biological systems. My expertise spans proteogenomics, high-throughput next generation omics, and microbiome research, where I apply bioinformatics methods to uncover novel biological mechanisms, identify biomarkers, and enhance our understanding of disease processes. My research integrates genomic, transcriptomic, and proteomic data. I am currently advancing single-cell omics research. I am also passionate about leveraging data-driven approaches to address complex biological questions, applying both analytical rigor and creativity to my work."
+  },
+  "work": [
+    {
+      "name": "University of Nevada, Reno",
+      "position": "Postdoctoral Scholar",
+      "location": "Reno, Nevada, United States",
+      "startDate": "2024-10"
+    },
+    {
+      "name": "University of Arkansas for Medical Sciences",
+      "position": "Research Assistant",
+      "location": "Little Rock, Arkansas, United States",
+      "startDate": "2020-08",
+      "endDate": "2023-12"
+    },
+    {
+      "name": "University of Arkansas at Little Rock",
+      "position": "Research Assistant",
+      "location": "Little Rock, Arkansas Area",
+      "startDate": "2019-09",
+      "endDate": "2020-08"
+    },
+    {
+      "name": "R. G Kar Medical College & Hospital",
+      "position": "Research Intern",
+      "location": "Kolkata, India",
+      "startDate": "2016-06",
+      "endDate": "2016-08",
+      "highlights": [
+        "Glycated Haemoglobin for the Diagnosis of Diabetes Mellitus and to Determine Estimated Average Glucose Concentration."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Arkansas at Little Rock",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Bioinformatics",
+      "startDate": "2019",
+      "endDate": "2023-12"
+    },
+    {
+      "institution": "University of Arkansas for Medical Sciences",
+      "studyType": "Doctor of Philosophy - PhD",
+      "area": "Bioinformatics",
+      "startDate": "2019-09",
+      "endDate": "2023-12"
+    },
+    {
+      "institution": "Vijaygarh Jyotish Ray College",
+      "studyType": "Master of Science (M.Sc.)",
+      "area": "Microbiology",
+      "startDate": "2015",
+      "endDate": "2017"
+    },
+    {
+      "institution": "University of Calcutta",
+      "studyType": "Bachelor of Science (B.Sc.)",
+      "area": "Microbiology",
+      "startDate": "2012",
+      "endDate": "2015"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Data Analysis"
+    },
+    {
+      "name": "Nextflow"
+    },
+    {
+      "name": "Data Integration"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Cognitive Class Python 101 for Data Science"
+    },
+    {
+      "name": "Fundamentals of Deep Learning"
+    },
+    {
+      "name": "Python for Data Science"
+    },
+    {
+      "name": "Fundamentals of Deep Learning for Computer Vision"
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native or Bilingual"
+    },
+    {
+      "language": "Hindi",
+      "fluency": "Native or Bilingual"
+    },
+    {
+      "language": "Bengali",
+      "fluency": "Native or Bilingual"
+    }
+  ]
+}
