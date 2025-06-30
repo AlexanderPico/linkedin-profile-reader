@@ -336,11 +336,19 @@ export interface JSONResumeBasics {
   profiles?: JSONResumeProfile[];
 }
 
+export interface JSONResumeAward {
+  title: string;
+  date?: string;
+  awarder?: string;
+  summary?: string;
+}
+
 export interface JSONResume {
   $schema?: string;
   basics?: JSONResumeBasics;
   work: JSONResumeWork[];
   education: JSONResumeEducation[];
+  awards?: JSONResumeAward[];
   skills?: JSONResumeSkill[];
   certificates?: JSONResumeCertificate[];
   languages?: JSONResumeLanguage[];
