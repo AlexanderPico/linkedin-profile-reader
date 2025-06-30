@@ -945,8 +945,8 @@ function parseRightColumnSections(
       item.text.length > 2
     );
     
-    console.log('DEBUG: Checking headrule at y=%s: found %d nearby title items', headrule.normalizedY.toFixed(3), nearbyTitleItems.length);
-    nearbyTitleItems.forEach(ti=>console.log('  nearby "%s" y=%s',ti.text,ti.y.toFixed(3)));
+    debug('DEBUG: Checking headrule at y=%s: found %d nearby title items', headrule.normalizedY.toFixed(3), nearbyTitleItems.length);
+    nearbyTitleItems.forEach(ti=>debug('  nearby "%s" y=%s',ti.text,ti.y.toFixed(3)));
     
     nearbyTitleItems.forEach(item => {
       const schemaSection = mapToSchemaSection(item.text);
