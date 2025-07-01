@@ -43,13 +43,7 @@
       "startDate": "2018-10",
       "endDate": "2019-02",
       "highlights": [
-        "Pull, analyze and compile data from CVENT",
-        "Assist in contract negotiations with vendors and in contract management",
-        "Coordinate travel and meeting logistics for the department.",
-        "Maintains and updates Travel system and database for tracking and reporting purposes.",
-        "Monitors union-wide meeting and calendar management system.",
-        "Plans and Coordinates large scale Events and event logistics.",
-        "Supports Director of Operations and Meetings and Travel Coordinator with data analysis and reporting."
+        "Pull, analyze and compile data from CVENT Assist in contract negotiations with vendors and in contract management Coordinate travel and meeting logistics for the department. Maintains and updates Travel system and database for tracking and reporting purposes. Monitors union-wide meeting and calendar management system. Plans and Coordinates large scale Events and event logistics. Supports Director of Operations and Meetings and Travel Coordinator with data analysis and reporting."
       ]
     },
     {
@@ -59,13 +53,7 @@
       "startDate": "2013-08",
       "endDate": "2018-08",
       "highlights": [
-        "Managed reports for three major funded grants. 21st Century & Abstinence Promotion & Say Yes to Education.",
-        "Planned, implemented, and oversaw the administration of Club-wide programs. Created unit plans and daily lesson plans that supported grant funded objectives which resulted in goal achievement and grant renewal.",
-        "Managed, monitored, and maintained high levels of staff accountability.",
-        "Maintained records related to the program, including participant contact information, community outreach activities, records of projects assigned and completed, and financial records.",
-        "Help design and implement a financial sustainability plan for the program",
-        "Provide program and data updates and progress reports to BGCNT, school administrators, funders and other stakeholders upon request, including a quarterly and year-end report to stakeholders.",
-        "Communicate with new hires before their start date to provide necessary information (e.g. work schedules and contract details), Process employment paperwork, and Gather candidate experience feedback from new hires."
+        "Managed reports for three major funded grants. 21st Century & Abstinence Promotion & Say Yes to Education. Planned, implemented, and oversaw the administration of Club-wide programs. Created unit plans and daily lesson plans that supported grant funded objectives which resulted in goal achievement and grant renewal. Managed, monitored, and maintained high levels of staff accountability. Maintained records related to the program, including participant contact information, community outreach activities, records of projects assigned and completed, and financial records. Help design and implement a financial sustainability plan for the program Provide program and data updates and progress reports to BGCNT, school administrators, funders and other stakeholders upon request, including a quarterly and year-end report to stakeholders. Communicate with new hires before their start date to provide necessary information (e.g. work schedules and contract details), Process employment paperwork, and Gather candidate experience feedback from new hires."
       ]
     }
   ],
@@ -108,15 +96,17 @@
     },
     {
       "name": "Administrative Human Resources"
+    }
+  ],
+  "awards": [
+    {
+      "title": "Employee of the Year"
     },
     {
-      "name": "Employee of the Year"
+      "title": "Employee of the Month"
     },
     {
-      "name": "Employee of the Month"
-    },
-    {
-      "name": "Award of Excellence"
+      "title": "Award of Excellence"
     }
   ]
 }

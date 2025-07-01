@@ -1,0 +1,1041 @@
+Warning: Setting up fake worker.
+Warning: Unsupported: field.type of Link
+Warning: NOT valid form element
+Warning: Unsupported: field.type of Link
+Warning: NOT valid form element
+Warning: Unsupported: field.type of Link
+Warning: NOT valid form element
+=== Starting PDF Analysis ===
+Total pages: 4
+
+Analyzing Page 1:
+- Text items: 56
+- HLines: 1
+- VLines: 0
+- Width: 38.25, Height: 49.5
+Large text found: "Anna-Marie Rooney" (size: 29, x: 13.723, y: 3.3470000000000004)
+Large text found: "Summary" (size: 18.75, x: 13.723, y: 7.984)
+Large text found: "Experience" (size: 18.75, x: 13.723, y: 32.065)
+Found 1 headrules on page 1:
+- Headrule: x=13.973, y=31.182, w=1.5, l=2.293
+
+Analyzing Page 2:
+- Text items: 39
+- HLines: 0
+- VLines: 0
+- Width: 38.25, Height: 49.5
+Found 0 headrules on page 2:
+
+Analyzing Page 3:
+- Text items: 44
+- HLines: 0
+- VLines: 0
+- Width: 38.25, Height: 49.5
+Found 0 headrules on page 3:
+
+Analyzing Page 4:
+- Text items: 21
+- HLines: 1
+- VLines: 0
+- Width: 38.25, Height: 49.5
+Large text found: "Education" (size: 18.75, x: 13.723, y: 17.565)
+Found 1 headrules on page 4:
+- Headrule: x=13.973, y=16.682, w=1.5, l=2.293
+
+Total items found:
+- Text items: 148
+- Headrules: 2
+Total text items: 148
+Total headrules: 2
+First 10 items: [
+  {
+    text: 'Contact',
+    x: 1.1,
+    y: 2.648,
+    fontSize: 16,
+    color: '#000000',
+    outlineColor: '#e1e8ed',
+    page: 1
+  },
+  {
+    text: 'annamarierooney@yahoo.com',
+    x: 1.1,
+    y: 3.864,
+    fontSize: 13.5,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: 'www.linkedin.com/in/',
+    x: 1.1,
+    y: 5.388,
+    fontSize: 14,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: 'annamarierooney',
+    x: 1.1,
+    y: 6.288,
+    fontSize: 14,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: '(LinkedIn)',
+    x: 6.449,
+    y: 6.288,
+    fontSize: 14,
+    color: '#000000',
+    outlineColor: '#a8b0b5',
+    page: 1
+  },
+  {
+    text: 'Top Skills',
+    x: 1.1,
+    y: 8.492,
+    fontSize: 16,
+    color: '#000000',
+    outlineColor: '#e1e8ed',
+    page: 1
+  },
+  {
+    text: 'Public Relations',
+    x: 1.1,
+    y: 9.708,
+    fontSize: 13.5,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: 'Copywriting',
+    x: 1.1,
+    y: 10.808,
+    fontSize: 13.5,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: 'Advertising',
+    x: 1.1,
+    y: 11.908,
+    fontSize: 13.5,
+    color: '#000001',
+    outlineColor: undefined,
+    page: 1
+  },
+  {
+    text: 'Honors-Awards',
+    x: 1.1,
+    y: 14.08,
+    fontSize: 16,
+    color: '#000000',
+    outlineColor: '#e1e8ed',
+    page: 1
+  }
+]
+DEBUG: X positions range: 1.1 to 23.31
+DEBUG: Sample x positions: [
+  1.1, 1.1, 1.1, 1.1,
+  1.1, 1.1, 1.1, 1.1,
+  1.1, 1.1
+]
+DEBUG: Final column boundary at x=10.086
+Left column: 17 items
+Right column: 115 items
+Right column headrules: 2
+DEBUG: Found 3 left column headers (visual detection): [
+  { text: 'Contact', fontSize: 16, outlineColor: '#e1e8ed', y: 2.648 },
+  {
+    text: 'Top Skills',
+    fontSize: 16,
+    outlineColor: '#e1e8ed',
+    y: 8.492
+  },
+  {
+    text: 'Honors-Awards',
+    fontSize: 16,
+    outlineColor: '#e1e8ed',
+    y: 14.08
+  }
+]
+DEBUG: Mapped headers to schema sections: [
+  { originalText: 'Contact', schemaSection: 'Contact', y: 2.648 },
+  { originalText: 'Top Skills', schemaSection: 'Skills', y: 8.492 },
+  { originalText: 'Honors-Awards', schemaSection: 'Awards', y: 14.08 }
+]
+DEBUG: Section "Contact" (original: "Contact") has 4 items
+DEBUG: Section "Skills" (original: "Top Skills") has 3 items
+DEBUG: Section "Awards" (original: "Honors-Awards") has 7 items
+DEBUG: Following proper 6-step right-column header detection logic
+DEBUG: STEP 3 - Found 2 headrules in right column: [
+  '{ x: 13.973, y: 31.182, normalizedY: 31.182, page: 1 }',
+  '{ x: 13.973, y: 151.841, normalizedY: 151.841, page: 4 }'
+]
+DEBUG: Title font headers: [
+  '"Anna-Marie Rooney" at y=3.347 (page 1)',
+  '"Summary" at y=7.984 (page 1)',
+  '"Experience" at y=32.065 (page 1)',
+  '"Education" at y=152.724 (page 4)'
+]
+DEBUG: STEP 3 - Found headrule section: "Experience" → "Experience" (y=32.065, page=1)
+DEBUG: STEP 3 - Found headrule section: "Education" → "Education" (y=152.724, page=4)
+DEBUG: STEP 4 - Experience found via headrule at y=32.065
+DEBUG: STEP 5 - Basics section: everything above Experience (y=32.065) = 19 items
+DEBUG: STEP 6 - All sections detected: [
+  { name: 'Experience', y: 32.065, page: 1 },
+  { name: 'Education', y: 152.72400000000002, page: 4 }
+]
+DEBUG: STEP 6 - Section "Experience" has 92 items (y=32.065 to 152.72400000000002)
+DEBUG: STEP 6 - Section "Education" has 2 items (y=152.72400000000002 to end)
+DEBUG: STEP 6 - Extracted Summary section (16 items), Basics now 3 items
+DEBUG: STEP 6 - Final sections: basics=3, summary=16, experience=92, education=2
+DEBUG: Parsing basics from 3 items
+DEBUG: Basics items: [
+  {
+    text: 'Anna-Marie Rooney',
+    x: 13.723,
+    y: 3.3470000000000004,
+    fontSize: 29,
+    color: '#000000',
+    outlineColor: '#181818',
+    page: 1,
+    originalPage: 1
+  },
+  {
+    text: 'Vice President, Communications at Gladstone Institutes',
+    x: 13.723,
+    y: 4.67,
+    fontSize: 15,
+    color: '#000000',
+    outlineColor: '#181818',
+    page: 1,
+    originalPage: 1
+  },
+  {
+    text: 'San Diego, California, United States',
+    x: 13.723,
+    y: 5.632,
+    fontSize: 15,
+    color: '#000000',
+    outlineColor: '#b0b0b0',
+    page: 1,
+    originalPage: 1
+  }
+]
+DEBUG: Max font size: 29
+DEBUG: Found name: "Anna-Marie Rooney" (fontSize: 29)
+DEBUG: Found label: "Vice President, Communications at Gladstone Institutes"
+DEBUG: Found location (color-based): "San Diego, California, United States"
+DEBUG: Parsed summary from 15 items: "Strategic communications leader with 30+ years of experience driving brand visibility, engagement, and impact across philanthropic, public affairs, and mission-driven organizations. I partner with executives and teams to shape narratives that inform, inspire, and activate audiences—from internal stakeholders to the global public. Skilled in turning complexity into clarity, navigating change with confidence, and leading high-performing teams. I thrive in fast-paced environments and bring a collaborative, solution-oriented mindset to every challenge. Passionate about work that makes a difference. Focused on purpose, people, and progress. Core strengths: Executive communications | Media & PR strategy | Crisis & issues management | Brand & reputation | Internal comms | Social & digital strategy | CSR | Cross-functional leadership"
+Parsing experience from 92 items
+Experience items: [
+  { text: 'Gladstone Institutes', fontSize: 15, y: 33.97 },
+  { text: 'Vice President Communications', fontSize: 14.5, y: 34.973 },
+  { text: 'August 2023 - Present', fontSize: 13.5, y: 35.881 },
+  { text: '(1 year 11 months)', fontSize: 13.5, y: 35.881 },
+  { text: 'San Francisco Bay Area', fontSize: 13.5, y: 36.798 },
+  {
+    text: 'As Vice President of Communications at Gladstone Institutes, I lead strategic',
+    fontSize: 13.5,
+    y: 38.134
+  },
+  {
+    text: "communications efforts to elevate the organization's visibility, support its",
+    fontSize: 13.5,
+    y: 39.259
+  },
+  {
+    text: 'scientific mission, and foster meaningful engagement with diverse audiences.',
+    fontSize: 13.5,
+    y: 40.384
+  },
+  {
+    text: 'My role encompasses a wide range of responsibilities, including:',
+    fontSize: 13.5,
+    y: 41.509
+  },
+  {
+    text: 'Shaping and executing integrated communication strategies that reflect',
+    fontSize: 13.5,
+    y: 43.759
+  },
+  {
+    text: "Gladstone's leadership in biomedical research and its commitment to solving",
+    fontSize: 13.5,
+    y: 44.884
+  },
+  {
+    text: "the world's most challenging diseases.",
+    fontSize: 13.5,
+    y: 46.009
+  },
+  {
+    text: 'Overseeing media relations, brand management, digital strategy, and',
+    fontSize: 13.5,
+    y: 48.861000000000004
+  },
+  {
+    text: 'executive communications to ensure consistency, clarity, and impact across all',
+    fontSize: 13.5,
+    y: 49.986000000000004
+  },
+  { text: 'channels.', fontSize: 13.5, y: 51.111000000000004 },
+  {
+    text: 'Collaborating with scientists and leadership to translate complex discoveries',
+    fontSize: 13.5,
+    y: 53.361000000000004
+  },
+  {
+    text: 'into compelling stories that resonate with the public, policymakers, donors, and',
+    fontSize: 13.5,
+    y: 54.486000000000004
+  },
+  {
+    text: 'the broader scientific community.',
+    fontSize: 13.5,
+    y: 55.611000000000004
+  },
+  {
+    text: 'Guiding crisis communication and internal communication to align messaging',
+    fontSize: 13.5,
+    y: 57.861000000000004
+  },
+  {
+    text: 'and support an inclusive, informed organizational culture.',
+    fontSize: 13.5,
+    y: 58.986000000000004
+  },
+  {
+    text: 'Leading a talented communications team dedicated to innovation, excellence,',
+    fontSize: 13.5,
+    y: 61.236000000000004
+  },
+  {
+    text: 'and storytelling that drives scientific understanding and societal impact.',
+    fontSize: 13.5,
+    y: 62.361000000000004
+  },
+  {
+    text: 'With a deep belief in the power of science communication to inspire change,',
+    fontSize: 13.5,
+    y: 64.611
+  },
+  {
+    text: "I'm proud to help advance Gladstone's mission and share the groundbreaking",
+    fontSize: 13.5,
+    y: 65.736
+  },
+  {
+    text: 'work of its researchers with the world.',
+    fontSize: 13.5,
+    y: 66.861
+  },
+  { text: 'Scripps Research', fontSize: 15, y: 69.26 },
+  {
+    text: 'Vice President of Marketing & Communications',
+    fontSize: 14.5,
+    y: 70.26400000000001
+  },
+  { text: 'November 2017 - August 2023', fontSize: 13.5, y: 71.171 },
+  { text: '(5 years 10 months)', fontSize: 13.5, y: 71.171 },
+  { text: 'Greater San Diego Area', fontSize: 13.5, y: 72.089 },
+  {
+    text: 'As Vice President of Marketing and Communications at Scripps Research,',
+    fontSize: 13.5,
+    y: 73.42500000000001
+  },
+  {
+    text: 'I led a high-performing team responsible for all internal and external',
+    fontSize: 13.5,
+    y: 74.55000000000001
+  },
+  {
+    text: 'communications across the institute. I spearheaded the development and',
+    fontSize: 13.5,
+    y: 75.67500000000001
+  },
+  {
+    text: "implementation of the organization's first-ever comprehensive communications",
+    fontSize: 13.5,
+    y: 76.80000000000001
+  },
+  {
+    text: "strategy—designed to establish, elevate, and safeguard Scripps Research's",
+    fontSize: 13.5,
+    y: 77.92500000000001
+  },
+  {
+    text: 'brand reputation on a global scale.',
+    fontSize: 13.5,
+    y: 79.05000000000001
+  },
+  {
+    text: "In 2018, I oversaw the institute's first full rebranding effort in more than three",
+    fontSize: 13.5,
+    y: 81.30000000000001
+  },
+  {
+    text: 'decades, which included a new logo, tagline, and brand identity guidelines—',
+    fontSize: 13.5,
+    y: 82.42500000000001
+  },
+  {
+    text: "marking a significant milestone in modernizing and unifying the organization's",
+    fontSize: 13.5,
+    y: 83.55000000000001
+  },
+  {
+    text: 'visual and strategic presence.',
+    fontSize: 13.5,
+    y: 84.67500000000001
+  },
+  {
+    text: 'Beyond brand strategy, I served as a key ambassador, fostering strong',
+    fontSize: 13.5,
+    y: 86.92500000000001
+  },
+  {
+    text: 'relationships between institute leadership, faculty, donors, and other critical',
+    fontSize: 13.5,
+    y: 88.05000000000001
+  },
+  {
+    text: "stakeholders, reinforcing trust and alignment in support of Scripps Research's",
+    fontSize: 13.5,
+    y: 89.17500000000001
+  },
+  { text: 'scientific mission.', fontSize: 13.5, y: 90.30000000000001 },
+  {
+    text: 'Salk Institute for Biological Studies',
+    fontSize: 15,
+    y: 93.126
+  },
+  {
+    text: 'Executive Director of Communications',
+    fontSize: 14.5,
+    y: 94.129
+  },
+  { text: 'September 2013 - October 2017', fontSize: 13.5, y: 95.037 },
+  { text: '(4 years 2 months)', fontSize: 13.5, y: 95.037 },
+  {
+    text: 'La Jolla, California',
+    fontSize: 13.5,
+    y: 95.95400000000001
+  },
+  {
+    text: 'As Executive Director of Communications at the Salk Institute, I led the',
+    fontSize: 13.5,
+    y: 97.29
+  },
+  {
+    text: "institute's comprehensive communications strategy, overseeing all facets of",
+    fontSize: 13.5,
+    y: 98.415
+  },
+  {
+    text: 'external and internal outreach—including publications, media relations, social',
+    fontSize: 13.5,
+    y: 99.54
+  },
+  {
+    text: 'media, marketing, digital content, multimedia production, and the creation of',
+    fontSize: 13.5,
+    y: 100.665
+  },
+  {
+    text: 'key annual collateral materials.',
+    fontSize: 13.5,
+    y: 101.79
+  },
+  {
+    text: 'The San Diego Foundation',
+    fontSize: 15,
+    y: 104.19000000000001
+  },
+  {
+    text: 'Vice President, Marketing and External Affairs',
+    fontSize: 14.5,
+    y: 105.19300000000001
+  },
+  {
+    text: 'July 2007 - August 2013',
+    fontSize: 13.5,
+    y: 106.10100000000001
+  },
+  { text: '(6 years 2 months)', fontSize: 13.5, y: 106.10100000000001 },
+  {
+    text: "As Chief Marketing Officer for The San Diego Foundation—the region's largest",
+    fontSize: 13.5,
+    y: 107.37
+  },
+  {
+    text: 'community foundation—I led the development and execution of integrated',
+    fontSize: 13.5,
+    y: 108.495
+  },
+  {
+    text: 'marketing and communications strategies designed to position the Foundation',
+    fontSize: 13.5,
+    y: 109.62
+  },
+  {
+    text: 'as a leader in philanthropy and civic engagement. My responsibilities spanned',
+    fontSize: 13.5,
+    y: 110.745
+  },
+  {
+    text: 'oversight of all branding, messaging, media relations, digital marketing, and',
+    fontSize: 13.5,
+    y: 111.87
+  },
+  { text: 'public outreach initiatives.', fontSize: 13.5, y: 112.995 },
+  {
+    text: 'As a member of the Executive Leadership Team, I played a central role in',
+    fontSize: 13.5,
+    y: 115.245
+  },
+  {
+    text: 'shaping organizational strategy, policy, and planning. I also worked closely',
+    fontSize: 13.5,
+    y: 116.37
+  },
+  {
+    text: 'with the Board of Governors and Executive Committees, providing strategic',
+    fontSize: 13.5,
+    y: 117.495
+  },
+  {
+    text: 'counsel and leading key department-specific initiatives aligned with the',
+    fontSize: 13.5,
+    y: 118.62
+  },
+  {
+    text: "Foundation's long-term vision.",
+    fontSize: 13.5,
+    y: 119.745
+  },
+  {
+    text: 'Key accomplishments include leading the marketing and public relations',
+    fontSize: 13.5,
+    y: 121.995
+  },
+  {
+    text: 'efforts for the landmark Our Greater San Diego Vision initiative—an',
+    fontSize: 13.5,
+    y: 123.12
+  },
+  {
+    text: 'unprecedented regional campaign that engaged over 30,000 participants,',
+    fontSize: 13.5,
+    y: 124.245
+  },
+  {
+    text: 'generated $3.5 million in media value, and achieved over 386 million media',
+    fontSize: 13.5,
+    y: 125.37
+  },
+  { text: 'impressions.', fontSize: 13.5, y: 126.495 },
+  {
+    text: "Under my leadership, the marketing team increased the Foundation's brand",
+    fontSize: 13.5,
+    y: 128.745
+  },
+  {
+    text: 'awareness from 37% to 51% through targeted, multi-channel campaigns.',
+    fontSize: 13.5,
+    y: 129.87
+  },
+  {
+    text: 'The Foundation also earned national recognition as the first community',
+    fontSize: 13.5,
+    y: 130.995
+  },
+  {
+    text: 'foundation in the country to launch an iPhone app, setting a precedent for',
+    fontSize: 13.5,
+    y: 132.12
+  },
+  {
+    text: 'digital innovation in the philanthropic sector.',
+    fontSize: 13.5,
+    y: 133.245
+  },
+  { text: 'KB Home', fontSize: 15, y: 135.644 },
+  {
+    text: 'Director of Marketing',
+    fontSize: 14.5,
+    y: 136.64800000000002
+  },
+  {
+    text: 'June 1996 - March 2003',
+    fontSize: 13.5,
+    y: 137.75400000000002
+  },
+  {
+    text: '(6 years 10 months)',
+    fontSize: 13.5,
+    y: 137.75400000000002
+  },
+  {
+    text: 'Reporting to the Vice President of Marketing, I led all marketing and public',
+    fontSize: 13.5,
+    y: 139.02300000000002
+  },
+  {
+    text: 'relations initiatives at both the corporate and local levels, with a strategic',
+    fontSize: 13.5,
+    y: 140.14800000000002
+  },
+  {
+    text: 'focus on increasing brand visibility and driving targeted traffic to new home',
+    fontSize: 13.5,
+    y: 141.27300000000002
+  },
+  { text: 'communities.', fontSize: 13.5, y: 142.39800000000002 },
+  {
+    text: 'I managed high-impact national cross-promotional campaigns with major',
+    fontSize: 13.5,
+    y: 144.64800000000002
+  },
+  {
+    text: 'brands, including Target, "got milk?", Scholastic, Regis and Kelly, and the',
+    fontSize: 13.5,
+    y: 145.77300000000002
+  },
+  {
+    text: 'widely successful Simpsons Home Giveaway in partnership with FOX—',
+    fontSize: 13.5,
+    y: 146.89800000000002
+  },
+  {
+    text: 'a campaign that significantly boosted consumer engagement and brand',
+    fontSize: 13.5,
+    y: 148.02300000000002
+  },
+  { text: 'recognition.', fontSize: 13.5, y: 149.14800000000002 }
+]
+Found 5 companies: [
+  'Gladstone Institutes',
+  'Scripps Research',
+  'Salk Institute for Biological Studies',
+  'The San Diego Foundation',
+  'KB Home'
+]
+Found 5 positions: [
+  'Vice President Communications',
+  'Vice President of Marketing & Communications',
+  'Executive Director of Communications',
+  'Vice President, Marketing and External Affairs',
+  'Director of Marketing'
+]
+Processing position "Vice President Communications" under company "Gladstone Institutes"
+
+DEBUG: Position "Vice President Communications" has 24 items between y=34.973 and y=70.26400000000001
+DEBUG: Found date: "August 2023 - Present"
+DEBUG: Skipped item: "(1 year 11 months)" (fontSize: 13.5, isDuration: true)
+DEBUG: Found location: "San Francisco Bay Area"
+DEBUG: Added highlight item: "As Vice President of Communications at Gladstone Institutes, I lead strategic" (fontSize: 13.5)
+DEBUG: Added highlight item: "communications efforts to elevate the organization's visibility, support its" (fontSize: 13.5)
+DEBUG: Added highlight item: "scientific mission, and foster meaningful engagement with diverse audiences." (fontSize: 13.5)
+DEBUG: Added highlight item: "My role encompasses a wide range of responsibilities, including:" (fontSize: 13.5)
+DEBUG: Added highlight item: "Shaping and executing integrated communication strategies that reflect" (fontSize: 13.5)
+DEBUG: Added highlight item: "Gladstone's leadership in biomedical research and its commitment to solving" (fontSize: 13.5)
+DEBUG: Added highlight item: "the world's most challenging diseases." (fontSize: 13.5)
+DEBUG: Added highlight item: "Overseeing media relations, brand management, digital strategy, and" (fontSize: 13.5)
+DEBUG: Added highlight item: "executive communications to ensure consistency, clarity, and impact across all" (fontSize: 13.5)
+DEBUG: Added highlight item: "channels." (fontSize: 13.5)
+DEBUG: Added highlight item: "Collaborating with scientists and leadership to translate complex discoveries" (fontSize: 13.5)
+DEBUG: Added highlight item: "into compelling stories that resonate with the public, policymakers, donors, and" (fontSize: 13.5)
+DEBUG: Added highlight item: "the broader scientific community." (fontSize: 13.5)
+DEBUG: Added highlight item: "Guiding crisis communication and internal communication to align messaging" (fontSize: 13.5)
+DEBUG: Added highlight item: "and support an inclusive, informed organizational culture." (fontSize: 13.5)
+DEBUG: Added highlight item: "Leading a talented communications team dedicated to innovation, excellence," (fontSize: 13.5)
+DEBUG: Added highlight item: "and storytelling that drives scientific understanding and societal impact." (fontSize: 13.5)
+DEBUG: Added highlight item: "With a deep belief in the power of science communication to inspire change," (fontSize: 13.5)
+DEBUG: Added highlight item: "I'm proud to help advance Gladstone's mission and share the groundbreaking" (fontSize: 13.5)
+DEBUG: Added highlight item: "work of its researchers with the world." (fontSize: 13.5)
+DEBUG: Skipped item: "Scripps Research" (fontSize: 15, isDuration: false)
+
+DEBUG: Found 20 highlight items for Gladstone Institutes
+
+=== HIGHLIGHT ITEMS FOR Gladstone Institutes ===
+Position: Vice President Communications
+Total highlight items: 20
+
+All highlight items with y-values:
+1. y=38.134 | "As Vice President of Communications at Gladstone Institutes, I lead strategic"
+2. y=39.259 | "communications efforts to elevate the organization's visibility, support its"
+3. y=40.384 | "scientific mission, and foster meaningful engagement with diverse audiences."
+4. y=41.509 | "My role encompasses a wide range of responsibilities, including:"
+5. y=43.759 | "Shaping and executing integrated communication strategies that reflect"
+6. y=44.884 | "Gladstone's leadership in biomedical research and its commitment to solving"
+7. y=46.009 | "the world's most challenging diseases."
+8. y=48.861 | "Overseeing media relations, brand management, digital strategy, and"
+9. y=49.986 | "executive communications to ensure consistency, clarity, and impact across all"
+10. y=51.111 | "channels."
+11. y=53.361 | "Collaborating with scientists and leadership to translate complex discoveries"
+12. y=54.486 | "into compelling stories that resonate with the public, policymakers, donors, and"
+13. y=55.611 | "the broader scientific community."
+14. y=57.861 | "Guiding crisis communication and internal communication to align messaging"
+15. y=58.986 | "and support an inclusive, informed organizational culture."
+16. y=61.236 | "Leading a talented communications team dedicated to innovation, excellence,"
+17. y=62.361 | "and storytelling that drives scientific understanding and societal impact."
+18. y=64.611 | "With a deep belief in the power of science communication to inspire change,"
+19. y=65.736 | "I'm proud to help advance Gladstone's mission and share the groundbreaking"
+20. y=66.861 | "work of its researchers with the world."
+=== END HIGHLIGHT ITEMS ===
+
+Created work entry: {
+  name: 'Gladstone Institutes',
+  position: 'Vice President Communications',
+  startDate: '2023-08',
+  location: 'San Francisco Bay Area',
+  highlights: [
+    "As Vice President of Communications at Gladstone Institutes, I lead strategic communications efforts to elevate the organization's visibility, support its scientific mission, and foster meaningful engagement with diverse audiences. My role encompasses a wide range of responsibilities, including:",
+    "Shaping and executing integrated communication strategies that reflect Gladstone's leadership in biomedical research and its commitment to solving the world's most challenging diseases.",
+    'Overseeing media relations, brand management, digital strategy, and executive communications to ensure consistency, clarity, and impact across all channels.',
+    'Collaborating with scientists and leadership to translate complex discoveries into compelling stories that resonate with the public, policymakers, donors, and the broader scientific community.',
+    'Guiding crisis communication and internal communication to align messaging and support an inclusive, informed organizational culture.',
+    'Leading a talented communications team dedicated to innovation, excellence, and storytelling that drives scientific understanding and societal impact.',
+    "With a deep belief in the power of science communication to inspire change, I'm proud to help advance Gladstone's mission and share the groundbreaking work of its researchers with the world."
+  ]
+}
+Processing position "Vice President of Marketing & Communications" under company "Scripps Research"
+
+DEBUG: Position "Vice President of Marketing & Communications" has 18 items between y=70.26400000000001 and y=94.129
+DEBUG: Found date: "November 2017 - August 2023"
+DEBUG: Skipped item: "(5 years 10 months)" (fontSize: 13.5, isDuration: true)
+DEBUG: Found location: "Greater San Diego Area"
+DEBUG: Added highlight item: "As Vice President of Marketing and Communications at Scripps Research," (fontSize: 13.5)
+DEBUG: Added highlight item: "I led a high-performing team responsible for all internal and external" (fontSize: 13.5)
+DEBUG: Added highlight item: "communications across the institute. I spearheaded the development and" (fontSize: 13.5)
+DEBUG: Added highlight item: "implementation of the organization's first-ever comprehensive communications" (fontSize: 13.5)
+DEBUG: Added highlight item: "strategy—designed to establish, elevate, and safeguard Scripps Research's" (fontSize: 13.5)
+DEBUG: Added highlight item: "brand reputation on a global scale." (fontSize: 13.5)
+DEBUG: Found date: "In 2018, I oversaw the institute's first full rebranding effort in more than three"
+DEBUG: Added highlight item: "decades, which included a new logo, tagline, and brand identity guidelines—" (fontSize: 13.5)
+DEBUG: Added highlight item: "marking a significant milestone in modernizing and unifying the organization's" (fontSize: 13.5)
+DEBUG: Added highlight item: "visual and strategic presence." (fontSize: 13.5)
+DEBUG: Added highlight item: "Beyond brand strategy, I served as a key ambassador, fostering strong" (fontSize: 13.5)
+DEBUG: Added highlight item: "relationships between institute leadership, faculty, donors, and other critical" (fontSize: 13.5)
+DEBUG: Added highlight item: "stakeholders, reinforcing trust and alignment in support of Scripps Research's" (fontSize: 13.5)
+DEBUG: Added highlight item: "scientific mission." (fontSize: 13.5)
+DEBUG: Skipped item: "Salk Institute for Biological Studies" (fontSize: 15, isDuration: false)
+
+DEBUG: Found 13 highlight items for Scripps Research
+
+=== HIGHLIGHT ITEMS FOR Scripps Research ===
+Position: Vice President of Marketing & Communications
+Total highlight items: 13
+
+All highlight items with y-values:
+1. y=73.425 | "As Vice President of Marketing and Communications at Scripps Research,"
+2. y=74.550 | "I led a high-performing team responsible for all internal and external"
+3. y=75.675 | "communications across the institute. I spearheaded the development and"
+4. y=76.800 | "implementation of the organization's first-ever comprehensive communications"
+5. y=77.925 | "strategy—designed to establish, elevate, and safeguard Scripps Research's"
+6. y=79.050 | "brand reputation on a global scale."
+7. y=82.425 | "decades, which included a new logo, tagline, and brand identity guidelines—"
+8. y=83.550 | "marking a significant milestone in modernizing and unifying the organization's"
+9. y=84.675 | "visual and strategic presence."
+10. y=86.925 | "Beyond brand strategy, I served as a key ambassador, fostering strong"
+11. y=88.050 | "relationships between institute leadership, faculty, donors, and other critical"
+12. y=89.175 | "stakeholders, reinforcing trust and alignment in support of Scripps Research's"
+13. y=90.300 | "scientific mission."
+=== END HIGHLIGHT ITEMS ===
+
+Created work entry: {
+  name: 'Scripps Research',
+  position: 'Vice President of Marketing & Communications',
+  location: 'Greater San Diego Area',
+  highlights: [
+    "As Vice President of Marketing and Communications at Scripps Research, I led a high-performing team responsible for all internal and external communications across the institute. I spearheaded the development and implementation of the organization's first-ever comprehensive communications strategy—designed to establish, elevate, and safeguard Scripps Research's brand reputation on a global scale.",
+    "decades, which included a new logo, tagline, and brand identity guidelines— marking a significant milestone in modernizing and unifying the organization's visual and strategic presence.",
+    "Beyond brand strategy, I served as a key ambassador, fostering strong relationships between institute leadership, faculty, donors, and other critical stakeholders, reinforcing trust and alignment in support of Scripps Research's scientific mission."
+  ]
+}
+Processing position "Executive Director of Communications" under company "Salk Institute for Biological Studies"
+
+DEBUG: Position "Executive Director of Communications" has 9 items between y=94.129 and y=105.19300000000001
+DEBUG: Found date: "September 2013 - October 2017"
+DEBUG: Skipped item: "(4 years 2 months)" (fontSize: 13.5, isDuration: true)
+DEBUG: Found location: "La Jolla, California"
+DEBUG: Added highlight item: "As Executive Director of Communications at the Salk Institute, I led the" (fontSize: 13.5)
+DEBUG: Added highlight item: "institute's comprehensive communications strategy, overseeing all facets of" (fontSize: 13.5)
+DEBUG: Added highlight item: "external and internal outreach—including publications, media relations, social" (fontSize: 13.5)
+DEBUG: Added highlight item: "media, marketing, digital content, multimedia production, and the creation of" (fontSize: 13.5)
+DEBUG: Added highlight item: "key annual collateral materials." (fontSize: 13.5)
+DEBUG: Skipped item: "The San Diego Foundation" (fontSize: 15, isDuration: false)
+
+DEBUG: Found 5 highlight items for Salk Institute for Biological Studies
+
+=== HIGHLIGHT ITEMS FOR Salk Institute for Biological Studies ===
+Position: Executive Director of Communications
+Total highlight items: 5
+
+All highlight items with y-values:
+1. y=97.290 | "As Executive Director of Communications at the Salk Institute, I led the"
+2. y=98.415 | "institute's comprehensive communications strategy, overseeing all facets of"
+3. y=99.540 | "external and internal outreach—including publications, media relations, social"
+4. y=100.665 | "media, marketing, digital content, multimedia production, and the creation of"
+5. y=101.790 | "key annual collateral materials."
+=== END HIGHLIGHT ITEMS ===
+
+Created work entry: {
+  name: 'Salk Institute for Biological Studies',
+  position: 'Executive Director of Communications',
+  startDate: '2013-09',
+  endDate: '2017-10',
+  location: 'La Jolla, California',
+  highlights: [
+    "As Executive Director of Communications at the Salk Institute, I led the institute's comprehensive communications strategy, overseeing all facets of external and internal outreach—including publications, media relations, social media, marketing, digital content, multimedia production, and the creation of key annual collateral materials."
+  ]
+}
+Processing position "Vice President, Marketing and External Affairs" under company "The San Diego Foundation"
+
+DEBUG: Position "Vice President, Marketing and External Affairs" has 24 items between y=105.19300000000001 and y=136.64800000000002
+DEBUG: Found date: "July 2007 - August 2013"
+DEBUG: Skipped item: "(6 years 2 months)" (fontSize: 13.5, isDuration: true)
+DEBUG: Added highlight item: "As Chief Marketing Officer for The San Diego Foundation—the region's largest" (fontSize: 13.5)
+DEBUG: Added highlight item: "community foundation—I led the development and execution of integrated" (fontSize: 13.5)
+DEBUG: Added highlight item: "marketing and communications strategies designed to position the Foundation" (fontSize: 13.5)
+DEBUG: Added highlight item: "as a leader in philanthropy and civic engagement. My responsibilities spanned" (fontSize: 13.5)
+DEBUG: Added highlight item: "oversight of all branding, messaging, media relations, digital marketing, and" (fontSize: 13.5)
+DEBUG: Added highlight item: "public outreach initiatives." (fontSize: 13.5)
+DEBUG: Added highlight item: "As a member of the Executive Leadership Team, I played a central role in" (fontSize: 13.5)
+DEBUG: Added highlight item: "shaping organizational strategy, policy, and planning. I also worked closely" (fontSize: 13.5)
+DEBUG: Added highlight item: "with the Board of Governors and Executive Committees, providing strategic" (fontSize: 13.5)
+DEBUG: Added highlight item: "counsel and leading key department-specific initiatives aligned with the" (fontSize: 13.5)
+DEBUG: Added highlight item: "Foundation's long-term vision." (fontSize: 13.5)
+DEBUG: Added highlight item: "Key accomplishments include leading the marketing and public relations" (fontSize: 13.5)
+DEBUG: Added highlight item: "efforts for the landmark Our Greater San Diego Vision initiative—an" (fontSize: 13.5)
+DEBUG: Added highlight item: "unprecedented regional campaign that engaged over 30,000 participants," (fontSize: 13.5)
+DEBUG: Added highlight item: "generated $3.5 million in media value, and achieved over 386 million media" (fontSize: 13.5)
+DEBUG: Added highlight item: "impressions." (fontSize: 13.5)
+DEBUG: Added highlight item: "Under my leadership, the marketing team increased the Foundation's brand" (fontSize: 13.5)
+DEBUG: Added highlight item: "awareness from 37% to 51% through targeted, multi-channel campaigns." (fontSize: 13.5)
+DEBUG: Added highlight item: "The Foundation also earned national recognition as the first community" (fontSize: 13.5)
+DEBUG: Added highlight item: "foundation in the country to launch an iPhone app, setting a precedent for" (fontSize: 13.5)
+DEBUG: Added highlight item: "digital innovation in the philanthropic sector." (fontSize: 13.5)
+DEBUG: Skipped item: "KB Home" (fontSize: 15, isDuration: false)
+
+DEBUG: Found 21 highlight items for The San Diego Foundation
+
+=== HIGHLIGHT ITEMS FOR The San Diego Foundation ===
+Position: Vice President, Marketing and External Affairs
+Total highlight items: 21
+
+All highlight items with y-values:
+1. y=107.370 | "As Chief Marketing Officer for The San Diego Foundation—the region's largest"
+2. y=108.495 | "community foundation—I led the development and execution of integrated"
+3. y=109.620 | "marketing and communications strategies designed to position the Foundation"
+4. y=110.745 | "as a leader in philanthropy and civic engagement. My responsibilities spanned"
+5. y=111.870 | "oversight of all branding, messaging, media relations, digital marketing, and"
+6. y=112.995 | "public outreach initiatives."
+7. y=115.245 | "As a member of the Executive Leadership Team, I played a central role in"
+8. y=116.370 | "shaping organizational strategy, policy, and planning. I also worked closely"
+9. y=117.495 | "with the Board of Governors and Executive Committees, providing strategic"
+10. y=118.620 | "counsel and leading key department-specific initiatives aligned with the"
+11. y=119.745 | "Foundation's long-term vision."
+12. y=121.995 | "Key accomplishments include leading the marketing and public relations"
+13. y=123.120 | "efforts for the landmark Our Greater San Diego Vision initiative—an"
+14. y=124.245 | "unprecedented regional campaign that engaged over 30,000 participants,"
+15. y=125.370 | "generated $3.5 million in media value, and achieved over 386 million media"
+16. y=126.495 | "impressions."
+17. y=128.745 | "Under my leadership, the marketing team increased the Foundation's brand"
+18. y=129.870 | "awareness from 37% to 51% through targeted, multi-channel campaigns."
+19. y=130.995 | "The Foundation also earned national recognition as the first community"
+20. y=132.120 | "foundation in the country to launch an iPhone app, setting a precedent for"
+21. y=133.245 | "digital innovation in the philanthropic sector."
+=== END HIGHLIGHT ITEMS ===
+
+Created work entry: {
+  name: 'The San Diego Foundation',
+  position: 'Vice President, Marketing and External Affairs',
+  startDate: '2007-07',
+  endDate: '2013-08',
+  highlights: [
+    "As Chief Marketing Officer for The San Diego Foundation—the region's largest community foundation—I led the development and execution of integrated marketing and communications strategies designed to position the Foundation as a leader in philanthropy and civic engagement. My responsibilities spanned oversight of all branding, messaging, media relations, digital marketing, and public outreach initiatives.",
+    "As a member of the Executive Leadership Team, I played a central role in shaping organizational strategy, policy, and planning. I also worked closely with the Board of Governors and Executive Committees, providing strategic counsel and leading key department-specific initiatives aligned with the Foundation's long-term vision.",
+    'Key accomplishments include leading the marketing and public relations efforts for the landmark Our Greater San Diego Vision initiative—an unprecedented regional campaign that engaged over 30,000 participants, generated $3.5 million in media value, and achieved over 386 million media impressions.',
+    "Under my leadership, the marketing team increased the Foundation's brand awareness from 37% to 51% through targeted, multi-channel campaigns. The Foundation also earned national recognition as the first community foundation in the country to launch an iPhone app, setting a precedent for digital innovation in the philanthropic sector."
+  ]
+}
+Processing position "Director of Marketing" under company "KB Home"
+
+DEBUG: Position "Director of Marketing" has 11 items between y=136.64800000000002 and y=Infinity
+DEBUG: Found date: "June 1996 - March 2003"
+DEBUG: Skipped item: "(6 years 10 months)" (fontSize: 13.5, isDuration: true)
+DEBUG: Added highlight item: "Reporting to the Vice President of Marketing, I led all marketing and public" (fontSize: 13.5)
+DEBUG: Added highlight item: "relations initiatives at both the corporate and local levels, with a strategic" (fontSize: 13.5)
+DEBUG: Added highlight item: "focus on increasing brand visibility and driving targeted traffic to new home" (fontSize: 13.5)
+DEBUG: Added highlight item: "communities." (fontSize: 13.5)
+DEBUG: Added highlight item: "I managed high-impact national cross-promotional campaigns with major" (fontSize: 13.5)
+DEBUG: Added highlight item: "brands, including Target, "got milk?", Scholastic, Regis and Kelly, and the" (fontSize: 13.5)
+DEBUG: Added highlight item: "widely successful Simpsons Home Giveaway in partnership with FOX—" (fontSize: 13.5)
+DEBUG: Added highlight item: "a campaign that significantly boosted consumer engagement and brand" (fontSize: 13.5)
+DEBUG: Added highlight item: "recognition." (fontSize: 13.5)
+
+DEBUG: Found 9 highlight items for KB Home
+
+=== HIGHLIGHT ITEMS FOR KB Home ===
+Position: Director of Marketing
+Total highlight items: 9
+
+All highlight items with y-values:
+1. y=139.023 | "Reporting to the Vice President of Marketing, I led all marketing and public"
+2. y=140.148 | "relations initiatives at both the corporate and local levels, with a strategic"
+3. y=141.273 | "focus on increasing brand visibility and driving targeted traffic to new home"
+4. y=142.398 | "communities."
+5. y=144.648 | "I managed high-impact national cross-promotional campaigns with major"
+6. y=145.773 | "brands, including Target, "got milk?", Scholastic, Regis and Kelly, and the"
+7. y=146.898 | "widely successful Simpsons Home Giveaway in partnership with FOX—"
+8. y=148.023 | "a campaign that significantly boosted consumer engagement and brand"
+9. y=149.148 | "recognition."
+=== END HIGHLIGHT ITEMS ===
+
+Created work entry: {
+  name: 'KB Home',
+  position: 'Director of Marketing',
+  startDate: '1996-06',
+  endDate: '2003-03',
+  highlights: [
+    'Reporting to the Vice President of Marketing, I led all marketing and public relations initiatives at both the corporate and local levels, with a strategic focus on increasing brand visibility and driving targeted traffic to new home communities.',
+    'I managed high-impact national cross-promotional campaigns with major brands, including Target, "got milk?", Scholastic, Regis and Kelly, and the widely successful Simpsons Home Giveaway in partnership with FOX— a campaign that significantly boosted consumer engagement and brand recognition.'
+  ]
+}
+Successfully parsed 5 work entries from 5 positions
+Parsing education from 2 items
+Education items: [
+  { text: 'University of Denver', fontSize: 15, y: 154.31600000000003 },
+  {
+    text: 'Bachelor of Science, Mass Communications',
+    fontSize: 13.5,
+    y: 155.41700000000003
+  }
+]
+Education baseline gap: 12
+Found potential institution: "University of Denver" (fontSize: 15)
+Found 1 potential institutions
+Processing institution: "University of Denver"
+Related items (1): [ 'Bachelor of Science, Mass Communications' ]
+Combined text: "Bachelor of Science, Mass Communications"
+Created education entry: {
+  institution: 'University of Denver',
+  studyType: 'Bachelor',
+  area: 'of Science, Mass Communications',
+  startDate: undefined,
+  endDate: undefined
+}
+Successfully parsed 1 education entries from 1 institutions
+DEBUG: Parsing skills from 3 items
+DEBUG: Merging contact info from 4 items
+DEBUG: Found email in contact: "annamarierooney@yahoo.com"
+{
+  "$schema": "https://jsonresume.org/schema/1.0.0/resume.json",
+  "work": [
+    {
+      "name": "Gladstone Institutes",
+      "position": "Vice President Communications",
+      "startDate": "2023-08",
+      "location": "San Francisco Bay Area",
+      "highlights": [
+        "As Vice President of Communications at Gladstone Institutes, I lead strategic communications efforts to elevate the organization's visibility, support its scientific mission, and foster meaningful engagement with diverse audiences. My role encompasses a wide range of responsibilities, including:",
+        "Shaping and executing integrated communication strategies that reflect Gladstone's leadership in biomedical research and its commitment to solving the world's most challenging diseases.",
+        "Overseeing media relations, brand management, digital strategy, and executive communications to ensure consistency, clarity, and impact across all channels.",
+        "Collaborating with scientists and leadership to translate complex discoveries into compelling stories that resonate with the public, policymakers, donors, and the broader scientific community.",
+        "Guiding crisis communication and internal communication to align messaging and support an inclusive, informed organizational culture.",
+        "Leading a talented communications team dedicated to innovation, excellence, and storytelling that drives scientific understanding and societal impact.",
+        "With a deep belief in the power of science communication to inspire change, I'm proud to help advance Gladstone's mission and share the groundbreaking work of its researchers with the world."
+      ]
+    },
+    {
+      "name": "Scripps Research",
+      "position": "Vice President of Marketing & Communications",
+      "location": "Greater San Diego Area",
+      "highlights": [
+        "As Vice President of Marketing and Communications at Scripps Research, I led a high-performing team responsible for all internal and external communications across the institute. I spearheaded the development and implementation of the organization's first-ever comprehensive communications strategy—designed to establish, elevate, and safeguard Scripps Research's brand reputation on a global scale.",
+        "decades, which included a new logo, tagline, and brand identity guidelines— marking a significant milestone in modernizing and unifying the organization's visual and strategic presence.",
+        "Beyond brand strategy, I served as a key ambassador, fostering strong relationships between institute leadership, faculty, donors, and other critical stakeholders, reinforcing trust and alignment in support of Scripps Research's scientific mission."
+      ]
+    },
+    {
+      "name": "Salk Institute for Biological Studies",
+      "position": "Executive Director of Communications",
+      "startDate": "2013-09",
+      "endDate": "2017-10",
+      "location": "La Jolla, California",
+      "highlights": [
+        "As Executive Director of Communications at the Salk Institute, I led the institute's comprehensive communications strategy, overseeing all facets of external and internal outreach—including publications, media relations, social media, marketing, digital content, multimedia production, and the creation of key annual collateral materials."
+      ]
+    },
+    {
+      "name": "The San Diego Foundation",
+      "position": "Vice President, Marketing and External Affairs",
+      "startDate": "2007-07",
+      "endDate": "2013-08",
+      "highlights": [
+        "As Chief Marketing Officer for The San Diego Foundation—the region's largest community foundation—I led the development and execution of integrated marketing and communications strategies designed to position the Foundation as a leader in philanthropy and civic engagement. My responsibilities spanned oversight of all branding, messaging, media relations, digital marketing, and public outreach initiatives.",
+        "As a member of the Executive Leadership Team, I played a central role in shaping organizational strategy, policy, and planning. I also worked closely with the Board of Governors and Executive Committees, providing strategic counsel and leading key department-specific initiatives aligned with the Foundation's long-term vision.",
+        "Key accomplishments include leading the marketing and public relations efforts for the landmark Our Greater San Diego Vision initiative—an unprecedented regional campaign that engaged over 30,000 participants, generated $3.5 million in media value, and achieved over 386 million media impressions.",
+        "Under my leadership, the marketing team increased the Foundation's brand awareness from 37% to 51% through targeted, multi-channel campaigns. The Foundation also earned national recognition as the first community foundation in the country to launch an iPhone app, setting a precedent for digital innovation in the philanthropic sector."
+      ]
+    },
+    {
+      "name": "KB Home",
+      "position": "Director of Marketing",
+      "startDate": "1996-06",
+      "endDate": "2003-03",
+      "highlights": [
+        "Reporting to the Vice President of Marketing, I led all marketing and public relations initiatives at both the corporate and local levels, with a strategic focus on increasing brand visibility and driving targeted traffic to new home communities.",
+        "I managed high-impact national cross-promotional campaigns with major brands, including Target, \"got milk?\", Scholastic, Regis and Kelly, and the widely successful Simpsons Home Giveaway in partnership with FOX— a campaign that significantly boosted consumer engagement and brand recognition."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Denver",
+      "studyType": "Bachelor",
+      "area": "of Science, Mass Communications"
+    }
+  ],
+  "basics": {
+    "name": "Anna-Marie Rooney",
+    "label": "Vice President, Communications at Gladstone Institutes",
+    "location": {
+      "city": "San Diego",
+      "region": "California",
+      "countryCode": "United States"
+    },
+    "summary": "Strategic communications leader with 30+ years of experience driving brand visibility, engagement, and impact across philanthropic, public affairs, and mission-driven organizations. I partner with executives and teams to shape narratives that inform, inspire, and activate audiences—from internal stakeholders to the global public. Skilled in turning complexity into clarity, navigating change with confidence, and leading high-performing teams. I thrive in fast-paced environments and bring a collaborative, solution-oriented mindset to every challenge. Passionate about work that makes a difference. Focused on purpose, people, and progress. Core strengths: Executive communications | Media & PR strategy | Crisis & issues management | Brand & reputation | Internal comms | Social & digital strategy | CSR | Cross-functional leadership",
+    "email": "annamarierooney@yahoo.com"
+  },
+  "skills": [
+    {
+      "name": "Public Relations"
+    },
+    {
+      "name": "Copywriting"
+    },
+    {
+      "name": "Advertising"
+    }
+  ],
+  "awards": [
+    {
+      "title": "Recognized as one of San Diego's Top Marketing Professionals by the SDBJ"
+    },
+    {
+      "title": "Recognized as a Woman Who Impacts San Diego"
+    },
+    {
+      "title": "Recognized as a Woman Who Means Business"
+    }
+  ]
+}

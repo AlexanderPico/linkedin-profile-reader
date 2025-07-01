@@ -12,8 +12,7 @@ const debugEnabled = debugArg !== undefined;
 // const debugKeyword = debugArg?.includes('=') ? debugArg.split('=')[1] : '';
 
 /**
- * Debug logging function that only outputs when debug is enabled
- * Usage: debug('Some debug message', variable1, variable2);
+ * Debug logging helper – enabled via --debug flag
  */
 const debug = (...args: any[]): void => {
   if (debugEnabled) {
@@ -389,25 +388,27 @@ const COLORS = {
 
 // Helper to convert pdf2json color index to hex
 function colorIndexToHex(colorIndex: number | undefined): string {
-  if (colorIndex === undefined) return COLORS.BLACK;
-  
   // pdf2json uses different color encoding - let's debug and map actual values
-  // For now, return the index as a debug value
-  return `#${colorIndex?.toString(16).padStart(6, '0')}` || COLORS.BLACK;
+  // This is a placeholder - actual mapping may be required
+  if (colorIndex === undefined) return '#000000'; // Default to black
+  const hex = `#${(colorIndex & 0xFFFFFF).toString(16).padStart(6, '0')}`;
+  return hex;
 }
 
 function extractTextContent(textItem: PDFTextItem): { text: string; fontSize: number; color: string; outlineColor?: string } {
-  const textParts = textItem.R.map(r => decodeURIComponent(r.T)).join('');
-  const fontSize = textItem.R.length > 0 ? textItem.R[0].TS[1] : 12;
+  // Decode the text content, which may be URI-encoded
+  const rawText = decodeURIComponent(textItem.R[0].T);
+  
+  // Convert all possible variants of quotes and apostrophes to straight ones
+  const text = rawText
+    .replace(/[\u2018\u2019\u02BC\u0301\u0060\u2032]/g, "'") // all possible apostrophe variants to straight apostrophe
+    .replace(/[\u201C\u201D\u02DD\u0302\u2033\u0022]/g, "'"); // all possible quote variants to straight quote
+
+  const fontSize = textItem.R[0].TS[1];
   const color = colorIndexToHex(textItem.clr);
   const outlineColor = textItem.oc;
   
-  return {
-    text: textParts,
-    fontSize,
-    color,
-    outlineColor
-  };
+  return { text, fontSize, color, outlineColor };
 }
 
 export async function parseLinkedInPdf(pdfInput: string | Buffer): Promise<JSONResume> {
@@ -834,6 +835,7 @@ function parseLeftColumnSections(leftColumn: Array<{
     'Certifications': 'Certifications',
     'Languages': 'Languages',
     'Honors-Awards': 'Awards',
+    'Awards': 'Awards',
     'Projects': 'Projects',
     'Publications': 'Publications'
   };
@@ -1133,60 +1135,97 @@ function parseSummary(summaryItems: any[]): string | undefined {
   return summaryText;
 }
 
+function cleanObject<T extends Record<string, any>>(obj: T, requiredFields: (keyof T)[] = []): T {
+  const cleaned: T = { ...obj };
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined && !requiredFields.includes(key as keyof T)) {
+      delete cleaned[key];
+    }
+  }
+  return cleaned;
+}
+
 function buildJSONResume(
   leftSections: { [sectionName: string]: any[] },
   rightSections: { basics: any[]; summary?: any[]; experience?: any[]; education?: any[] }
 ): JSONResume {
+  // Initialize the resume object with required schema
   const resume: JSONResume = {
-    $schema: "https://jsonresume.org/schema/1.0.0/resume.json",
-    basics: parseBasics(rightSections.basics),
-    work: rightSections.experience ? parseExperience(rightSections.experience) : [],
-    education: rightSections.education ? parseEducation(rightSections.education) : [],
+    $schema: 'https://jsonresume.org/schema/1.0.0/resume.json',
+    work: [],
+    education: []
   };
-  
-  // Add Summary to basics if present
-  if (rightSections.summary && resume.basics) {
-    const summaryText = parseSummary(rightSections.summary);
-    if (summaryText) {
-      resume.basics.summary = summaryText;
+
+  // Parse basics section
+  const basics = parseBasics(rightSections.basics);
+  if (basics) {
+    resume.basics = cleanObject(basics);
+  }
+
+  // Parse summary if available
+  if (rightSections.summary) {
+    const summary = parseSummary(rightSections.summary);
+    if (summary) {
+      if (!resume.basics) resume.basics = {};
+      resume.basics.summary = summary;
     }
   }
-  
-  // Add left column sections using schema-based keys
-  if (leftSections['Skills']) {
-    resume.skills = parseSkills(leftSections['Skills'] || []);
+
+  // Parse experience section
+  if (rightSections.experience) {
+    resume.work = parseExperience(rightSections.experience).map(work => 
+      cleanObject(work, ['name', 'position'])
+    );
   }
-  
-  if (leftSections['Certifications']) {
-    resume.certificates = parseCertificates(leftSections['Certifications'] || []);
+
+  // Parse education section
+  if (rightSections.education) {
+    resume.education = parseEducation(rightSections.education).map(edu => 
+      cleanObject(edu, ['institution'])
+    );
   }
-  
-  if (leftSections['Languages']) {
-    resume.languages = parseLanguages(leftSections['Languages'] || []);
+
+  // Parse skills section
+  if (leftSections.Skills) {
+    resume.skills = parseSkills(leftSections.Skills);
   }
-  
-  if (leftSections['Awards']) {
-    resume.awards = parseAwards(leftSections['Awards'] || []);
+
+  // Parse certificates section
+  if (leftSections.Certifications) {
+    resume.certificates = parseCertificates(leftSections.Certifications);
   }
-  
-  if (leftSections['Projects']) {
-    resume.projects = parseProjects(leftSections['Projects'] || []);
+
+  // Parse languages section
+  if (leftSections.Languages) {
+    resume.languages = parseLanguages(leftSections.Languages);
   }
-  
-  if (leftSections['Publications']) {
-    resume.publications = parsePublications(leftSections['Publications'] || []);
+
+  // Parse awards section
+  if (leftSections.Awards) {
+    resume.awards = parseAwards(leftSections.Awards);
   }
-  
-  if (leftSections['Volunteer']) {
-    resume.volunteer = parseVolunteer(leftSections['Volunteer'] || []);
+
+  // Parse projects section
+  if (leftSections.Projects) {
+    resume.projects = parseProjects(leftSections.Projects);
   }
-  
-  // Merge contact info from left column into basics
-  if (leftSections['Contact'] && resume.basics) {
-    mergeContactInfo(resume.basics, leftSections['Contact']);
+
+  // Parse publications section
+  if (leftSections.Publications) {
+    resume.publications = parsePublications(leftSections.Publications);
   }
-  
-  // Collect final metrics: parsed results
+
+  // Parse volunteer section
+  if (leftSections.Volunteer) {
+    resume.volunteer = parseVolunteer(leftSections.Volunteer);
+  }
+
+  // Merge contact info from left column if available
+  if (leftSections.Contact && resume.basics) {
+    mergeContactInfo(resume.basics, leftSections.Contact);
+  }
+
+  // Collect final metrics
   if (currentMetrics && resume.basics) {
     currentMetrics.hasName = !!resume.basics.name;
     currentMetrics.hasLabel = !!resume.basics.label;
@@ -1204,7 +1243,7 @@ function buildJSONResume(
     currentMetrics.awardsCount = resume.awards?.length || 0;
     currentMetrics.certificatesCount = resume.certificates?.length || 0;
   }
-  
+
   return resume;
 }
 
@@ -1268,73 +1307,51 @@ function parseBasics(basicsItems: Array<{
   outlineColor?: string;
   page: number;
 }>): JSONResumeBasics {
-  console.log(`DEBUG: Parsing basics from ${basicsItems.length} items`);
-  console.log(`DEBUG: Basics items:`, basicsItems.map(item => ({
-    text: item.text,
-    fontSize: item.fontSize,
-    color: item.color,
-    y: item.y
-  })));
-  
+  console.log('DEBUG: Parsing basics from', basicsItems.length, 'items');
+  console.log('DEBUG: Basics items:', basicsItems);
+
   const basics: JSONResumeBasics = {};
-  
-  // Sort by y position (top to bottom)
-  basicsItems.sort((a, b) => a.y - b.y);
-  
-  // Name should be the largest font at the top
-  const maxFontSize = Math.max(...basicsItems.map(i => i.fontSize));
-  console.log(`DEBUG: Max font size: ${maxFontSize}`);
-  
-  const nameItem = basicsItems.find(item => 
-    item.fontSize === maxFontSize && item.text.length > 3
-  );
+
+  // Find the largest font size (usually the name)
+  const maxFontSize = Math.max(...basicsItems.map(item => item.fontSize));
+  console.log('DEBUG: Max font size:', maxFontSize);
+
+  // Sort items by y position to maintain order
+  const sortedItems = [...basicsItems].sort((a, b) => a.y - b.y);
+
+  // Find name (largest font size)
+  const nameItem = sortedItems.find(item => item.fontSize === maxFontSize);
   if (nameItem) {
     basics.name = nameItem.text;
     console.log(`DEBUG: Found name: "${basics.name}" (fontSize: ${nameItem.fontSize})`);
   }
-  
-  // Label should be the text immediately after the name
-  // Looking at the debug output, it should be "Research Investigator and Core Director of Bioinformatics at Gladstone Institutes"
-  const nameY = nameItem?.y || 0;
-  const labelCandidates = basicsItems.filter(item => 
-    item.y > nameY && 
-    item.y < nameY + 3 && // within 3 units of name
-    item.text.length > 2 && // Allow shorter continuation words like "tell"
-    item.fontSize === 15 && // consistent font size for labels
-    !/@/.test(item.text) &&
-    !/linkedin/i.test(item.text) &&
-    !/Summary|Education|Experience/i.test(item.text)
+
+  // Find label (items with fontSize = 15 that aren't location)
+  const labelItems = sortedItems.filter(item => 
+    item.fontSize === 15 && 
+    !isColorInRange(item.color, PDF_COLOR_RANGES.LOCATION_TEXT) &&
+    !hasOutlineColor(item, 'LOCATION_TEXT')
   );
-  
-  if (labelCandidates.length > 0) {
-    labelCandidates.sort((a, b) => a.y - b.y);
-    // Combine consecutive lines that are close together
-    let labelText = labelCandidates[0].text;
-    for (let i = 1; i < labelCandidates.length; i++) {
-      if (Math.abs(labelCandidates[i].y - labelCandidates[i-1].y) < 1.5) {
-        labelText += ' ' + labelCandidates[i].text;
-      } else {
-        break;
-      }
-    }
-    basics.label = labelText;
+
+  if (labelItems.length > 0) {
+    // Combine all label items in order
+    basics.label = labelItems.map(item => item.text).join(' ').trim();
     console.log(`DEBUG: Found label: "${basics.label}"`);
   }
-  
-  // Location detection using color - location text has consistent outlineColor
-  const locationItems = basicsItems.filter(item => 
-    hasOutlineColor(item, 'LOCATION_TEXT')
+
+  // Find location (gray color or location-like text)
+  const locationItem = sortedItems.find(item => 
+    isColorInRange(item.color, PDF_COLOR_RANGES.LOCATION_TEXT) ||
+    hasOutlineColor(item, 'LOCATION_TEXT') ||
+    /\b(Area|City|State|Country|United States|California|New York|Campus)\b/i.test(item.text)
   );
-  if (locationItems.length > 0) {
-    const locationText = locationItems[0].text;
-    basics.location = parseLocationText(locationText);
-    console.log(`DEBUG: Found location (color-based): "${locationText}"`);
+
+  if (locationItem) {
+    const location = parseLocationText(locationItem.text);
+    basics.location = location;
+    console.log(`DEBUG: Found location (color-based): "${locationItem.text}"`);
   }
-  
-  // Summary will now be handled separately as its own section
-  
-  // Email and LinkedIn will be added from the Contact section in left column
-  
+
   return basics;
 }
 
@@ -1365,9 +1382,6 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
   })));
 
   const workEntries: JSONResumeWork[] = [];
-  // Remove unused variables
-  // let currentCompany = '';
-  // let i = 0;
 
   // STEP 1: Identify companies (fontSize = 15)
   const companies = experienceItems.filter(item => item.fontSize === 15);
@@ -1379,25 +1393,41 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
 
   // STEP 3: Helper functions for date and location detection
   const isDate = (text: string): boolean => {
-    return /\b(January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2}\/\d{1,2}\/\d{4}|\d{4})\b/i.test(text) ||
-           /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\b/i.test(text) ||
+    // More specific patterns to avoid catching text with years that aren't dates
+    return /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b/i.test(text) ||
+           /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}\b/i.test(text) ||
            /\b\d{4}\s*[-–—]\s*\d{4}\b/.test(text) ||
+           /\b\d{4}\s*[-–—]\s*Present\b/i.test(text) ||
            /\bPresent\b/i.test(text) ||
-           /\(\d+\s+(year|month)/i.test(text);
+           // Only catch standalone years if they're clearly part of a date range
+           /^\d{4}$/.test(text) ||
+           // Month/Year patterns
+           /^\d{1,2}\/\d{4}$/.test(text) ||
+           /^\d{1,2}-\d{4}$/.test(text);
   };
 
   const isLocation = (item: any): boolean => {
     // Check for location by color (gray colors)
-    return isColorInRange(item.color, PDF_COLOR_RANGES.LOCATION_TEXT) ||
+    return (isColorInRange(item.color, PDF_COLOR_RANGES.LOCATION_TEXT) ||
            hasOutlineColor(item, 'LOCATION_TEXT') ||
            // Fallback: common location patterns
-           /\b(Area|City|State|Country|United States|California|New York|Campus)\b/i.test(item.text);
+           /\b(Area|City|State|Country|United States|California|New York|Campus)\b/i.test(item.text)) &&
+           // Exclude text that's clearly not a location
+           !/\b(app|digital|innovation|sector)\b/i.test(item.text);
   };
 
   const isUrl = (text: string): boolean => {
     return /\.(org|com|edu|net|gov)($|\/)/i.test(text) ||
            /^https?:\/\//i.test(text) ||
            /^www\./i.test(text);
+  };
+
+  const isDuration = (text: string): boolean => {
+    return /^\(\d+\s+(year|month)s?\s+\d+\s+(year|month)s?\)$/.test(text) ||
+           /^\d+\s+(year|month)s?\s+\d+\s+(year|month)s?$/.test(text) ||
+           /^\d+\s+(year|month)s?$/.test(text) ||
+           /^\(\d+\s+(year|month)s?\)$/.test(text) ||
+           /^(\d+\s+(year|month)s?\s+)?(\d+\s+(year|month)s?)$/.test(text);
   };
 
   // STEP 4: Process each position
@@ -1427,15 +1457,11 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
     let dateRange = '';
     let location = '';
     let url = '';
-    const highlights: string[] = [];
+    const highlightItems: any[] = [];
 
     for (const item of positionItems) {
-      if (isDate(item.text)) {
-        if (item.text.includes('(') && item.text.includes('month')) {
-          // Duration information captured but not used in work entry
-        } else {
-          dateRange = item.text;
-        }
+      if (isDate(item.text) && !isDuration(item.text)) {
+        dateRange = item.text;
       } else if (isLocation(item)) {
         location = item.text;
       } else if (isUrl(item.text)) {
@@ -1445,33 +1471,62 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
           url = 'https://' + url;
         }
       } else {
-        // Check if this might be a highlight (larger y-gap or bullet point)
-        const isHighlight = item.text.startsWith('•') || 
-                           item.text.startsWith('-') ||
-                           item.text.startsWith('*') ||
-                           (item.fontSize <= 13.5 && item.text.length > 10);
-        
-        if (isHighlight) {
-          highlights.push(item.text);
+        // Collect all non-metadata text as potential highlights
+        if (item.fontSize <= 13.5 && item.text.length > 0 && !isDuration(item.text)) {
+          highlightItems.push(item);
         }
       }
     }
 
     // STEP 6: Create work entry
-    if (companyForPosition && position.text) {
-      const workEntry: JSONResumeWork = {
-        name: companyForPosition,
-        position: position.text,
-        startDate: extractStartDate(dateRange),
-        endDate: extractEndDate(dateRange),
-        location: location || undefined,
-        url: url || undefined,
-        highlights: highlights.length > 0 ? highlights : undefined
-      };
+    const workEntry: JSONResumeWork = {
+      name: companyForPosition,
+      position: position.text
+    } as JSONResumeWork;
 
-      workEntries.push(workEntry);
-      console.log(`Created work entry:`, workEntry);
+    const start = extractStartDate(dateRange);
+    const end = extractEndDate(dateRange);
+    if (start) workEntry.startDate = start;
+    if (end) workEntry.endDate = end;
+    if (location) workEntry.location = location;
+    if (url) workEntry.url = url;
+    
+    // Process highlights
+    if (highlightItems.length > 0) {
+      // Sort by y position to maintain correct order
+      highlightItems.sort((a, b) => a.y - b.y);
+      
+      // Group highlights by vertical spacing gaps
+      const highlights: string[] = [];
+      let currentHighlight = '';
+      let lastY = -1;
+      
+      for (const item of highlightItems) {
+        // If there's a significant gap in y-position (> 2 units), start a new highlight
+        if (lastY !== -1 && (item.y - lastY > 2)) {
+          if (currentHighlight) {
+            highlights.push(currentHighlight.trim());
+            currentHighlight = '';
+          }
+        }
+        
+        // Always add a space between items
+        currentHighlight += (currentHighlight ? ' ' : '') + item.text.trim();
+        lastY = item.y;
+      }
+      
+      // Add the last highlight if any
+      if (currentHighlight) {
+        highlights.push(currentHighlight.trim());
+      }
+      
+      if (highlights.length > 0) {
+        workEntry.highlights = highlights;
+      }
     }
+
+    workEntries.push(workEntry);
+    console.log(`Created work entry:`, workEntry);
   }
 
   // Update metrics
@@ -1485,15 +1540,35 @@ function parseExperience(experienceItems: any[]): JSONResumeWork[] {
 }
 
 function extractStartDate(dateText: string): string | undefined {
-  const match = dateText.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
-  if (match) {
+  // First try to match full month name
+  const fullMonthMatch = dateText.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+  if (fullMonthMatch) {
     const monthMap: { [key: string]: string } = {
       'January': '01', 'February': '02', 'March': '03', 'April': '04',
       'May': '05', 'June': '06', 'July': '07', 'August': '08',
       'September': '09', 'October': '10', 'November': '11', 'December': '12'
     };
-    return `${match[2]}-${monthMap[match[1]]}`;
+    return `${fullMonthMatch[2]}-${monthMap[fullMonthMatch[1]]}`;
   }
+
+  // Then try abbreviated month name
+  const abbrevMonthMatch = dateText.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4})/i);
+  if (abbrevMonthMatch) {
+    const monthMap: { [key: string]: string } = {
+      'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+      'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+      'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+    };
+    return `${abbrevMonthMatch[2]}-${monthMap[abbrevMonthMatch[1].toLowerCase()]}`;
+  }
+
+  // Finally try numeric date (MM/YYYY or MM-YYYY)
+  const numericMatch = dateText.match(/(\d{1,2})[\/\-](\d{4})/);
+  if (numericMatch) {
+    const month = numericMatch[1].padStart(2, '0');
+    return `${numericMatch[2]}-${month}`;
+  }
+
   return undefined;
 }
 
@@ -1501,16 +1576,45 @@ function extractEndDate(dateText: string): string | undefined {
   if (/Present/i.test(dateText)) {
     return undefined;
   }
-  // Look for end date after " - " (space before dash, space after dash)
-  const match = dateText.match(/\s-\s(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
-  if (match) {
+
+  // Look for end date after any type of dash with optional spaces
+  const afterDash = dateText.split(/\s*[-–—]\s*/)[1];
+  if (!afterDash) return undefined;
+
+  // If it's "Present", return undefined
+  if (/Present/i.test(afterDash)) {
+    return undefined;
+  }
+
+  // First try full month name
+  const fullMonthMatch = afterDash.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+  if (fullMonthMatch) {
     const monthMap: { [key: string]: string } = {
       'January': '01', 'February': '02', 'March': '03', 'April': '04',
       'May': '05', 'June': '06', 'July': '07', 'August': '08',
       'September': '09', 'October': '10', 'November': '11', 'December': '12'
     };
-    return `${match[2]}-${monthMap[match[1]]}`;
+    return `${fullMonthMatch[2]}-${monthMap[fullMonthMatch[1]]}`;
   }
+
+  // Then try abbreviated month name
+  const abbrevMonthMatch = afterDash.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{4})/i);
+  if (abbrevMonthMatch) {
+    const monthMap: { [key: string]: string } = {
+      'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+      'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+      'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+    };
+    return `${abbrevMonthMatch[2]}-${monthMap[abbrevMonthMatch[1].toLowerCase()]}`;
+  }
+
+  // Finally try numeric date (MM/YYYY or MM-YYYY)
+  const numericMatch = afterDash.match(/(\d{1,2})[\/\-](\d{4})/);
+  if (numericMatch) {
+    const month = numericMatch[1].padStart(2, '0');
+    return `${numericMatch[2]}-${month}`;
+  }
+
   return undefined;
 }
 
@@ -1701,9 +1805,62 @@ function parseLanguages(languageItems: any[]): JSONResumeLanguage[] {
 }
 
 function parseAwards(awardItems: any[]): JSONResumeAward[] {
-  return awardItems.map(item => ({
-    title: item.text
-  }));
+  const awards: JSONResumeAward[] = [];
+  
+  // Sort items by y position to maintain order
+  const sortedItems = [...awardItems].sort((a, b) => a.y - b.y);
+  
+  let currentAward: string[] = [];
+  let prevY = -Infinity;
+  
+  const flushAward = () => {
+    if (currentAward.length > 0) {
+      const title = currentAward.join(' ').trim()
+        // Clean up bullet points and other markers
+        .replace(/^[•\-*]\s*/, '')
+        .replace(/^\d+[\.\)]\s*/, '')
+        .trim();
+      
+      if (title) {
+        awards.push({ title });
+      }
+      currentAward = [];
+    }
+  };
+  
+  for (const item of sortedItems) {
+    const text = item.text.trim();
+    if (!text) continue;
+    
+    // Skip section headers and other non-award text
+    if (item.fontSize >= 14 || /^(Contact|Education|Experience|Top Skills|Skills|Certifications?|Publications?|Languages?|Projects?)$/i.test(text)) {
+      continue;
+    }
+    
+    // Check if this is a new award entry
+    const hasLargeGap = (item.y - prevY) > 1.5;
+    const isNewAward = hasLargeGap || 
+                      /^(Recognized|Awarded|Named|Selected|Honored|Winner|Recipient|Achievement)/i.test(text) ||
+                      /^[•\-*]\s/.test(text) ||
+                      /^\d+[\.\)]\s/.test(text);
+    
+    if (isNewAward && currentAward.length > 0) {
+      flushAward();
+    }
+    
+    currentAward.push(text);
+    prevY = item.y;
+  }
+  
+  // Don't forget the last award
+  flushAward();
+  
+  // Update metrics
+  if (currentMetrics) {
+    currentMetrics.awardsCount = awards.length;
+  }
+  
+  return awards;
 }
 
 function parseProjects(projectItems: any[]): JSONResumeProject[] {

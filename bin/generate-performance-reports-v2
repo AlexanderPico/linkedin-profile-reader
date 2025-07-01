@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import { generateAllReports, generateSummaryTable } from '../dist/performance-report-v2.js';
+import { generateAllReports, generateSummaryTable } from '../dist/performance-report.js';
 import fs from 'fs';
 
 async function main() {
   try {
-    console.log('🚀 LinkedIn Profile Parser - Performance Analysis v2');
+    console.log('🚀 LinkedIn Profile Parser - Performance Analysis');
     console.log('='.repeat(60));
     
     // Generate all individual reports
@@ -19,7 +19,7 @@ async function main() {
     // Generate summary table
     console.log('\n📊 Generating performance summary...');
     const summaryTable = generateSummaryTable(allReports);
-    const summaryPath = 'tests/performance-summary-v2.md';
+    const summaryPath = 'tests/performance-summary.md';
     fs.writeFileSync(summaryPath, summaryTable);
     console.log(`✅ Summary saved: ${summaryPath}`);
     

@@ -89,7 +89,7 @@ try {
   // Generate performance report if requested
   if (reportFlag) {
     try {
-      const { generateAllReports, generateSummaryTable } = await import('../src/performance-report-v2.js');
+      const { generateAllReports, generateSummaryTable } = await import('../src/performance-report.js');
       console.log('\n🔍 Generating performance reports...');
       const allReports = await generateAllReports();
       

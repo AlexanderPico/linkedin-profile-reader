@@ -2,9 +2,11 @@ import {
   parseLinkedInPdf,
   getParsingMetrics,
   ParsingMetrics,
+  JSONResume,
 } from './index.js';
 import fs from 'fs';
 import path from 'path';
+import { diff } from 'jest-diff';
 
 // Enhanced metrics interface with computed values
 interface PerformanceReport {
@@ -25,6 +27,11 @@ interface PerformanceReport {
   status: string;
   issues: string[];
   strengths: string[];
+  diffs?: {
+    work?: string | null;
+    education?: string | null;
+    basics?: string | null;
+  };
 }
 
 export async function generatePerformanceReport(
@@ -49,7 +56,7 @@ export async function generatePerformanceReport(
     const expectedEducationCount = expected.education?.length || 0;
 
     // Parse the PDF and get metrics directly
-    await parseLinkedInPdf(pdfPath);
+    const result: JSONResume = await parseLinkedInPdf(pdfPath);
     const metrics = getParsingMetrics();
 
     if (!metrics) {
@@ -83,10 +90,21 @@ export async function generatePerformanceReport(
     ].filter(Boolean).length;
     const overallSuccessRate = Math.round((successfulSections / 4) * 100);
 
+    // Deep-diff comparison
+    const workDiff = diff(expected.work, result.work);
+    const educationDiff = diff(expected.education, result.education);
+    const basicsDiff = expected.basics ? diff(expected.basics, result.basics) : null;
+    
+    const hasContentDiff = (workDiff && !workDiff.includes('Compared values have no visual difference')) ||
+                           (educationDiff && !educationDiff.includes('Compared values have no visual difference')) ||
+                           (basicsDiff && !basicsDiff.includes('Compared values have no visual difference'));
+
     // Determine status
     let status: string;
-    if (overallSuccessRate === 100) {
+    if (overallSuccessRate === 100 && !hasContentDiff) {
       status = 'PERFECT PARSING';
+    } else if (hasContentDiff) {
+      status = '⚠️ CONTENT MISMATCH';
     } else if (overallSuccessRate >= 75) {
       status = 'GOOD PARSING';
     } else if (overallSuccessRate >= 50) {
@@ -107,6 +125,16 @@ export async function generatePerformanceReport(
       issues.push('Work entry fragmentation detected');
     if (educationSuccessRate < 100 && metrics.educationEntriesDetected > 0)
       issues.push('Education parsing incomplete');
+
+    if (workDiff && !workDiff.includes('Compared values have no visual difference')) {
+      issues.push('Work section has content mismatches.');
+    }
+    if (educationDiff && !educationDiff.includes('Compared values have no visual difference')) {
+      issues.push('Education section has content mismatches.');
+    }
+    if (basicsDiff && !basicsDiff.includes('Compared values have no visual difference')) {
+      issues.push('Basics section has content mismatches.');
+    }
 
     if (basicsParsed) strengths.push('Complete basics extraction');
     if (metrics.summaryLength > 200)
@@ -129,6 +157,11 @@ export async function generatePerformanceReport(
       status,
       issues,
       strengths,
+      diffs: {
+        work: workDiff,
+        education: educationDiff,
+        basics: basicsDiff
+      }
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
@@ -137,6 +170,84 @@ export async function generatePerformanceReport(
 
 export function generateMarkdownReport(report: PerformanceReport): string {
   const date = new Date().toISOString().split('T')[0];
+
+  let diffDetails = '';
+  if (report.diffs) {
+    const formatDiff = (diffText: string | null | undefined) => {
+      if (!diffText || diffText.includes('Compared values have no visual difference')) {
+        return null;
+      }
+      
+      // Clean up the diff output
+      return diffText
+        .split('\n')
+        .filter(line => {
+          // Keep only meaningful diff lines
+          const trimmed = line.trim();
+          if (!trimmed) return false;
+          if (trimmed.includes('Compared values have no visual difference')) return false;
+          if (trimmed.includes('Expected:')) return false;
+          if (trimmed.includes('Received:')) return false;
+          if (trimmed.includes('Array [')) return false;
+          if (trimmed.includes('Object {')) return false;
+          if (trimmed.includes('},')) return false;
+          if (trimmed.includes('],')) return false;
+          if (trimmed.includes(': undefined,')) return false;
+          if (trimmed === '}' || trimmed === ']') return false;
+          // Remove lines with just formatting
+          if (trimmed.match(/^\[[\d]+m.*\[[\d]+m$/)) return false;
+          return true;
+        })
+        .map(line => {
+          // Clean up ANSI color codes and format for markdown
+          let cleaned = line
+            .replace(/\[\d+m/g, '') // Remove ANSI color codes
+            .replace(/\[2m/g, '')   // Remove dim formatting
+            .replace(/\[22m/g, '')  // Remove undim formatting
+            .trim();
+          
+          // Format diff markers
+          if (cleaned.startsWith('- ')) {
+            return `-${cleaned.slice(2).trim()}`;
+          }
+          if (cleaned.startsWith('+ ')) {
+            return `+${cleaned.slice(2).trim()}`;
+          }
+          // Keep context lines as is
+          return cleaned;
+        })
+        .join('\n');
+    };
+
+    // Format each section's diffs
+    if (report.diffs.work) {
+      const workDiff = formatDiff(report.diffs.work);
+      if (workDiff) {
+        diffDetails += '\n### Work Section Diffs\n```diff\n' + workDiff + '\n```\n';
+      }
+    }
+
+    if (report.diffs.education) {
+      const educationDiff = formatDiff(report.diffs.education);
+      if (educationDiff) {
+        diffDetails += '\n### Education Section Diffs\n```diff\n' + educationDiff + '\n```\n';
+      }
+    }
+
+    if (report.diffs.basics) {
+      const basicsDiff = formatDiff(report.diffs.basics);
+      if (basicsDiff) {
+        diffDetails += '\n### Basics Section Diffs\n```diff\n' + basicsDiff + '\n```\n';
+      }
+    }
+  }
+
+  const issuesContent = report.issues.length > 0
+    ? report.issues.map((issue) => `- ${issue}`).join('\n')
+    : '- No major issues detected';
+
+  const issuesSection = `### ⚠️ Issues Identified
+${issuesContent}${diffDetails}`;
 
   return `# Parsing Performance Report: ${report.fixtureName}
 
@@ -197,8 +308,7 @@ ${Object.entries(report.metrics.rightColumnSections)
 ### 💪 Strengths
 ${report.strengths.map((strength) => `- ${strength}`).join('\n')}
 
-### ⚠️ Issues Identified
-${report.issues.length > 0 ? report.issues.map((issue) => `- ${issue}`).join('\n') : '- No major issues detected'}
+${issuesSection}
 
 ## 📈 Performance Rating
 
@@ -213,7 +323,7 @@ ${
 }
 
 ---
-*This report was automatically generated by the LinkedIn Profile Parser performance analysis tool v2.*
+*This report was automatically generated by the LinkedIn Profile Parser performance analysis tool.*
 `;
 }
 
@@ -358,7 +468,7 @@ export function generateSummaryTable(allReports: PerformanceReport[]): string {
     });
 
   table += `\n---
-*This summary was automatically generated by the LinkedIn Profile Parser performance analysis tool v2.*
+*This summary was automatically generated by the LinkedIn Profile Parser performance analysis tool*
 `;
 
   return table;
