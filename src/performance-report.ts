@@ -93,11 +93,17 @@ export async function generatePerformanceReport(
     // Deep-diff comparison
     const workDiff = diff(expected.work, result.work);
     const educationDiff = diff(expected.education, result.education);
-    const basicsDiff = expected.basics ? diff(expected.basics, result.basics) : null;
-    
-    const hasContentDiff = (workDiff && !workDiff.includes('Compared values have no visual difference')) ||
-                           (educationDiff && !educationDiff.includes('Compared values have no visual difference')) ||
-                           (basicsDiff && !basicsDiff.includes('Compared values have no visual difference'));
+    const basicsDiff = expected.basics
+      ? diff(expected.basics, result.basics)
+      : null;
+
+    const hasContentDiff =
+      (workDiff &&
+        !workDiff.includes('Compared values have no visual difference')) ||
+      (educationDiff &&
+        !educationDiff.includes('Compared values have no visual difference')) ||
+      (basicsDiff &&
+        !basicsDiff.includes('Compared values have no visual difference'));
 
     // Determine status
     let status: string;
@@ -126,13 +132,22 @@ export async function generatePerformanceReport(
     if (educationSuccessRate < 100 && metrics.educationEntriesDetected > 0)
       issues.push('Education parsing incomplete');
 
-    if (workDiff && !workDiff.includes('Compared values have no visual difference')) {
+    if (
+      workDiff &&
+      !workDiff.includes('Compared values have no visual difference')
+    ) {
       issues.push('Work section has content mismatches.');
     }
-    if (educationDiff && !educationDiff.includes('Compared values have no visual difference')) {
+    if (
+      educationDiff &&
+      !educationDiff.includes('Compared values have no visual difference')
+    ) {
       issues.push('Education section has content mismatches.');
     }
-    if (basicsDiff && !basicsDiff.includes('Compared values have no visual difference')) {
+    if (
+      basicsDiff &&
+      !basicsDiff.includes('Compared values have no visual difference')
+    ) {
       issues.push('Basics section has content mismatches.');
     }
 
@@ -160,8 +175,8 @@ export async function generatePerformanceReport(
       diffs: {
         work: workDiff,
         education: educationDiff,
-        basics: basicsDiff
-      }
+        basics: basicsDiff,
+      },
     };
   } catch (error) {
     throw error instanceof Error ? error : new Error(String(error));
@@ -174,18 +189,22 @@ export function generateMarkdownReport(report: PerformanceReport): string {
   let diffDetails = '';
   if (report.diffs) {
     const formatDiff = (diffText: string | null | undefined) => {
-      if (!diffText || diffText.includes('Compared values have no visual difference')) {
+      if (
+        !diffText ||
+        diffText.includes('Compared values have no visual difference')
+      ) {
         return null;
       }
-      
+
       // Clean up the diff output
       return diffText
         .split('\n')
-        .filter(line => {
+        .filter((line) => {
           // Keep only meaningful diff lines
           const trimmed = line.trim();
           if (!trimmed) return false;
-          if (trimmed.includes('Compared values have no visual difference')) return false;
+          if (trimmed.includes('Compared values have no visual difference'))
+            return false;
           if (trimmed.includes('Expected:')) return false;
           if (trimmed.includes('Received:')) return false;
           if (trimmed.includes('Array [')) return false;
@@ -198,14 +217,14 @@ export function generateMarkdownReport(report: PerformanceReport): string {
           if (trimmed.match(/^\[[\d]+m.*\[[\d]+m$/)) return false;
           return true;
         })
-        .map(line => {
+        .map((line) => {
           // Clean up ANSI color codes and format for markdown
           let cleaned = line
             .replace(/\[\d+m/g, '') // Remove ANSI color codes
-            .replace(/\[2m/g, '')   // Remove dim formatting
-            .replace(/\[22m/g, '')  // Remove undim formatting
+            .replace(/\[2m/g, '') // Remove dim formatting
+            .replace(/\[22m/g, '') // Remove undim formatting
             .trim();
-          
+
           // Format diff markers
           if (cleaned.startsWith('- ')) {
             return `-${cleaned.slice(2).trim()}`;
@@ -223,28 +242,34 @@ export function generateMarkdownReport(report: PerformanceReport): string {
     if (report.diffs.work) {
       const workDiff = formatDiff(report.diffs.work);
       if (workDiff) {
-        diffDetails += '\n### Work Section Diffs\n```diff\n' + workDiff + '\n```\n';
+        diffDetails +=
+          '\n### Work Section Diffs\n```diff\n' + workDiff + '\n```\n';
       }
     }
 
     if (report.diffs.education) {
       const educationDiff = formatDiff(report.diffs.education);
       if (educationDiff) {
-        diffDetails += '\n### Education Section Diffs\n```diff\n' + educationDiff + '\n```\n';
+        diffDetails +=
+          '\n### Education Section Diffs\n```diff\n' +
+          educationDiff +
+          '\n```\n';
       }
     }
 
     if (report.diffs.basics) {
       const basicsDiff = formatDiff(report.diffs.basics);
       if (basicsDiff) {
-        diffDetails += '\n### Basics Section Diffs\n```diff\n' + basicsDiff + '\n```\n';
+        diffDetails +=
+          '\n### Basics Section Diffs\n```diff\n' + basicsDiff + '\n```\n';
       }
     }
   }
 
-  const issuesContent = report.issues.length > 0
-    ? report.issues.map((issue) => `- ${issue}`).join('\n')
-    : '- No major issues detected';
+  const issuesContent =
+    report.issues.length > 0
+      ? report.issues.map((issue) => `- ${issue}`).join('\n')
+      : '- No major issues detected';
 
   const issuesSection = `### ⚠️ Issues Identified
 ${issuesContent}${diffDetails}`;

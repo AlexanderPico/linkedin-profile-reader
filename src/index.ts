@@ -379,13 +379,6 @@ interface PDFData {
   Meta: any;
 }
 
-// Color constants
-const COLORS = {
-  BLACK: '#212121',
-  GRAY: '#bebebe',
-  LIGHT_GRAY: '#e1e8ed'
-};
-
 // Helper to convert pdf2json color index to hex
 function colorIndexToHex(colorIndex: number | undefined): string {
   // pdf2json uses different color encoding - let's debug and map actual values

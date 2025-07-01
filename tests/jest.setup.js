@@ -15,7 +15,7 @@ const debugKeyword = debugArg?.includes('=') ? debugArg.split('=')[1] : '';
 // Simple debug function
 function debug(...args) {
   if (debugEnabled) {
-    // eslint-disable-next-line no-console
+     
     console.log(...args);
   }
 }
